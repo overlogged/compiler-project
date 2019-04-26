@@ -35,7 +35,7 @@ todo: package，module
 ## 函数
 
 ```
-fn fun[T](x:i8, f <: struct { g:T }):i8 = {
+fn fun[T](x:i8, f·: struct { g:T }):i8 = {
   //
   return 1;
 }
@@ -61,20 +61,20 @@ fun(a,b)
 
 ## 控制语句
 ```
-if (xxx) {
+if xxx {
 
-} else if (xxx) {
+} else if xxx {
 
 } else {
 
 }
 
 
-while (xxx) {
+while xxx {
 
 }
 
-for(int i=0;i<n;i++) {
+for i in range(1,10) {
 
 }
 ```
