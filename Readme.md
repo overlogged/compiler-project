@@ -12,38 +12,36 @@ todo: package，module
   - i8,16,32,64
   - f32,f64
   - char
+  - null
 - 复合类型
   - 结构体
   ```
-  data A[T] = struct {
-      x:bool,
-      y:i8,
-      z:T
-  };
+  data A[T] = bool x, i8 y, T z
   ```
   - 联合
   ```
-  data Maybe[T] = union {
-      x:A,
-      y:struct {
-        z:bool,
-        h:T
-      }
-  };
+  data Maybe[T] = bool x | i8 y,i32 h | T z
   ```
+
 
 ## 函数
 
 ```
-fn fun[T](x:i8, f·: struct { g:T }):i8 = {
+fn fun(x:&i8 | null) {
+  if x.i8? {
+
+  } else {
+
+  }
+}
+
+fn fun(x:&A[i8]):u8 {
+
+}
+
+fn fun[T](x:i8, f: (T g) ):i8 {
   //
   return 1;
-}
-```
-
-```
-fn fun[T](x,y):i8 = {
-  
 }
 ```
 
@@ -58,6 +56,12 @@ fun(a,b)
 ## 运算符
 
 和 C 语言一样
+
+## 变量
+```
+val x: i8 = 0
+var y: u32 = 1
+```
 
 ## 控制语句
 ```
@@ -81,4 +85,4 @@ for i in range(1,10) {
 
 ## 其他
 
-不要指针，不要强制类型转换
+指针的目的：call by name；堆内存管理。不允许加减和随意赋值。
