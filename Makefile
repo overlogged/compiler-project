@@ -1,16 +1,39 @@
-CPPDEBUG = -g -Wall -D DEBUG
-CPPFLAGS = -O2 -I include/ -std=c++17 ${CPPDEBUG}
+# This Makefile is designed to be simple and readable.  It does not
+# aim at portability.  It requires GNU Make.
 
-all: compiler
+BASE = bin/main
+CXX = g++
+FLEX = flex
+CXXFLAGS = -std=c++17 -g
 
-bin/parser.o: src/parser.yy
-	bison -d --output=src/parser.tab.cpp src/parser.yy
-	g++ $(CPPFLAGS) -c -o bin/parser.o src/parser.tab.cpp
+all: bin $(BASE)
 
-bin/lexer.o: src/lexer.ll
-	flex -+ --outfile=src/lexer.yy.cpp $<
-	g++ $(CPPFLAGS) -c src/lexer.yy.cpp -o bin/lexer.o
+.PHONY: bin
+bin:
+	mkdir -p bin
 
-.PHONY: clean
+src/parser.cpp src/parser.hpp: src/parser.yy
+	bison -d --output=src/parser.cpp $<
+
+src/lexer.cpp: src/lexer.ll
+	flex -o $@ $<
+
+bin/%.o: src/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(BASE): bin/main.o bin/parser.o bin/lexer.o bin/driver.o bin/utils.o
+	$(CXX) -o $@ $^
+
+%.json: %.rs
+	bash -c "bin/main $^ > $@"
+
+.PHONY: test clean
+
+test: bin/main samples/function.json
+
+$(BASE).o: src/parser.hpp
+parser.o: src/parser.hpp
+lexer.o: src/parser.hpp
+
 clean:
-	rm -rf $(CLEANLIST)
+	rm -rf bin src/*.hh src/parser.hpp src/parser.cpp src/lexer.cpp samples/*.json

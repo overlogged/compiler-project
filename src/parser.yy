@@ -1,129 +1,101 @@
-%require "3.2"
 %language "c++"
-%define api.value.type variant
+%require "3.0"
+%defines
+
 %define api.token.constructor
-%locations
-%define parse.trace
+%define api.value.type variant
 %define parse.assert
+
+%code requires {
+  #include <string>
+  #include "parse_tree.h"
+  class driver;
+}
+
+// The parsing context.
+%param { driver& drv }
+
+%locations
+
+%define parse.trace
 %define parse.error verbose
+
+%code {
+#include "driver.h"
+}
 
 %define api.token.prefix {TOK_}
 %token
   END  0  "end of file"
-  ASSIGN  ":="
-  MINUS   "-"
-  PLUS    "+"
-  STAR    "*"
-  SLASH   "/"
+  KW_FN   "fn"
+
+  LANGLE  "{"
+  RANGLE  "}"
+  LSQUARE "["
+  RSQUARE "]"
   LPAREN  "("
   RPAREN  ")"
+
+  COLON   ":"
+  COMMA   ","
 ;
 
 %token <std::string> IDENTIFIER "identifier"
-%token <int> NUMBER "number"
-%type  <int> exp
 
+%%
+%start module_first;
 
-%{
-#include <cmath>
-#include <iostream>
+module_first: module { drv.parse_tree = $1; }
 
-int yyparse(void);
-int yylex(void);
-int yywrap()
+%type <node_module> module;
+module: %empty { $$.blocks = std::vector<node_block>();}
+      | module block { $1.blocks.push_back($2); $$ = std::move($1); };
+
+%type <node_block> block;
+block: functionBlock { $$ = $1;}
+
+%type <node_function_block> functionBlock;
+functionBlock: KW_FN IDENTIFIER LPAREN parameters RPAREN type LANGLE RANGLE 
 {
-    return 1;
+    $$ = node_function_block { 
+        .fun_name = $2,
+        .params = $4.params,
+        .ret_type = $6
+    };
 }
-int yyerror(const char *msg);
 
-double results[1000];
-int count = 0;
-
-%}
-
-%define api.token.prefix {TOK_}
-
-%token ADDOP MULOP EXPOP NUMBER LBRACE RBRACE
-
-%type <double> final exp term factor atom primary NUMBER
-%type <char> ADDOP MULOP EXPOP
-
-%%
-final:
-    exp {
-        results[count++] = $1;
-    } |
-    final exp {
-        results[count++] = $2;
+%type <node_parameters> parameters;
+parameters: 
+    %empty { $$.params = std::vector<node_var_name_type>();}
+    | varNameType { 
+        $$.params = std::vector<node_var_name_type>();
+        $$.params.push_back($1);
+    }
+    | parameters COMMA varNameType {
+        $$ = std::move($1);
+        $$.params.push_back($3);
     };
 
-exp:
-    exp ADDOP term {
-        if($2 == '+'){
-            $$ = $1 + $3;
-        }else{
-            $$ = $1 - $3;
-        }
-    } |
-    term {
-        $$ = $1;
-    };
 
-atom: 
-    NUMBER {
-        $$ = $1;
-    } |
-    LBRACE exp RBRACE {
-        $$ = $2;
-    };
-
-primary:
-    atom {
-        $$ = $1;
-    } |
-    ADDOP primary {
-        if($1 == '-') {
-            $$ = - $2;
-        } else {
-            $$ = $2;
-        }
-    };
-
-factor:
-    primary EXPOP factor {
-        $$ = pow($1,$3);
-    } |
-    primary {
-        $$ = $1;
-    };
-
-term:
-    term MULOP factor {
-        if($2 == '*'){
-            $$ = $1 * $3;
-        }else{
-            $$ = $1 / $3;
-        }
-    } |
-    factor {
-        $$ = $1;
-    };
-
-%%
-
-/*
-
-final = exp \n
-exp = exp + term | exp - term | term
-term = term * factor | term / factor | factor
-factor = primary ^ factor | primary
-primary =  atom | - primary
-atom = NUMBER | ( exp )
-
-*/
-
-int yyerror(const char *msg)
+%type <node_var_name_type> varNameType;
+varNameType: IDENTIFIER COLON type 
 {
-    printf("Error encountered: %s \n", msg);
-    return 0;
+    $$ = node_var_name_type {
+        .name = $1,
+        .type = $3
+    };
+}
+
+%type <std::string> type;
+type: IDENTIFIER 
+{ 
+    // todo
+    $$ = $1; 
+}
+
+%%
+
+void yy::parser::error (const location_type& l, const std::string& m)
+{
+    std::cerr << l << ": " << m << '\n';
 }

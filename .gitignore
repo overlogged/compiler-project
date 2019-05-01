@@ -3,11 +3,10 @@
 .vscode
 bin
 compiler
-src/lexer.yy.cpp
-src/parser.tab.cpp
-test/*.hh
-test/parser.cpp
-test/lexer.cpp
-test/main
+src/lexer.cpp
+src/parser.cpp
+src/parser.hpp
+src/*.hh
 .DS*
 *.o
+samples/*.json
