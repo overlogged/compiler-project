@@ -2,6 +2,4 @@ cmake_minimum_required (VERSION 3.0)
 
 project (compiler)
 
-aux_source_directory(src SRC_FILES)
-
-add_executable(compiler ${SRC_FILES})
+add_executable(compiler src/driver.cpp src/driver.h src/main.cpp src/parse_tree.h src/utils.cpp src/utils.h)
