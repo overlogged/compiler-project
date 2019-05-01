@@ -1,41 +1,32 @@
 # This Makefile is designed to be simple and readable.  It does not
 # aim at portability.  It requires GNU Make.
 
-BASE = test
+BASE = main
 BISON = bison
 CXX = g++
 FLEX = flex
 XSLTPROC = xsltproc
+CXXFLAGS = -std=c++17 -g
+BISONFLAGS = -d
+FLEXFLAGS = -+
 
 all: $(BASE)
 
-%.cc %.hh: %.yy
-	$(BISON) $(BISONFLAGS) -o $*.cc $<
+parser.cpp parser.hpp: parser.yy
+	$(BISON) $(BISONFLAGS) --output=parser.cpp $<
 
-%.cc: %.ll
-	$(FLEX) $(FLEXFLAGS) -o$@ $<
+lexer.cpp: lexer.ll
+	$(FLEX) $(FLEXFLAGS) -o $@ $<
 
-%.o: %.cc
-	$(CXX) $(CXXFLAGS) -c -o$@ $<
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-$(BASE): $(BASE).o parser.o scanner.o
+$(BASE): main.o parser.o lexer.o driver.o utils.o
 	$(CXX) -o $@ $^
 
-$(BASE).o: parser.hh
-parser.o: parser.hh
-scanner.o: parser.hh
+$(BASE).o: parser.hpp
+parser.o: parser.hpp
+lexer.o: parser.hpp
 
-run: $(BASE)
-	@echo "Type arithmetic expressions.  Quit with ctrl-d."
-	./$< -
-
-html: parser.html
-%.html: %.xml
-	$(XSLTPROC) $(XSLTPROCFLAGS) -o $@ $$($(BISON) --print-datadir)/xslt/xml2xhtml.xsl $<
-
-CLEANFILES =										\
-  $(BASE) *.o										\
-  parser.hh parser.cc parser.output parser.xml parser.html parser.gv location.hh	\
-  scanner.cc
 clean:
-	rm -f $(CLEANFILES)
+	rm -f *.hh *.out *.o parser.hpp parser.cpp lexer.cpp

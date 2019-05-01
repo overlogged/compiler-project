@@ -4,6 +4,15 @@ module = {block}
 
 block = functionBlock
 
-functionBlock = "fn" identifier [typeParams] "(" ")"
+functionBlock = "fn" identifier [typeParams] "(" parameters ")" type "{" functionBody "}"
 
-typeParams = "[" identifier {"," identifier} "]"
+typeParams = "[" identifier  {"," identifier}  "]"
+
+parameters = e | varNameType {"," varNameType}
+
+varNameType = identifier ":" type
+
+# todo
+functionBody = e
+
+type = identifier

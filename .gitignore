@@ -5,6 +5,8 @@ bin
 compiler
 src/lexer.yy.cpp
 src/parser.tab.cpp
-test/location.hh
-test/parser.hh
+test/*.hh
+test/parser.cpp
+test/lexer.cpp
 .DS*
+*.o
