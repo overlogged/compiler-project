@@ -8,5 +8,6 @@ src/parser.tab.cpp
 test/*.hh
 test/parser.cpp
 test/lexer.cpp
+test/main
 .DS*
 *.o

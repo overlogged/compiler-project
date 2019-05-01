@@ -8,7 +8,6 @@ FLEX = flex
 XSLTPROC = xsltproc
 CXXFLAGS = -std=c++17 -g
 BISONFLAGS = -d
-FLEXFLAGS = -+
 
 all: $(BASE)
 
@@ -24,9 +23,16 @@ lexer.cpp: lexer.ll
 $(BASE): main.o parser.o lexer.o driver.o utils.o
 	$(CXX) -o $@ $^
 
+%.json: %.rs
+	bash -c "./main $^ > $@"
+
+.PHONY: test clean
+
+test: main ../samples/function.json
+
 $(BASE).o: parser.hpp
 parser.o: parser.hpp
 lexer.o: parser.hpp
 
 clean:
-	rm -f *.hh *.out *.o parser.hpp parser.cpp lexer.cpp
+	rm -f *.hh *.out *.o parser.hpp parser.cpp lexer.cpp main samples/*.json

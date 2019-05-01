@@ -5,11 +5,13 @@
 #include <map>
 #include <string>
 
-// Give Flex the prototype of yylex we want and 
+// Give Flex the prototype of yylex we want and
 #define YY_DECL yy::parser::symbol_type yylex(driver &drv)
 
 // declare it for the parser's sake.
 YY_DECL;
+
+#define register
 
 // Conducting the whole scanning and parsing of Calc++.
 class driver
@@ -31,4 +33,7 @@ class driver
     bool trace_scanning;
     // The token's location used by the scanner.
     yy::location location;
+
+    // parse_tree
+    node_module parse_tree;
 };

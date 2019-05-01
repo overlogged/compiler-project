@@ -43,11 +43,13 @@
 %token <std::string> IDENTIFIER "identifier"
 
 %%
-%start module;
+%start module_first;
 
-%type <std::vector<node_block>> module;
-module: %empty { $$ = std::vector<node_block>();}
-      | module block { $1.push_back($2); $$ = std::move($1); };
+module_first: module { drv.parse_tree = $1; }
+
+%type <node_module> module;
+module: %empty { $$.blocks = std::vector<node_block>();}
+      | module block { $1.blocks.push_back($2); $$ = std::move($1); };
 
 %type <node_block> block;
 block: functionBlock { $$ = $1;}

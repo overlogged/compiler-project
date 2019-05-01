@@ -9,8 +9,8 @@
 #include <variant>
 #include "utils.h"
 
-
-std::string to_string(const std::string& s){
+inline std::string to_string(const std::string &s)
+{
     return "\"" + s + "\"";
 }
 
@@ -34,7 +34,6 @@ std::string to_string(const std::vector<T> &arr)
     return ret;
 }
 
-
 // ============================================================
 
 // node_var_name_type
@@ -43,17 +42,14 @@ struct node_var_name_type
     std::string name, type;
 };
 
-inline std::string to_string(const node_var_name_type& node)
+inline std::string to_string(const node_var_name_type &node)
 {
     return obj_to_string(
-        vec_str {"name","type"},
-        vec_str {
+        vec_str{"name", "type"},
+        vec_str{
             to_string(node.name),
-            to_string(node.type)
-        }
-    );
+            to_string(node.type)});
 }
-
 
 // node_parameters
 struct node_parameters
@@ -61,16 +57,12 @@ struct node_parameters
     std::vector<node_var_name_type> params;
 };
 
-inline std::string to_string(const node_parameters& node)
+inline std::string to_string(const node_parameters &node)
 {
     return obj_to_string(
-        vec_str {"params"},
-        vec_str {to_string(node.params)}
-    );
+        vec_str{"params"},
+        vec_str{to_string(node.params)});
 }
-
-
-
 
 // node_function_block
 struct node_function_block
@@ -80,17 +72,15 @@ struct node_function_block
     std::string ret_type;
 };
 
-inline std::string to_string(const node_function_block& node)
+inline std::string to_string(const node_function_block &node)
 {
     return obj_to_string(
-        vec_str{"fun_name","params","ret_type"},
+        vec_str{"fun_name", "params", "ret_type"},
         vec_str{
             to_string(node.fun_name),
             to_string(node.params),
-            to_string(node.ret_type)
-        });
+            to_string(node.ret_type)});
 }
-
 
 // node_block
 using node_block = std::variant<node_function_block>;
@@ -105,7 +95,6 @@ inline std::string to_string(const node_block &node)
         assert(false);
     }
 }
-
 
 // node_module
 struct node_module

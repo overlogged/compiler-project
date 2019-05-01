@@ -22,10 +22,11 @@ std::string obj_to_string(vec_str keys, vec_str values)
     assert(keys.size() == values.size());
     for (auto i = 0; i < keys.size(); i++)
     {
-        if(i){
+        if (i)
+        {
             ret.append(",");
         }
-        ret.append(keys[i]);
+        ret.append("\"" + keys[i] + "\"");
         ret.append(" : ");
         ret.append(values[i]);
     }
