@@ -1,0 +1,9 @@
+EBNF 完整版
+
+module = {block}
+
+block = functionBlock
+
+functionBlock = "fn" identifier [typeParams] "(" ")"
+
+typeParams = "[" identifier {"," identifier} "]"
