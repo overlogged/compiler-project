@@ -29,7 +29,7 @@ $(BASE): bin/main.o bin/parser.o bin/lexer.o bin/driver.o bin/utils.o
 
 .PHONY: test clean
 
-test: bin/main samples/function.json
+test: all bin/main samples/function.json
 
 $(BASE).o: src/parser.hpp
 parser.o: src/parser.hpp
