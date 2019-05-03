@@ -41,7 +41,8 @@
 ;
 
 %token <std::string> IDENTIFIER "identifier"
-
+%token <std::string> FLOAT 
+%token <std::string> INT 
 %%
 %start module_first;
 
@@ -92,7 +93,6 @@ type: IDENTIFIER
     // todo
     $$ = $1; 
 }
-
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m)
