@@ -36,4 +36,5 @@ class driver
 
     // parse_tree
     node_module parse_tree;
+    node_exp1* test;
 };

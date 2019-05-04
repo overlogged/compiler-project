@@ -29,6 +29,10 @@ oct_int_const          [0]oct_digit*
 bin_int_const          [0][bB][0-1]+
 float_const            {dec_float_const}|{hex_float_const}
 int_const              (({dec_int_const}|{hex_int_const}|{oct_int_const}){int_suffix}?)|{bin_int_const}
+const_var              ({float_const}|{int_const})
+assign_op              ("="|"+="|"-="|"/="|"*=")
+function_call          ({id}"("({id}(","{id})?)?")")
+binary_op              ("+"|"-"|"*"|"/")            
 %{
   // Code run each time a pattern is matched.
   # define YY_USER_ACTION  loc.columns (yyleng);
@@ -53,11 +57,14 @@ int_const              (({dec_int_const}|{hex_int_const}|{oct_int_const}){int_su
 "("           return yy::parser::make_LPAREN (loc);
 ")"           return yy::parser::make_RPAREN (loc);
 ":"           return yy::parser::make_COLON (loc);
+";"           return yy::parser::make_SEMICOLON (loc);
 ","           return yy::parser::make_COMMA (loc);
 "fn"          return yy::parser::make_KW_FN (loc);
 {id}          return yy::parser::make_IDENTIFIER (yytext, loc);
-{float_const} return yy::parser::make_FLOAT (yytext, loc);
-{int_const}   return yy::parser::make_INT (yytext, loc);
+{const_var}   return yy::parser::make_CONST_VAR (yytext, loc);
+{function_call} return yy::parser::make_FUNCTION_CALL (yytext, loc);
+{assign_op}   return yy::parser::make_ASSIGN_OP (yytext, loc);
+{binary_op}   return yy::parser::make_BINARY_OP (yytext, loc);
 .             {
                   throw yy::parser::syntax_error(loc, "invalid character: " + std::string(yytext));
 }
