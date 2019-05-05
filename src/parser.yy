@@ -56,13 +56,13 @@ module: %empty { $$.blocks = std::vector<node_block>();}
 block: functionBlock { $$ = $1;}
 
 %type <node_function_block> functionBlock;
-functionBlock: KW_FN IDENTIFIER LPAREN parameters RPAREN type LANGLE exp1s RANGLE 
+functionBlock: KW_FN IDENTIFIER LPAREN parameters RPAREN type LANGLE exp_list RANGLE 
 {
     $$ = node_function_block { 
         .fun_name = $2,
         .params = $4.params,
         .ret_type = $6,
-        .exp1s = &$8
+        .exp_list = $8
     };
 }
 
@@ -94,70 +94,68 @@ type: IDENTIFIER
     // todo
     $$ = $1; 
 }
-%type <node_exp1s> exp1s;
-exp1s: 
-    %empty { $$.exp1s = std::vector<node_exp1>();}
-    | exp1s exp1 SEMICOLON {
-        std::cout<<"1tiao"<<std::endl;
-        $$ = std::move($1);
-        $$.exp1s.push_back($2);
-        drv.test = &($$.exp1s[0]);
-        std::cout<<"parse get_if<node_expalt>: "<<std::get_if<node_exp1alt*>(&($$.exp1s[0].val))<<std::endl;
-        std::cout<<"parse get_if<node_exp2>: "<<std::get_if<node_exp2*>(&($$.exp1s[0].val))<<std::endl;
-        std::cout<<"parse node_address: "<<&($$.exp1s[0])<<std::endl;
+%type <std::shared_ptr<node_exp_list>> exp_list;
+exp_list: 
+    %empty { $$ = std::make_shared<node_exp_list>();}
+    | exp_list exp1 SEMICOLON {
+        $$ = $1;
+        $1->push_back($2);
     };
-%type <node_exp1> exp1;
+%type <std::shared_ptr<node_exp1>> exp1;
 exp1:
     exp1 ASSIGN_OP exp2 {
-        $$.val = new(node_exp1alt);
-        (*std::get_if<node_exp1alt*>(&($$.val)))->val0 = $1;
-        (*std::get_if<node_exp1alt*>(&($$.val)))->val1 = $3;
+        $$ = std::make_shared<node_exp1>();
+        *$$.get() = std::make_shared<node_exp1alt>();
+        (*std::get_if<std::shared_ptr<node_exp1alt>>($$.get()))->op = $2;
+        (*std::get_if<std::shared_ptr<node_exp1alt>>($$.get()))->left_val = $1;
+        (*std::get_if<std::shared_ptr<node_exp1alt>>($$.get()))->right_val = $3;
     }
     | exp2{
-        std::cout<<"1->2"<<std::endl;
-        $$.val = &$1;
+        $$ = std::make_shared<node_exp1>();
+        *$$.get() = $1;
     }
-%type <node_exp2> exp2;
+%type <std::shared_ptr<node_exp2>> exp2;
 exp2:
-    exp2"?"exp2":"exp3{
+    /*exp2"?"exp2":"exp3{
         $$.val = new(node_exp2alt);
         (*std::get_if<node_exp2alt*>(&($$.val)))->val0 = $1;
         (*std::get_if<node_exp2alt*>(&($$.val)))->val1 = $3;
         (*std::get_if<node_exp2alt*>(&($$.val)))->val2 = $5;
     }
-    | exp3{
-        std::cout<<"2->3"<<std::endl;
-        $$.val = &$1;
-        std::cout<<*std::get_if<std::string>(&(((*std::get_if<node_exp3*>(&($$.val)))->vars)[0].val))<<std::endl;
+    | */exp3{
+        $$ = std::make_shared<node_exp2>();
+        *$$.get() = $1;
     }
-%type <node_exp3> exp3;
+%type <std::shared_ptr<node_exp3>> exp3;
 exp3:
     exp3 BINARY_OP exp4{
-       $1.vars.push_back($3);
-       $1.ops.push_back($2);
-       $$ = std::move($1);
+        $$ = $1;
+        (*$$.get()).ops->push_back($2); 
+        (*$$.get()).vars->push_back(*$3.get()); 
     }
     |exp4 {
-        std::cout<<"3->4"<<std::endl;
-        $$.vars = std::vector<node_exp4>();
-        $$.vars.push_back($1);
-        std::cout<<*std::get_if<std::string>(&(($$.vars)[0].val))<<std::endl;
+        $$ = std::make_shared<node_exp3>();
+        (*$$.get()).ops = std::make_shared<vec_str>();
+        (*$$.get()).vars = std::make_shared<std::vector<node_exp4>>();
+        (*$$.get()).vars->push_back(*$1.get());
     }
-%type <node_exp4> exp4;
+%type <std::shared_ptr<node_exp4>> exp4;
 exp4:
     IDENTIFIER{
-        $$.val = $1;
+        $$ = std::make_shared<node_exp4>();
+        *$$.get() = $1;
     }
     |FUNCTION_CALL{
-        $$.val = $1;
+        $$ = std::make_shared<node_exp4>();
+        *$$.get() = $1;
     }
     |CONST_VAR{
-        std::cout<<"const"<<std::endl;
-        $$.val = $1;
-        std::cout<<*std::get_if<std::string>(&($$.val))<<std::endl;
+        $$ = std::make_shared<node_exp4>();
+        *$$.get() = $1;
     }
     |LPAREN exp1 RPAREN{
-        $$.val = &$2;
+        $$ = std::make_shared<node_exp4>();
+        *$$.get() = $2;
     }
 %%
 
