@@ -4,20 +4,34 @@ module = {block}
 
 block = functionBlock
 
-functionBlock = "fn" identifier [typeParams] "(" parameters ")" type "{" exp_list "}"
+functionBlock = "fn" identifier [typeParams] "(" parameters ")" type "{" {statement} "}"
 
 typeParams = "[" identifier  {"," identifier}  "]"
 
 parameters = e | varNameType {"," varNameType}
 
 varNameType = identifier ":" type
-exp_list  = { exp1 ";"}
-exp1 = exp2 {assign_op exp2}
-#以后用来加?:
-exp2 = exp3  
-#----------
-exp3 = exp4 {binary_op exp4}
-exp4 = identifier|function_call|const|"("exp1")"
+
+primaryExpr = identifier | constant | '(' expression ')'
+
+postfixExpr = 
+    primaryExpr | 
+    postfixExpr '(' arguments ')' |
+    postfixExpr '.' identifier
+
+expression = binaryExpr | unaryExpr assignOp expression 
+
+binaryExpr = unaryExpr | binaryExpr binaryOp unaryExpr
+
+unaryExpr = postfixExpr | unary_op unaryExpr
+
+arguments = e | arguments {"," argument}
+
+argument = expression {"," expression}
+
+singleStmt = expression ";"
+
+statement = singleStmt
 
 # todo
 type = identifier
