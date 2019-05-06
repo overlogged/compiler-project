@@ -9,10 +9,46 @@
 #include <variant>
 #include "utils.h"
 
+struct node_expression;
+
+// node_identifier
+struct node_identifier
+{
+    std::string val;
+};
+
+inline std::string to_string(const node_identifier &node)
+{
+    return to_string(node.val);
+}
+
+// node_constant
+struct node_constant
+{
+    std::string val;
+};
+
+inline std::string to_string(const node_constant &node)
+{
+    return to_string(node.val);
+}
+
+// node_type
+struct node_type
+{
+    std::string val;
+};
+
+inline std::string to_string(const node_type &node)
+{
+    return to_string(node.val);
+}
+
 // node_var_name_type
 struct node_var_name_type
 {
-    std::string name, type;
+    node_identifier name;
+    node_type type;
 };
 
 inline std::string to_string(const node_var_name_type &node)
@@ -37,12 +73,108 @@ inline std::string to_string(const node_parameters &node)
         vec_str{to_string(node.params)});
 }
 
+// node_primary_expr
+using node_primary_expr = std::variant<node_identifier, node_constant, std::shared_ptr<node_expression>>;
+
+// node_post_dot_expr
+struct node_post_dot_expr
+{
+    std::shared_ptr<node_post_expr> obj;
+    node_identifier attr;
+};
+
+inline std::string to_string(const node_post_dot_expr &node)
+{
+    return obj_to_string(
+        vec_str{"obj", "attr"},
+        vec_str{to_string(node.obj), to_string(node.attr)});
+}
+
+// node_arugments
+struct node_aruguments
+{
+    std::vector<std::shared_ptr<node_expression>> args;
+};
+
+inline std::string to_string(const node_aruguments &node)
+{
+    return to_string(node.args);
+}
+
+// node_post_call_expr
+struct node_post_call_expr
+{
+    std::shared_ptr<node_post_expr> callable;
+    node_aruguments arguments;
+};
+
+inline std::string to_string(const node_post_call_expr &node)
+{
+    return obj_to_string(
+        vec_str{"callable", "arugments"},
+        vec_str{to_string(node.callable), to_string(node.arguments)});
+}
+
+// node_post_expr
+using node_post_expr = std::variant<node_primary_expr, node_post_call_expr, node_post_dot_expr>;
+
+// node_unary_expr
+struct node_unary_expr
+{
+    std::vector<std::string> ops;
+    node_post_expr post_expr;
+};
+
+inline std::string to_string(const node_unary_expr &node)
+{
+    return obj_to_string(
+        vec_str{"ops", "post_expr"},
+        vec_str{to_string(node.ops), to_string(node.post_expr)});
+}
+
+// node_binary_expr
+struct node_binary_expr
+{
+    std::vector<node_unary_expr> vars;
+    std::vector<std::string> ops;
+};
+
+inline std::string to_string(const node_binary_expr &node)
+{
+    return obj_to_string(
+        vec_str{"vars", "ops"},
+        vec_str{to_string(node.vars), to_string(node.ops)});
+}
+
+// node_assign_expr
+struct node_assign_expr
+{
+    node_unary_expr lval;
+    std::string op;
+    std::shared_ptr<node_expression> rval;
+};
+
+inline std::string to_string(const node_assign_expr &node)
+{
+    return obj_to_string(
+        vec_str{"lval", "op", "rval"},
+        vec_str{to_string(node.lval),
+                to_string(node.op),
+                to_string(node.rval)});
+}
+
+// node_expression
+using node_expression = std::variant<node_binary_expr, node_assign_expr>;
+
+// node_statememt
+using node_statemet = std::variant<node_expression>;
+
 // node_function_block
 struct node_function_block
 {
-    std::string fun_name;
+    node_identifier fun_name;
     std::vector<node_var_name_type> params;
-    std::string ret_type;
+    node_type ret_type;
 };
 
 inline std::string to_string(const node_function_block &node)

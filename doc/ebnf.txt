@@ -19,15 +19,13 @@ postfixExpr =
     postfixExpr '(' arguments ')' |
     postfixExpr '.' identifier
 
-expression = binaryExpr | unaryExpr assignOp expression 
+unaryExpr = postfixExpr | unary_op unaryExpr
 
 binaryExpr = unaryExpr | binaryExpr binaryOp unaryExpr
 
-unaryExpr = postfixExpr | unary_op unaryExpr
+expression = binaryExpr | unaryExpr assignOp expression 
 
-arguments = e | arguments {"," argument}
-
-argument = expression {"," expression}
+arguments = e | expression {"," expression}
 
 singleStmt = expression ";"
 

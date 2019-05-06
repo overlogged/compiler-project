@@ -52,6 +52,12 @@ module_first: module {
 };
 
 
+%type <node_constant> constant;
+constant: CONST_VAR { $$.val = $1;};
+
+%type <node_identifier> identifier;
+identifier: IDENTIFIER { $$.val = $1;};
+
 %type <node_module> module;
 module: %empty { $$.blocks = std::vector<node_block>();}
       | module block { $1.blocks.push_back($2); $$ = std::move($1); };
@@ -60,7 +66,7 @@ module: %empty { $$.blocks = std::vector<node_block>();}
 block: functionBlock { $$ = $1;}
 
 %type <node_function_block> functionBlock;
-functionBlock: KW_FN IDENTIFIER LPAREN parameters RPAREN type LANGLE RANGLE 
+functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE RANGLE 
 {
     $$ = node_function_block { 
         .fun_name = $2,
@@ -84,7 +90,7 @@ parameters:
 
 
 %type <node_var_name_type> varNameType;
-varNameType: IDENTIFIER COLON type 
+varNameType: identifier COLON type 
 {
     $$ = node_var_name_type {
         .name = $1,
@@ -92,11 +98,11 @@ varNameType: IDENTIFIER COLON type
     };
 }
 
-%type <std::string> type;
-type: IDENTIFIER 
+%type <node_type> type;
+type: identifier 
 { 
     // todo
-    $$ = $1; 
+    $$.val = $1.val; 
 }
 
 %%
