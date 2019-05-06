@@ -9,53 +9,6 @@
 #include <variant>
 #include "utils.h"
 
-inline std::string to_string(const std::string &s)
-{
-    return "\"" + s + "\"";
-}
-
-// to_string for vector
-template <typename T>
-std::string to_string(const std::vector<T> &arr)
-{
-    if (arr.empty())
-        return "[]";
-    std::string ret = "[";
-    for (auto i = 0; i < arr.size(); i++)
-    {
-        if (i)
-        {
-            ret.append(",");
-        }
-        auto s = to_string(arr[i]);
-        ret.append(s);
-    }
-    ret.append("]");
-    return ret;
-}
-//to_string for 2 types variant
-template <typename T1, typename T2>
-std::string to_string(const std::variant<T1, T2> &node)
-{
-    auto pval1 = std::get_if<T1>(&node);
-    auto pval2 = std::get_if<T2>(&node);
-    if (pval1)
-        return to_string(*pval1);
-    else if (pval2)
-        return to_string(*pval2);
-    else
-        assert(false);
-}
-//to_string for sharad_ptr<>
-template <typename T>
-std::string to_string(const std::shared_ptr<T> &node)
-{
-    assert(node.get());
-    return to_string(*node.get());
-}
-
-// ============================================================
-
 // node_var_name_type
 struct node_var_name_type
 {
@@ -104,17 +57,6 @@ inline std::string to_string(const node_function_block &node)
 
 // node_block
 using node_block = std::variant<node_function_block>;
-inline std::string to_string(const node_block &node)
-{
-    if (auto x = std::get_if<node_function_block>(&node))
-    {
-        return to_string(*x);
-    }
-    else
-    {
-        assert(false);
-    }
-}
 
 // node_module
 struct node_module

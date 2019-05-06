@@ -30,8 +30,10 @@ bin_int_const          [0][bB][0-1]+
 float_const            {dec_float_const}|{hex_float_const}
 int_const              (({dec_int_const}|{hex_int_const}|{oct_int_const}){int_suffix}?)|{bin_int_const}
 const_var              ({float_const}|{int_const})
-unary_bin_op           ("+"|"-"|"*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
-assign_op              ("+"|"-"|"*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&")=
+unary_bin_op           ("+"|"-")
+unary_op               ("~"|"!")
+binary_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
+assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")=
 %{
   // Code run each time a pattern is matched.
   # define YY_USER_ACTION  loc.columns (yyleng);
@@ -63,8 +65,10 @@ assign_op              ("+"|"-"|"*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&")=
 {const_var}     return yy::parser::make_CONST_VAR (yytext, loc);
 {assign_op}     return yy::parser::make_ASSIGN_OP (yytext, loc);
 {unary_bin_op}  return yy::parser::make_UNARY_BINARY_OP (yytext, loc);
-.             {
-                  throw yy::parser::syntax_error(loc, "invalid character: " + std::string(yytext));
+{unary_op}      return yy::parser::make_UNARY_OP (yytext, loc);
+{binary_op}     return yy::parser::make_BINARY_OP (yytext, loc);
+.               {
+                    throw yy::parser::syntax_error(loc, "invalid character: " + std::string(yytext));
 }
 <<EOF>>      return yy::parser::make_END (loc);
 %%

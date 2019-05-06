@@ -40,6 +40,8 @@
 ;
 %token <std::string> CONST_VAR
 %token <std::string> UNARY_BINARY_OP
+%token <std::string> UNARY_OP
+%token <std::string> BINARY_OP
 %token <std::string> ASSIGN_OP
 %token <std::string> IDENTIFIER "identifier"
 %%
