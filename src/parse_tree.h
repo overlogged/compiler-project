@@ -10,6 +10,7 @@
 #include "utils.h"
 
 struct node_expression;
+struct node_post_expr;
 
 // node_identifier
 struct node_identifier
@@ -76,6 +77,17 @@ inline std::string to_string(const node_parameters &node)
 // node_primary_expr
 using node_primary_expr = std::variant<node_identifier, node_constant, std::shared_ptr<node_expression>>;
 
+// node_arugments
+struct node_aruguments
+{
+    std::vector<std::shared_ptr<node_expression>> args;
+};
+
+inline std::string to_string(const node_aruguments &node)
+{
+    return to_string(node.args);
+}
+
 // node_post_dot_expr
 struct node_post_dot_expr
 {
@@ -88,17 +100,6 @@ inline std::string to_string(const node_post_dot_expr &node)
     return obj_to_string(
         vec_str{"obj", "attr"},
         vec_str{to_string(node.obj), to_string(node.attr)});
-}
-
-// node_arugments
-struct node_aruguments
-{
-    std::vector<std::shared_ptr<node_expression>> args;
-};
-
-inline std::string to_string(const node_aruguments &node)
-{
-    return to_string(node.args);
 }
 
 // node_post_call_expr
@@ -116,7 +117,17 @@ inline std::string to_string(const node_post_call_expr &node)
 }
 
 // node_post_expr
-using node_post_expr = std::variant<node_primary_expr, node_post_call_expr, node_post_dot_expr>;
+struct node_post_expr
+{
+    std::variant<node_primary_expr, node_post_call_expr, node_post_dot_expr> expr;
+};
+
+inline std::string to_string(const node_post_expr &node)
+{
+    return obj_to_string(
+        vec_str{"expr"},
+        vec_str{to_string(node.expr)});
+}
 
 // node_unary_expr
 struct node_unary_expr
@@ -164,7 +175,17 @@ inline std::string to_string(const node_assign_expr &node)
 }
 
 // node_expression
-using node_expression = std::variant<node_binary_expr, node_assign_expr>;
+struct node_expression
+{
+    std::variant<node_binary_expr, node_assign_expr> expr;
+};
+
+inline std::string to_string(const node_expression &node)
+{
+    return obj_to_string(
+        vec_str{"expr"},
+        vec_str{to_string(node.expr)});
+}
 
 // node_statememt
 using node_statemet = std::variant<node_expression>;
