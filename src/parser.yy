@@ -66,13 +66,13 @@ module: %empty { $$.blocks = std::vector<node_block>();}
 block: functionBlock { $$ = $1;}
 
 %type <node_function_block> functionBlock;
-functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE RANGLE 
+functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE statement_list RANGLE 
 {
     $$ = node_function_block { 
         .fun_name = $2,
         .params = $4.params,
-        .ret_type = $6
-        // .exp_list = $8
+        .ret_type = $6,
+        .statement_list = $8
     };
 }
 
@@ -105,6 +105,127 @@ type: identifier
     $$.val = $1.val; 
 }
 
+%type <node_statement_list> statement_list;
+statement_list: 
+    statement_list statement
+    {
+        $$ = std::move($1);
+        $$.push_back($2);
+    }
+    |%empty
+    {
+        $$ = node_statement_list();
+    }
+%type <node_statement> statement ;
+statement:
+    single_statement
+    {
+        $$ = $1;
+    }
+%type <node_single_statement> single_statement;
+single_statement:
+    expression SEMICOLON
+    {
+        $$ = *$1.get();
+    }
+%type <std::shared_ptr<node_expression>> expression;
+expression:
+    binary_expr
+    {
+        $$ = std::make_shared<node_expression>();
+        $$.get()->expr = $1;
+    }
+    |unary_expr ASSIGN_OP expression
+    {
+        std::shared_ptr<node_expression> data = std::make_shared<node_expression>();
+        data->expr = node_assign_expr {
+                    .lval = $1, 
+                    .op = $2,
+                    .rval = $3
+        };
+        $$ = data;
+    }
+%type <node_binary_expr> binary_expr;
+binary_expr:
+    unary_expr
+    {
+        $$.vars.push_back($1);
+    }
+    |binary_expr BINARY_OP unary_expr
+    {
+        $1.vars.push_back($3); 
+        $1.ops.push_back($2);
+        $$ = std::move($1);
+    }
+    |binary_expr UNARY_BINARY_OP unary_expr
+    {
+        $1.vars.push_back($3); 
+        $1.ops.push_back($2);
+        $$ = std::move($1);   
+    }
+%type <node_unary_expr> unary_expr;
+unary_expr:
+    post_expr
+    {
+        $$.post_expr = *$1.get();
+    }
+    |UNARY_OP unary_expr
+    {
+        $$.ops.push_back($1);
+    }
+    |UNARY_BINARY_OP unary_expr
+    {
+        $$.ops.push_back($1);
+    }
+%type <std::shared_ptr<node_post_expr>> post_expr;
+post_expr:
+    post_expr "." identifier //post_dot_expr
+    {
+        auto data = std::make_shared<node_post_expr>();
+        (*data).expr = node_post_dot_expr{.obj=$1,.attr=$3}; 
+        $$ = data;
+    }
+    |post_expr LPAREN  arguments RPAREN //post_call_expr
+    {
+        auto data = std::make_shared<node_post_expr>();
+        (*data).expr = node_post_call_expr{.callable = $1,.arguments = $3}; 
+        $$ = data;        
+    }
+    |primary_expr
+    {
+        auto data = std::make_shared<node_post_expr>();
+        (*data).expr = $1; 
+        $$ = data;
+    }
+%type <node_primary_expr> primary_expr;
+primary_expr:
+    identifier
+    {
+        $$ = $1;
+    }
+    |constant
+    {
+        $$ = $1;
+    }
+    |LPAREN expression RPAREN
+    {
+        $$ = $2;
+    }
+%type <node_arguments> arguments;
+arguments:
+    expression
+    {
+        $$.push_back($1);
+    }
+    |arguments","expression
+    {
+        $1.push_back($3);
+        $$ = std::move($1);
+    }
+    |%empty
+    {
+        $$ = std::vector<std::shared_ptr<node_expression>>();
+    } 
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m)

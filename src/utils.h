@@ -4,6 +4,7 @@
 #include <vector>
 #include <cassert>
 #include <variant>
+#include <memory>
 
 using vec_str = std::vector<std::string>;
 
