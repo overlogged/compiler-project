@@ -27,9 +27,22 @@ expression = binaryExpr | unaryExpr assignOp expression
 
 arguments = e | expression {"," expression}
 
+varList  = e | identifier {"," identifier}
+
+varDefStmt = ("var"|"val") varList [":" type] ["=" expression] ";"
+
 singleStmt = expression ";"
 
-statement = singleStmt
+returnStmt = "return" expression ";"
+
+ifStmt = "if" expression "{" {statement} "}" ["else" "{" {statement} "}"]
+
+forStmt = "for" identifier "in" expression "{" {statement} "}"
+
+whileStmt = ("while" expression | "loop") "{" {statement} "}"
+
+statement = singleStmt | varDefStmt | returnStmt | ifStmt | forStmt | whileStmt
+
 
 # todo
 type = identifier
