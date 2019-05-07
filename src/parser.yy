@@ -67,13 +67,13 @@ module: %empty { }
 block: functionBlock { $$ = $1;}
 
 %type <node_function_block> functionBlock;
-functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE statements RANGLE 
+functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE statement_list RANGLE 
 {
     $$ = node_function_block { 
         .fun_name = $2,
         .params = $4.params,
         .ret_type = $6,
-        .statements = std::move($8)
+        .statement_list = std::move($8)
     };
 }
 
@@ -122,7 +122,7 @@ postfixExpr:
         auto data = std::make_shared<node_post_expr>();
         data->expr = node_post_call_expr {
             .callable = $1,
-            .arguments = $3
+            .arguments = std::move($3)
         };
         $$ = data;
     } |
@@ -182,15 +182,15 @@ expression:
         $$ = data;
     };
 
-%type <node_aruguments> arguments;
+%type <node_arguments> arguments;
 arguments: 
     %empty {} |
     expression {
-        $$.args.push_back($1);
+        $$.push_back($1);
     } |
     arguments COMMA expression {
         $$ = std::move($1);
-        $$.args.push_back($3);
+        $$.push_back($3);
     };
 
 %type <node_statement> statement;
@@ -199,10 +199,10 @@ statement:
         $$ = $1;
     };
 
-%type <std::vector<node_statement>> statements;
-statements:
+%type <std::vector<node_statement>> statement_list;
+statement_list:
     %empty {} |
-    statements statement { $$ = std::move($1); $$.push_back($2);};
+    statement_list statement { $$ = std::move($1); $$.push_back($2);};
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m)

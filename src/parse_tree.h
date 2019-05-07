@@ -23,6 +23,9 @@ inline std::string to_string(const node_identifier &node)
     return to_string(node.val);
 }
 
+// node_arugments
+using node_arguments = std::vector<std::shared_ptr<node_expression>>;
+
 // node_constant
 struct node_constant
 {
@@ -77,17 +80,6 @@ inline std::string to_string(const node_parameters &node)
 // node_primary_expr
 using node_primary_expr = std::variant<node_identifier, node_constant, std::shared_ptr<node_expression>>;
 
-// node_arugments
-struct node_aruguments
-{
-    std::vector<std::shared_ptr<node_expression>> args;
-};
-
-inline std::string to_string(const node_aruguments &node)
-{
-    return to_string(node.args);
-}
-
 // node_post_dot_expr
 struct node_post_dot_expr
 {
@@ -106,7 +98,7 @@ inline std::string to_string(const node_post_dot_expr &node)
 struct node_post_call_expr
 {
     std::shared_ptr<node_post_expr> callable;
-    node_aruguments arguments;
+    node_arguments arguments;
 };
 
 inline std::string to_string(const node_post_call_expr &node)
@@ -196,18 +188,18 @@ struct node_function_block
     node_identifier fun_name;
     std::vector<node_var_name_type> params;
     node_type ret_type;
-    std::vector<node_statement> statements;
+    std::vector<node_statement> statement_list;
 };
 
 inline std::string to_string(const node_function_block &node)
 {
     return obj_to_string(
-        vec_str{"fun_name", "params", "ret_type", "statements"},
+        vec_str{"fun_name", "params", "ret_type", "statement_list"},
         vec_str{
             to_string(node.fun_name),
             to_string(node.params),
             to_string(node.ret_type),
-            to_string(node.statements)});
+            to_string(node.statement_list)});
 }
 
 // node_block
