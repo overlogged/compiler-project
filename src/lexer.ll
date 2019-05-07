@@ -33,7 +33,7 @@ const_var              ({float_const}|{int_const})
 unary_bin_op           ("+"|"-")
 unary_op               ("~"|"!")
 binary_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
-assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")=
+assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")?=
 %{
   // Code run each time a pattern is matched.
   # define YY_USER_ACTION  loc.columns (yyleng);
@@ -51,6 +51,7 @@ assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")=
 {blank}+    loc.step ();
 \n+         loc.lines (yyleng); loc.step ();
 
+"."             return yy::parser::make_DOT (loc);
 "{"             return yy::parser::make_LANGLE (loc);
 "}"             return yy::parser::make_RANGLE (loc);
 "["             return yy::parser::make_LSQUARE (loc);  

@@ -133,7 +133,7 @@ inline std::string to_string(const node_post_expr &node)
 struct node_unary_expr
 {
     std::vector<std::string> ops;
-    node_post_expr post_expr;
+    std::shared_ptr<node_post_expr> post_expr;
 };
 
 inline std::string to_string(const node_unary_expr &node)
@@ -187,8 +187,8 @@ inline std::string to_string(const node_expression &node)
         vec_str{to_string(node.expr)});
 }
 
-// node_statememt
-using node_statemet = std::variant<node_expression>;
+// node_statement
+using node_statement = std::variant<std::shared_ptr<node_expression>>;
 
 // node_function_block
 struct node_function_block
@@ -196,16 +196,18 @@ struct node_function_block
     node_identifier fun_name;
     std::vector<node_var_name_type> params;
     node_type ret_type;
+    std::vector<node_statement> statements;
 };
 
 inline std::string to_string(const node_function_block &node)
 {
     return obj_to_string(
-        vec_str{"fun_name", "params", "ret_type"},
+        vec_str{"fun_name", "params", "ret_type", "statements"},
         vec_str{
             to_string(node.fun_name),
             to_string(node.params),
-            to_string(node.ret_type)});
+            to_string(node.ret_type),
+            to_string(node.statements)});
 }
 
 // node_block

@@ -37,6 +37,7 @@
   SEMICOLON ";"
   COLON   ":"
   COMMA   ","
+  DOT     "."
 ;
 %token <std::string> CONST_VAR
 %token <std::string> UNARY_BINARY_OP
@@ -59,20 +60,20 @@ constant: CONST_VAR { $$.val = $1;};
 identifier: IDENTIFIER { $$.val = $1;};
 
 %type <node_module> module;
-module: %empty { $$.blocks = std::vector<node_block>();}
+module: %empty { }
       | module block { $1.blocks.push_back($2); $$ = std::move($1); };
 
 %type <node_block> block;
 block: functionBlock { $$ = $1;}
 
 %type <node_function_block> functionBlock;
-functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE RANGLE 
+functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE statements RANGLE 
 {
     $$ = node_function_block { 
         .fun_name = $2,
         .params = $4.params,
-        .ret_type = $6
-        // .exp_list = $8
+        .ret_type = $6,
+        .statements = std::move($8)
     };
 }
 
@@ -80,7 +81,6 @@ functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE RANGLE
 parameters: 
     %empty { $$.params = std::vector<node_var_name_type>();}
     | varNameType { 
-        $$.params = std::vector<node_var_name_type>();
         $$.params.push_back($1);
     }
     | parameters COMMA varNameType {
@@ -105,6 +105,104 @@ type: identifier
     $$.val = $1.val; 
 }
 
+%type <node_primary_expr> primaryExpr;
+primaryExpr: 
+    identifier { $$ = $1; } |
+    constant { $$ = $1; } |
+    LPAREN expression RPAREN { $$ = $2;};
+
+%type <std::shared_ptr<node_post_expr>> postfixExpr;
+postfixExpr:
+    primaryExpr {
+        auto data = std::make_shared<node_post_expr>();
+        data->expr = $1;
+        $$ = data;
+    } |
+    postfixExpr LPAREN arguments RPAREN {
+        auto data = std::make_shared<node_post_expr>();
+        data->expr = node_post_call_expr {
+            .callable = $1,
+            .arguments = $3
+        };
+        $$ = data;
+    } |
+    postfixExpr DOT identifier {
+        auto data = std::make_shared<node_post_expr>();
+        data->expr = node_post_dot_expr {
+            .obj = $1,
+            .attr = $3
+        };
+        $$ = data; 
+    };
+
+%type <node_unary_expr> unaryExpr;
+unaryExpr: 
+    postfixExpr {
+        $$.post_expr = $1;
+    } |
+    UNARY_OP unaryExpr {
+        $$ = std::move($2);
+        $$.ops.push_back($1);
+    } |
+    UNARY_BINARY_OP unaryExpr {
+        $$ = std::move($2);
+        $$.ops.push_back($1);
+    };
+
+%type <node_binary_expr> binaryExpr;
+binaryExpr:
+    unaryExpr {
+        $$.vars.push_back($1);
+    } |
+    binaryExpr BINARY_OP unaryExpr {
+        $$ = std::move($1);
+        $$.vars.push_back($3);
+        $$.ops.push_back($2);
+    } |
+    binaryExpr UNARY_BINARY_OP unaryExpr {
+        $$ = std::move($1);
+        $$.vars.push_back($3);
+        $$.ops.push_back($2);
+    };
+
+%type <std::shared_ptr<node_expression>> expression;
+expression:
+    binaryExpr {
+        auto data = std::make_shared<node_expression>();
+        data->expr = $1;
+        $$ = data;
+    } |
+    unaryExpr ASSIGN_OP expression {
+        auto data = std::make_shared<node_expression>();
+        data->expr = node_assign_expr {
+            .lval = $1,
+            .op = $2,
+            .rval = $3
+        };
+        $$ = data;
+    };
+
+%type <node_aruguments> arguments;
+arguments: 
+    %empty {} |
+    expression {
+        $$.args.push_back($1);
+    } |
+    arguments COMMA expression {
+        $$ = std::move($1);
+        $$.args.push_back($3);
+    };
+
+%type <node_statement> statement;
+statement: 
+    expression SEMICOLON {
+        $$ = $1;
+    };
+
+%type <std::vector<node_statement>> statements;
+statements:
+    %empty {} |
+    statements statement { $$ = std::move($1); $$.push_back($2);};
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m)
