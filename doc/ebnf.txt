@@ -43,6 +43,10 @@ whileStmt = ("while" expression | "loop") "{" {statement} "}"
 
 statement = singleStmt | varDefStmt | returnStmt | ifStmt | forStmt | whileStmt
 
+productType = "(" [type | varNameType] {"," (type | varNameType)} ")"
 
-# todo
-type = identifier
+sumType = varNameType {"|" varNameType}
+
+type = identifier | productType | sumType
+
+typeDef = "data" identifier "=" type

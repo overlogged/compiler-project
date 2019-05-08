@@ -16,11 +16,12 @@ todo: package，module
 - 复合类型
   - 结构体
   ```
-  data A[T] = bool x, i8 y, T z
+  data A[T] = (x:bool, y:i32, z:T)
+  data B = (bool,y:i32)
   ```
   - 联合
   ```
-  data Maybe[T] = bool x | i8 y,i32 h | T z
+  data Maybe[T] = x:bool | a: (y:i8, h:i32) | z:T
   ```
 
 
@@ -28,7 +29,7 @@ todo: package，module
 
 ```
 fn fun(x:&i8 | null) {
-  if x.i8? {
+  if x.&i8? {
 
   } else {
 
@@ -42,6 +43,7 @@ fn fun(x:&A[i8]):u8 {
 fn fun[T](x:i8, f: (T g) ):i8 {
   //
   return 1;
+  val x = (y:1,z:6)
 }
 ```
 
