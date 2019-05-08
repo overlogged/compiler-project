@@ -4,28 +4,24 @@ module = {block}
 
 block = functionBlock
 
-functionBlock = "fn" identifier [typeParams] "(" parameters ")" type "{" {statement} "}"
+functionBlock = "fn" identifier productType type "{" {statement} "}"
 
 typeParams = "[" identifier  {"," identifier}  "]"
-
-parameters = e | varNameType {"," varNameType}
-
-varNameType = identifier ":" type
 
 primaryExpr = identifier | constant | '(' expression ')'
 
 postfixExpr = 
     primaryExpr | 
-    postfixExpr '(' arguments ')' |
-    postfixExpr '.' identifier
+    postfixExpr '(' expressionList ')' |
+    postfixExpr '.' identifier "?"?
 
 unaryExpr = postfixExpr | unary_op unaryExpr
 
 binaryExpr = unaryExpr | binaryExpr binaryOp unaryExpr
 
-expression = binaryExpr | unaryExpr assignOp expression 
+expression = binaryExpr | unaryExpr assignOp expression
 
-arguments = e | expression {"," expression}
+expressionList = e | expression {"," expression}
 
 varList  = e | identifier {"," identifier}
 
@@ -43,10 +39,8 @@ whileStmt = ("while" expression | "loop") "{" {statement} "}"
 
 statement = singleStmt | varDefStmt | returnStmt | ifStmt | forStmt | whileStmt
 
-productType = "(" [type | varNameType] {"," (type | varNameType)} ")"
+sumType = "(" [identifier ":"] type  {"|" [identifier ":"] type } ")"
 
-sumType = varNameType {"|" varNameType}
+productType = "(" [identifier ":"] type  {"," [identifier ":"] type } ")"
 
-type = identifier | productType | sumType
-
-typeDef = "data" identifier "=" type
+type = (identifier | sumType | productType) "&"?
