@@ -73,7 +73,7 @@ functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE statement_l
         .fun_name = $2,
         .params = $4.params,
         .ret_type = $6,
-        .statement_list = std::move($8)
+        .statement_list = std::move(*$8)
     };
 }
 
@@ -199,10 +199,10 @@ statement:
         $$ = $1;
     };
 
-%type <std::vector<node_statement>> statement_list;
+%type <std::shared_ptr<std::vector<node_statement>>> statement_list;
 statement_list:
-    %empty {} |
-    statement_list statement { $$ = std::move($1); $$.push_back($2);};
+    %empty {$$ = std::make_shared<std::vector<node_statement>>();} |
+    statement_list statement { $$ = $1; $$->push_back($2);};
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m)
