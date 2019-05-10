@@ -36,18 +36,7 @@ inline std::string to_string(const node_constant &node)
 {
     return to_string(node.val);
 }
-
-// node_type
-struct node_type
-{
-    std::string val;
-};
-
-inline std::string to_string(const node_type &node)
-{
-    return to_string(node.val);
-}
-
+/*
 // node_var_name_type
 struct node_var_name_type
 {
@@ -75,7 +64,7 @@ inline std::string to_string(const node_parameters &node)
     return obj_to_string(
         vec_str{"params"},
         vec_str{to_string(node.params)});
-}
+}*/
 
 // node_primary_expr
 using node_primary_expr = std::variant<node_identifier, node_constant, std::shared_ptr<node_expression>>;
@@ -167,6 +156,7 @@ inline std::string to_string(const node_assign_expr &node)
 }
 
 // node_expression
+struct node_type;
 struct node_expression
 {
     std::variant<node_binary_expr, node_assign_expr> expr;
@@ -182,11 +172,45 @@ inline std::string to_string(const node_expression &node)
 // node_statement
 using node_statement = std::variant<std::shared_ptr<node_expression>>;
 
+//node_types
+struct node_sum_type
+{
+    std::vector<std::string> lables;
+    std::vector<std::variant<node_identifier,std::shared_ptr<node_type>>> element;
+};
+inline std::string to_string(const node_sum_type& node)
+{
+    return obj_to_string(vec_str{"type_lable","sum_type"},vec_str{to_string(node.lables),to_string(node.element)});
+}
+struct node_product_type
+{
+    std::vector<std::variant<node_identifier,std::shared_ptr<node_type>>> element;
+    std::vector<std::string> lables;
+};
+inline std::string to_string(const node_product_type& node)
+{
+    return obj_to_string(vec_str{"type_lable","product_type"},vec_str{to_string(node.lables),to_string(node.element)});
+}
+struct node_type
+{
+    bool is_ref;
+    std::variant<node_identifier,node_sum_type,node_product_type> type_val;
+}; 
+inline std::string to_string(const node_type& node)
+{
+    std::string lable;
+    if(node.is_ref)
+        lable = "ref_type";
+    else
+        lable = "type";
+    return obj_to_string(vec_str{lable},vec_str{to_string(node.type_val)});
+}
+
 // node_function_block
 struct node_function_block
 {
     node_identifier fun_name;
-    std::vector<node_var_name_type> params;
+    node_product_type params;
     node_type ret_type;
     std::vector<node_statement> statement_list;
 };

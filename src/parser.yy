@@ -38,7 +38,10 @@
   COLON   ":"
   COMMA   ","
   DOT     "."
+  REFERRENCE_OP "&"
+  UNION_OP      "|"
 ;
+
 %token <std::string> CONST_VAR
 %token <std::string> UNARY_BINARY_OP
 %token <std::string> UNARY_OP
@@ -67,16 +70,16 @@ module: %empty { }
 block: functionBlock { $$ = $1;}
 
 %type <node_function_block> functionBlock;
-functionBlock: KW_FN identifier LPAREN parameters RPAREN type LANGLE statement_list RANGLE 
+functionBlock: KW_FN identifier product_type type LANGLE statement_list RANGLE 
 {
     $$ = node_function_block { 
         .fun_name = $2,
-        .params = $4.params,
-        .ret_type = $6,
-        .statement_list = std::move(*$8)
+        .params = $3,
+        .ret_type = *$4.get(),
+        .statement_list = std::move(*$6)
     };
 }
-
+/*
 %type <node_parameters> parameters;
 parameters: 
     %empty { $$.params = std::vector<node_var_name_type>();}
@@ -97,13 +100,7 @@ varNameType: identifier COLON type
         .type = $3
     };
 }
-
-%type <node_type> type;
-type: identifier 
-{ 
-    // todo
-    $$.val = $1.val; 
-}
+*/
 
 %type <node_primary_expr> primaryExpr;
 primaryExpr: 
@@ -163,7 +160,17 @@ binaryExpr:
         $$ = std::move($1);
         $$.vars.push_back($3);
         $$.ops.push_back($2);
-    };
+    } |
+    binaryExpr REFERRENCE_OP unaryExpr{
+        $$ = std::move($1);
+        $$.vars.push_back($3);
+        $$.ops.push_back("&");
+    } |
+    binaryExpr UNION_OP unaryExpr{
+        $$ = std::move($1);
+        $$.vars.push_back($3);
+        $$.ops.push_back("|");
+    } ;
 
 %type <std::shared_ptr<node_expression>> expression;
 expression:
@@ -203,6 +210,101 @@ statement:
 statement_list:
     %empty {$$ = std::make_shared<std::vector<node_statement>>();} |
     statement_list statement { $$ = $1; $$->push_back($2);};
+
+%type <node_product_type> product_type;
+product_type:
+    LPAREN product_type_tuple RPAREN{
+        $$ = $2;
+    };
+%type <node_product_type> product_type_tuple;
+product_type_tuple:
+    product_type_tuple COMMA identifier COLON type{
+        $1.lables.push_back($3.val);
+        $1.element.push_back($5);
+        $$ = std::move($1);
+    }|
+    identifier COLON type{
+        $$.lables.push_back($1.val);
+        $$.element.push_back($3);
+    }|
+    product_type_tuple COMMA type{
+        $1.lables.push_back("_"+std::to_string($1.lables.size()));
+        $1.element.push_back($3);
+        $$ = std::move($1);
+    }|
+    type{
+        $$.lables.push_back("_0");
+        $$.element.push_back($1);
+    };    
+%type <node_sum_type> sum_type;
+sum_type:
+    LPAREN sum_type_tuple RPAREN{
+        $$ = std::move($2);
+    };
+%type <node_sum_type> sum_type_tuple;
+sum_type_tuple:
+    sum_type_tuple UNION_OP identifier COLON type{
+        $$.lables.push_back($3.val);
+        $$.element.push_back($5);
+    }|
+    identifier COLON type{
+        $$.lables.push_back($1.val);
+        $$.element.push_back($3);
+    }|
+    sum_type_tuple UNION_OP type{
+        $$.lables.push_back("_"+std::to_string($$.lables.size()));
+        $$.element.push_back($3);
+    }|
+    type{
+        $$.lables.push_back("_"+std::to_string($$.lables.size()));
+        $$.element.push_back($1);
+    };
+%type <std::shared_ptr<node_type>> type;
+type:
+    identifier
+    {
+        auto data = std::make_shared<node_type>();
+        data->is_ref = false;
+        data->type_val = $1;
+        $$ = data;
+    }|
+    identifier REFERRENCE_OP
+    {
+        auto data = std::make_shared<node_type>();
+        data->is_ref = true;
+        data->type_val = $1;
+        $$ = data;
+    }|
+    sum_type
+    {
+        auto data = std::make_shared<node_type>();
+        data->is_ref = false;
+        data->type_val = $1;
+        $$ = data;
+    }|
+    sum_type REFERRENCE_OP
+    {
+        auto data = std::make_shared<node_type>();
+        data->is_ref = true;
+        data->type_val = $1;
+        $$ = data;
+    }|
+    product_type
+    {
+        auto data = std::make_shared<node_type>();
+        data->is_ref = false;
+        data->type_val = $1;
+        $$ = data;
+    }|
+    product_type REFERRENCE_OP
+    {
+        auto data = std::make_shared<node_type>();
+        data->is_ref = true;
+        data->type_val = $1;
+        $$ = data;
+    };
+
+
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m)

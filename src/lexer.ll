@@ -32,8 +32,10 @@ int_const              (({dec_int_const}|{hex_int_const}|{oct_int_const}){int_su
 const_var              ({float_const}|{int_const})
 unary_bin_op           ("+"|"-")
 unary_op               ("~"|"!")
-binary_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
+binary_op              ("*"|"/"|"%"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
 assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")?=
+referrence_op          "&"
+union_op               "|"
 %{
   // Code run each time a pattern is matched.
   # define YY_USER_ACTION  loc.columns (yyleng);
@@ -62,6 +64,8 @@ assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")?=
 ";"             return yy::parser::make_SEMICOLON (loc);
 ","             return yy::parser::make_COMMA (loc);
 "fn"            return yy::parser::make_KW_FN (loc);
+{referrence_op} return yy::parser::make_REFERRENCE_OP (loc);
+{union_op}      return yy::parser::make_UNION_OP (loc);
 {id}            return yy::parser::make_IDENTIFIER (yytext, loc);
 {const_var}     return yy::parser::make_CONST_VAR (yytext, loc);
 {assign_op}     return yy::parser::make_ASSIGN_OP (yytext, loc);
