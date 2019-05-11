@@ -30,7 +30,7 @@ bin_int_const          [0][bB][0-1]+
 float_const            {dec_float_const}|{hex_float_const}
 int_const              (({dec_int_const}|{hex_int_const}|{oct_int_const}){int_suffix}?)|{bin_int_const}
 const_var              ({float_const}|{int_const})
-unary_bin_op           ("+"|"-")
+unary_bin_op           ("+"|"-"|"*"|"&")
 unary_op               ("~"|"!")
 binary_op              ("*"|"/"|"%"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
 assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")?=
