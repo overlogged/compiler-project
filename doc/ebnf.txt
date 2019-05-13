@@ -23,9 +23,9 @@ expression = binaryExpr | unaryExpr assignOp expression
 
 expressionList = e | expression {"," expression}
 
-varList  = e | identifier {"," identifier}
+varList  = identifier {"," identifier}
 
-varDefStmt = ("var"|"val") varList [":" type] ["=" expression] ";"
+varDefStmt = ("var"|"val") varList [":" type] "=" expression ";"
 
 singleStmt = expression ";"
 

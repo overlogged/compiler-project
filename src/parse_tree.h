@@ -24,7 +24,7 @@ inline std::string to_string(const node_identifier &node)
 }
 
 // node_arugments
-using node_arguments = std::vector<std::shared_ptr<node_expression>>;
+using node_expression_list = std::vector<std::shared_ptr<node_expression>>;
 
 // node_constant
 struct node_constant
@@ -68,7 +68,19 @@ inline std::string to_string(const node_parameters &node)
 
 // node_primary_expr
 using node_primary_expr = std::variant<node_identifier, node_constant, std::shared_ptr<node_expression>>;
+// node_post_type_check_expr
+struct node_post_check_expr
+{
+    node_identifier check_lable;
+    std::shared_ptr<node_post_expr> check_exp;
 
+};
+inline std::string to_string(const node_post_check_expr &node)
+{
+    return obj_to_string(
+        vec_str{"check_lable", "check_exp"},
+        vec_str{to_string(node.check_lable), to_string(node.check_exp)});
+}
 // node_post_dot_expr
 struct node_post_dot_expr
 {
@@ -87,27 +99,25 @@ inline std::string to_string(const node_post_dot_expr &node)
 struct node_post_call_expr
 {
     std::shared_ptr<node_post_expr> callable;
-    node_arguments arguments;
+    node_expression_list exp_list;
 };
 
 inline std::string to_string(const node_post_call_expr &node)
 {
     return obj_to_string(
         vec_str{"callable", "arugments"},
-        vec_str{to_string(node.callable), to_string(node.arguments)});
+        vec_str{to_string(node.callable), to_string(node.exp_list)});
 }
 
 // node_post_expr
 struct node_post_expr
 {
-    std::variant<node_primary_expr, node_post_call_expr, node_post_dot_expr> expr;
+    std::variant<node_primary_expr, node_post_call_expr, node_post_dot_expr,node_post_check_expr> expr;
 };
 
 inline std::string to_string(const node_post_expr &node)
 {
-    return obj_to_string(
-        vec_str{"expr"},
-        vec_str{to_string(node.expr)});
+    return to_string(node.expr);
 }
 
 // node_unary_expr
@@ -154,25 +164,8 @@ inline std::string to_string(const node_assign_expr &node)
                 to_string(node.op),
                 to_string(node.rval)});
 }
-
-// node_expression
-struct node_type;
-struct node_expression
-{
-    std::variant<node_binary_expr, node_assign_expr> expr;
-};
-
-inline std::string to_string(const node_expression &node)
-{
-    return obj_to_string(
-        vec_str{"expr"},
-        vec_str{to_string(node.expr)});
-}
-
-// node_statement
-using node_statement = std::variant<std::shared_ptr<node_expression>>;
-
 //node_types
+struct node_type;
 struct node_sum_type
 {
     std::vector<std::string> lables;
@@ -204,6 +197,80 @@ inline std::string to_string(const node_type& node)
     else
         lable = "type";
     return obj_to_string(vec_str{lable},vec_str{to_string(node.type_val)});
+}
+// node_statement
+struct node_statement;
+struct node_expression
+{
+    std::variant<node_binary_expr, node_assign_expr> expr;
+};
+
+inline std::string to_string(const node_expression &node)
+{
+    return to_string(node.expr);
+}
+
+struct node_return_statement
+{
+    node_expression expr;
+};
+inline std::string to_string(const node_return_statement& node)
+{
+    return obj_to_string(vec_str{"ret_expr"},vec_str{to_string(node.expr)});
+}
+struct node_if_statement
+{
+    node_expression condition;
+    std::vector<node_statement> if_statement;
+    std::vector<node_statement> else_statement;
+};
+inline std::string to_string(const node_if_statement& node)
+{
+    return obj_to_string(vec_str{"if_codition","if_stmt_list","else_stmt_list"},vec_str{to_string(node.condition),to_string(node.if_statement),to_string(node.else_statement)});
+}
+struct node_while_statement
+{
+    node_expression while_condition;
+    std::vector<node_statement> loop_statement;   
+};
+inline std::string to_string(const node_while_statement& node)
+{
+    return obj_to_string(vec_str{"while_codition","while_stmt_list"},vec_str{to_string(node.while_condition),to_string(node.loop_statement)});
+}
+struct node_for_statement
+{
+    node_identifier id;
+    node_expression for_range;
+    std::vector<node_statement> for_statement;
+};
+inline std::string to_string(const node_for_statement& node)
+{
+    return obj_to_string(vec_str{"for_id","for_range","loop_stmt_list"},vec_str{to_string(node.id),to_string(node.for_range),to_string(node.for_statement)});
+}
+struct node_var_def_statement
+{
+    bool is_const;
+    std::vector<node_identifier> var_list;
+    node_type var_type;
+    node_expression initial_exp;
+};
+inline std::string to_string(const node_var_def_statement& node)
+{
+    return obj_to_string(vec_str{"is_const","var_list","var_type","initial_exp"},vec_str{to_string(node.is_const?"true":"flase"),to_string(node.var_list),to_string(node.var_type),to_string(node.initial_exp)});
+}
+struct node_statement
+{
+     std::variant<
+        node_return_statement,
+        node_if_statement,
+        node_while_statement,
+        node_for_statement,
+        node_expression,
+        node_var_def_statement> statement;
+}; 
+inline std::string to_string(const node_statement& node)
+{
+    return to_string(node.statement);
 }
 //node fun_param
 struct node_fun_param

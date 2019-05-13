@@ -10,7 +10,7 @@
 
 %option noyywrap nounput noinput batch debug
 
-id                     [a-zA-Z][a-zA-Z_0-9]*
+id                     [a-zA-Z_][_a-zA-Z_0-9]*
 blank                  [ \t\r]
 digit                  [0-9]
 non_zero_digit         [1-9]
@@ -30,12 +30,14 @@ bin_int_const          [0][bB][0-1]+
 float_const            {dec_float_const}|{hex_float_const}
 int_const              (({dec_int_const}|{hex_int_const}|{oct_int_const}){int_suffix}?)|{bin_int_const}
 const_var              ({float_const}|{int_const})
-unary_bin_op           ("+"|"-"|"*"|"&")
+unary_bin_op           ("+"|"-"|"*")
 unary_op               ("~"|"!")
 binary_op              ("*"|"/"|"%"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
-assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")?=
+assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")=
+equal                  "="
 referrence_op          "&"
 union_op               "|"
+question_mark          "?"
 %{
   // Code run each time a pattern is matched.
   # define YY_USER_ACTION  loc.columns (yyleng);
@@ -64,6 +66,17 @@ union_op               "|"
 ";"             return yy::parser::make_SEMICOLON (loc);
 ","             return yy::parser::make_COMMA (loc);
 "fn"            return yy::parser::make_KW_FN (loc);
+"return"        return yy::parser::make_KW_RETURN (loc);
+"for"           return yy::parser::make_KW_FOR (loc);
+"in"            return yy::parser::make_KW_IN (loc);
+"while"         return yy::parser::make_KW_WHILE (loc);
+"loop"          return yy::parser::make_KW_LOOP (loc);
+"if"            return yy::parser::make_KW_IF (loc);
+"else"          return yy::parser::make_KW_ELSE (loc);
+"var"           return yy::parser::make_KW_VAR (loc);
+"val"           return yy::parser::make_KW_VAL (loc);
+{equal}         return yy::parser::make_EQUAL (loc);
+{question_mark} return yy::parser::make_QUESTION_MARK (loc);
 {referrence_op} return yy::parser::make_REFERRENCE_OP (loc);
 {union_op}      return yy::parser::make_UNION_OP (loc);
 {id}            return yy::parser::make_IDENTIFIER (yytext, loc);
