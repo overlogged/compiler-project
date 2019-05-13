@@ -69,8 +69,18 @@ module: %empty { }
 %type <node_block> block;
 block: functionBlock { $$ = $1;}
 
+%type <node_fun_param> fun_param;
+fun_param:
+    LPAREN RPAREN{
+        $$.empty_flag = true;
+    } | 
+    product_type{
+        $$.empty_flag = false;
+        $$.params = $1;
+    }
+
 %type <node_function_block> functionBlock;
-functionBlock: KW_FN identifier product_type type LANGLE statement_list RANGLE 
+functionBlock: KW_FN identifier fun_param type LANGLE statement_list RANGLE 
 {
     $$ = node_function_block { 
         .fun_name = $2,

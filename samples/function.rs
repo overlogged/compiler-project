@@ -1,3 +1,3 @@
-fn main(i8,(i8|id:u32),qwq) (i8,i8) {
+fn main() (i8,i8) {
 
 }

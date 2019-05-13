@@ -4,7 +4,7 @@ module = {block}
 
 block = functionBlock
 
-functionBlock = "fn" identifier productType type "{" {statement} "}"
+functionBlock = "fn" identifier funType type "{" {statement} "}"
 
 typeParams = "[" identifier  {"," identifier}  "]"
 

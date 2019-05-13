@@ -205,12 +205,28 @@ inline std::string to_string(const node_type& node)
         lable = "type";
     return obj_to_string(vec_str{lable},vec_str{to_string(node.type_val)});
 }
-
+//node fun_param
+struct node_fun_param
+{
+    bool empty_flag;
+    node_product_type params;
+};
+inline std::string to_string(const node_fun_param& node)
+{
+    if(node.empty_flag)
+    {
+        return to_string("");
+    }
+    else
+    {
+        return to_string(node.params);
+    }
+}
 // node_function_block
 struct node_function_block
 {
     node_identifier fun_name;
-    node_product_type params;
+    node_fun_param params;
     node_type ret_type;
     std::vector<node_statement> statement_list;
 };
