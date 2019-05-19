@@ -53,7 +53,14 @@
   QUESTION_MARK "?"
 ;
 
-%token <std::string> CONST_VAR
+%token <std::string> OCT_INT_CONST
+%token <std::string> BIN_INT_CONST
+%token <std::string> HEX_INT_CONST
+%token <std::string> DEC_INT_CONST
+%token <std::string> DEC_FLOAT_CONST
+%token <std::string> HEX_FLOAT_CONST
+%token <std::string> CHAR_CONST
+%token <std::string> STRING_CONST
 %token <std::string> UNARY_BINARY_OP
 %token <std::string> UNARY_OP
 %token <std::string> BINARY_OP
@@ -68,7 +75,70 @@ module_first: module {
 
 
 %type <node_constant> constant;
-constant: CONST_VAR { $$.val = $1;};
+constant: DEC_INT_CONST { 
+            $$.val = $1;
+            $$.type = std::make_shared<node_type>();
+            $$.type->is_ref = false;
+            auto type = std::make_shared<node_identifier>();
+            type->val = number_type($1, 10, $$.value);
+            $$.type->type_val = *type;
+        }
+        | BIN_INT_CONST {
+            $$.val = $1; 
+            $$.type = std::make_shared<node_type>();
+            $$.type->is_ref = false;
+            auto type = std::make_shared<node_identifier>();
+            type->val = bin_type($1);
+            $$.type->type_val = *type;
+            $$.value = bin_to_value($1);
+        }
+        | OCT_INT_CONST {
+            $$.val = $1;
+            $$.type = std::make_shared<node_type>();
+            $$.type->is_ref = false;
+            auto type = std::make_shared<node_identifier>();
+            auto value = $1.substr(1);
+            type->val = number_type(value, 8, $$.value);
+            $$.type->type_val = *type;
+        }
+        | HEX_INT_CONST {
+            $$.val = $1;
+            $$.type = std::make_shared<node_type>();
+            $$.type->is_ref = false;
+            auto type = std::make_shared<node_identifier>();
+            auto value = $1.substr(2);
+            type->val = number_type(value, 16, $$.value);
+            $$.type->type_val = *type;
+        }
+        | DEC_FLOAT_CONST { 
+            $$.val = $1;
+            $$.type = std::make_shared<node_type>();
+            $$.type->is_ref = false;
+            auto type = std::make_shared<node_identifier>();
+            type->val = float_type($1, 10, $$.value);
+            $$.type->type_val = *type;
+        }
+        | HEX_FLOAT_CONST {
+            $$.val = $1;
+            $$.type = std::make_shared<node_type>();
+            $$.type->is_ref = false;
+            auto type = std::make_shared<node_identifier>();
+            auto value = $1.substr(2);
+            type->val = float_type(value, 16, $$.value);
+            $$.type->type_val = *type;
+        }
+        | CHAR_CONST { 
+            $$.val = $1; 
+            $$.type = std::make_shared<node_type>();
+            $$.type->is_ref = false;
+            auto type_name = std::make_shared<node_identifier>();
+            type_name->val = "char";
+            $$.type->type_val = *type_name;
+            $$.value = 'a';
+        }
+        | STRING_CONST { 
+            $$.val = $1;
+        };
 
 %type <node_identifier> identifier;
 identifier: IDENTIFIER { $$.val = $1;};
@@ -264,26 +334,26 @@ statement:
 var_def_statement:
     KW_VAR var_list COLON type EQUAL expression
     {
-        $$.is_const = false;
+        $$.is_immutable = false;
         $$.var_list = $2;
         $$.var_type = *$4;
         $$.initial_exp = *$6;
     }|
     KW_VAR var_list EQUAL expression
     {
-        $$.is_const = false;
+        $$.is_immutable = false;
         $$.initial_exp = *$4;
         $$.var_list = $2;
     }|
     KW_VAL var_list EQUAL expression
     {
-        $$.is_const = true;
+        $$.is_immutable = true;
         $$.initial_exp = *$4;
         $$.var_list = $2;
     }|
     KW_VAL var_list COLON type EQUAL expression
     {
-        $$.is_const = true;
+        $$.is_immutable = true;
         $$.var_list = $2;
         $$.var_type = *$4;
         $$.initial_exp = *$6;

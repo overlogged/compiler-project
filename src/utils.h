@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#include <stack>
 #include <vector>
+#include <cmath>
 #include <cassert>
 #include <variant>
 #include <memory>
@@ -11,9 +13,74 @@ using vec_str = std::vector<std::string>;
 std::string myprintf(const char *format, ...);
 std::string obj_to_string(vec_str keys, vec_str values);
 
+std::string bin_type(const std::string &s);
+std::string number_type(const std::string &s, int base, std::variant<unsigned long long, double, float, char, long double> &val);
+std::string float_type(const std::string &s, int base, std::variant<unsigned long long, double, float, char, long double> &val);
+float cal_float(const std::string &s, int base);
+double cal_double(const std::string &s, int base);
+long double cal_ldouble(const std::string &s, int base);
+unsigned long long bin_to_value(const std::string &s);
+unsigned long long number_to_value(const std::string &s, int base);
+
+inline int char_to_integer(char c)
+{
+    int tmp = 0;
+    if(c >= '0' && c <= '9')
+        tmp = c - '0';
+    else if(c >= 'a' && c <= 'f')
+        tmp = c - 'a' + 10;
+    else if(c >= 'A' && c <= 'F')
+        tmp = c - 'A' + 10;
+    else
+        assert(false);
+    return tmp;
+}
+
 inline std::string to_string(const std::string &s)
 {
     return "\"" + s + "\"";
+}
+
+inline std::string to_string(int x)
+{
+    return std::to_string(x);
+}
+
+inline std::string to_string(long double x)
+{
+    return std::to_string(x);
+}
+
+// to_string for long long
+inline std::string to_string(unsigned long long x) 
+{
+    return std::to_string(x);
+}
+
+// to_string for double
+inline std::string to_string(double x)
+{
+    return std::to_string(x);
+}
+
+// to_string for float
+inline std::string to_string(float x)
+{
+    return std::to_string(x);
+}
+
+// to_string for bool
+inline std::string to_string(bool x) 
+{
+    return (x ? std::string("\"true\"") : std::string("\"false\""));
+}
+
+inline bool is_unsigned(const std::string &s) {
+    if(s.find("u") != std::string::npos)
+        return true;
+    if(s.find("U") != std::string::npos)
+        return true;
+    return false;
 }
 
 // to_string for vector
@@ -98,6 +165,30 @@ std::string to_string(const std::variant<T1, T2, T3, T4> &node)
     else
         assert(false);
 }
+
+//to_string for 5 types variant
+template <typename T1, typename T2, typename T3,typename T4, typename T5>
+std::string to_string(const std::variant<T1, T2, T3, T4, T5> &node)
+{
+    auto pval1 = std::get_if<T1>(&node);
+    auto pval2 = std::get_if<T2>(&node);
+    auto pval3 = std::get_if<T3>(&node);
+    auto pval4 = std::get_if<T4>(&node);
+    auto pval5 = std::get_if<T5>(&node);
+    if (pval1)
+        return to_string(*pval1);
+    else if (pval2)
+        return to_string(*pval2);
+    else if (pval3)
+        return to_string(*pval3);
+    else if (pval4)
+        return to_string(*pval4);
+    else if (pval5)
+        return to_string(*pval5);
+    else
+        assert(false);
+}
+
 //to_string for 6 types variant
 template <typename T1, typename T2, typename T3,typename T4, typename T5,typename T6>
 std::string to_string(const std::variant<T1, T2, T3, T4, T5, T6> &node)
@@ -130,4 +221,59 @@ std::string to_string(const std::shared_ptr<T> &node)
 {
     assert(node.get());
     return to_string(*node.get());
+}
+
+template <typename T>
+void cal_float(const std::string &s, int base, T &res)
+{
+    T exp_part = 0.0;
+    T exp_base = (base == 10) ? 10.0 : 2.0;
+    bool exp_flag = false;
+    bool mul = true;
+    std::stack<int> fraction;
+    bool integer_flag = true;
+    for(auto i = 0; i < s.size(); i++)
+    {
+        if(s[i] == '.')
+            integer_flag = false;
+        else if(s[i] == 'p' || s[i] == 'e' || s[i] == 'E')
+            exp_flag = true;
+        else if(s[i] == '+')
+            mul = true;
+        else if(s[i] == '-')
+            mul = false;
+        else
+        {
+            if(exp_flag)
+            {
+                exp_part *= 10;
+                exp_part += char_to_integer(s[i]);
+            }
+            else if(integer_flag)
+            {
+                res *= base;
+                res += char_to_integer(s[i]);
+            }
+            else //fraction_part
+            {
+                fraction.push(char_to_integer(s[i]));
+            }
+        }
+    }
+    T fraction_part = 0.0;
+    while(!fraction.empty())
+    {   
+        fraction_part += fraction.top();
+        fraction_part /= base;
+        fraction.pop();
+    }
+    res += fraction_part;
+
+    if(exp_flag)
+    {
+        if(mul)
+            res *= pow(exp_base, exp_part);
+        else
+            res /= pow(exp_base, exp_part);
+    }
 }

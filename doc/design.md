@@ -10,7 +10,7 @@ todo: package，module
   - bool
   - u8,16,32,64
   - i8,16,32,64
-  - f32,f64
+  - f32,f64, f128
   - char
   - null
 - 复合类型

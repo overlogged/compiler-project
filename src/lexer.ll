@@ -23,13 +23,12 @@ int_suffix             ([uU]?([lL]|"ll"|"LL"))|(([lL]|"ll"|"LL")?[uU])
 hex_prefix             [0][xX]
 dec_float_const        ((({digit_seq}?\.{digit_seq})|({digit_seq}\.)|{digit_seq})(([eE][+-]?{digit_seq})?{float_suffix}?))
 hex_float_const        ({hex_prefix}(({hex_digit_seq}?\.{hex_digit_seq})|({hex_digit_seq}\.)|{hex_digit_seq})(([p][+-]?{digit_seq})?{float_suffix}?))
-dec_int_const          {non_zero_digit}{digit}*
-hex_int_const          {hex_prefix}{hex_digit}+
-oct_int_const          [0]oct_digit*
+dec_int_const          {non_zero_digit}{digit}*{int_suffix}?
+hex_int_const          {hex_prefix}{hex_digit}+{int_suffix}?
+oct_int_const          [0]oct_digit+{int_suffix}?
 bin_int_const          [0][bB][0-1]+
-float_const            {dec_float_const}|{hex_float_const}
-int_const              (({dec_int_const}|{hex_int_const}|{oct_int_const}){int_suffix}?)|{bin_int_const}
-const_var              ({float_const}|{int_const})
+char_const             (\'[^\']{1}\')|(\'[\\].{1}\')
+string_const           \"[^"]*\"
 unary_bin_op           ("+"|"-"|"*")
 unary_op               ("~"|"!")
 binary_op              ("*"|"/"|"%"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
@@ -80,7 +79,14 @@ question_mark          "?"
 {referrence_op} return yy::parser::make_REFERRENCE_OP (loc);
 {union_op}      return yy::parser::make_UNION_OP (loc);
 {id}            return yy::parser::make_IDENTIFIER (yytext, loc);
-{const_var}     return yy::parser::make_CONST_VAR (yytext, loc);
+{oct_int_const} return yy::parser::make_OCT_INT_CONST(yytext, loc);
+{bin_int_const} return yy::parser::make_BIN_INT_CONST(yytext, loc);
+{hex_int_const} return yy::parser::make_HEX_INT_CONST(yytext, loc);
+{dec_int_const} return yy::parser::make_DEC_INT_CONST(yytext, loc);
+{dec_float_const}   return yy::parser::make_DEC_FLOAT_CONST(yytext, loc);
+{hex_float_const}   return yy::parser::make_HEX_FLOAT_CONST(yytext, loc);
+{char_const}    return yy::parser::make_CHAR_CONST(yytext, loc);
+{string_const}  return yy::parser::make_STRING_CONST(yytext, loc);
 {assign_op}     return yy::parser::make_ASSIGN_OP (yytext, loc);
 {unary_bin_op}  return yy::parser::make_UNARY_BINARY_OP (yytext, loc);
 {unary_op}      return yy::parser::make_UNARY_OP (yytext, loc);

@@ -11,6 +11,8 @@
 
 struct node_expression;
 struct node_post_expr;
+//node_types
+struct node_type;
 
 // node_identifier
 struct node_identifier
@@ -29,12 +31,14 @@ using node_expression_list = std::vector<std::shared_ptr<node_expression>>;
 // node_constant
 struct node_constant
 {
+    std::shared_ptr<node_type> type;
     std::string val;
+    std::variant<unsigned long long, double, float, char, long double> value;
 };
 
 inline std::string to_string(const node_constant &node)
 {
-    return to_string(node.val);
+    return obj_to_string(vec_str{"const_type", "origin", "value"}, vec_str{to_string(node.type),to_string(node.val), to_string(node.value)});
 }
 /*
 // node_var_name_type
@@ -164,8 +168,7 @@ inline std::string to_string(const node_assign_expr &node)
                 to_string(node.op),
                 to_string(node.rval)});
 }
-//node_types
-struct node_type;
+
 struct node_sum_type
 {
     std::vector<std::string> lables;
@@ -249,14 +252,14 @@ inline std::string to_string(const node_for_statement& node)
 }
 struct node_var_def_statement
 {
-    bool is_const;
+    bool is_immutable;
     std::vector<node_identifier> var_list;
     node_type var_type;
     node_expression initial_exp;
 };
 inline std::string to_string(const node_var_def_statement& node)
 {
-    return obj_to_string(vec_str{"is_const","var_list","var_type","initial_exp"},vec_str{to_string(node.is_const?"true":"flase"),to_string(node.var_list),to_string(node.var_type),to_string(node.initial_exp)});
+    return obj_to_string(vec_str{"is_immutable","var_list","var_type","initial_exp"},vec_str{to_string(node.is_immutable),to_string(node.var_list),to_string(node.var_type),to_string(node.initial_exp)});
 }
 struct node_statement
 {
