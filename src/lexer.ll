@@ -15,6 +15,7 @@ blank                  [ \t\r]
 digit                  [0-9]
 non_zero_digit         [1-9]
 hex_digit              [0-9a-fA-F]
+hex_quad               {hex_digit}{4}
 oct_digit              [0-7]
 digit_seq              {digit}+
 hex_digit_seq          {hex_digit}+
@@ -27,7 +28,13 @@ dec_int_const          {non_zero_digit}{digit}*{int_suffix}?
 hex_int_const          {hex_prefix}{hex_digit}+{int_suffix}?
 oct_int_const          [0]oct_digit+{int_suffix}?
 bin_int_const          [0][bB][0-1]+
-char_const             (\'[^\']{1}\')|(\'[\\].{1}\')
+simple_escape_seq      [\\]['"abfnrtv\\]
+octal_escape_seq       [\\]{oct_digit}|[\\]{oct_digit}{2}|[\\]{oct_digit}{3}
+hex_escape_seq         [\\]"x"{hex_digit}+
+universal_char         [\\]"u"{hex_quad}|[\\]"U"{hex_quad}{2}
+escape_seq             {simple_escape_seq}|{octal_escape_seq}|{hex_escape_seq}|{universal_char}
+c_char_seq             ([^'\\\r\n])|{escape_seq}
+char_const             (\'{c_char_seq}\')|("L"\'{c_char_seq}\')|("u"\'{c_char_seq}\')|("U"\'{c_char_seq}\')
 string_const           \"[^"]*\"
 unary_bin_op           ("+"|"-"|"*")
 unary_op               ("~"|"!")
