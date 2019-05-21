@@ -30,12 +30,12 @@ oct_int_const          [0]oct_digit+{int_suffix}?
 bin_int_const          [0][bB][0-1]+
 simple_escape_seq      [\\]['"abfnrtv\\]
 octal_escape_seq       [\\]{oct_digit}|[\\]{oct_digit}{2}|[\\]{oct_digit}{3}
-hex_escape_seq         [\\]"x"{hex_digit}+
+hex_escape_seq         [\\]"x"{hex_digit}{2}
 universal_char         [\\]"u"{hex_quad}|[\\]"U"{hex_quad}{2}
 escape_seq             {simple_escape_seq}|{octal_escape_seq}|{hex_escape_seq}|{universal_char}
 c_char_seq             ([^'\\\r\n])|{escape_seq}
 char_const             (\'{c_char_seq}\')|("L"\'{c_char_seq}\')|("u"\'{c_char_seq}\')|("U"\'{c_char_seq}\')
-string_const           \"[^"]*\"
+string_const           \"{c_char_seq}+\"
 unary_bin_op           ("+"|"-"|"*")
 unary_op               ("~"|"!")
 binary_op              ("*"|"/"|"%"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")

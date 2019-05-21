@@ -76,68 +76,82 @@ module_first: module {
 
 %type <node_constant> constant;
 constant: DEC_INT_CONST { 
-            $$.val = $1;
+            $$.is_const = true;
+            $$.ori = $1;
             $$.type = std::make_shared<node_type>();
             $$.type->is_ref = false;
-            auto type = std::make_shared<node_identifier>();
-            type->val = number_type($1, 10, $$.value);
-            $$.type->type_val = *type;
+            node_identifier type_name;
+            type_name.val = number_type($1, 10, $$.val);
+            $$.type->type_val = type_name;
         }
         | BIN_INT_CONST {
-            $$.val = $1; 
+            $$.is_const = true;
+            $$.ori = $1; 
             $$.type = std::make_shared<node_type>();
             $$.type->is_ref = false;
-            auto type = std::make_shared<node_identifier>();
-            type->val = bin_type($1);
-            $$.type->type_val = *type;
-            $$.value = bin_to_value($1);
+            node_identifier type_name;
+            type_name.val = bin_type($1);
+            $$.type->type_val = type_name;
+            $$.val = bin_to_value($1);
         }
         | OCT_INT_CONST {
-            $$.val = $1;
+            $$.is_const = true;
+            $$.ori = $1;
             $$.type = std::make_shared<node_type>();
             $$.type->is_ref = false;
-            auto type = std::make_shared<node_identifier>();
+            node_identifier type_name;
             auto value = $1.substr(1);
-            type->val = number_type(value, 8, $$.value);
-            $$.type->type_val = *type;
+            type_name.val = number_type(value, 8, $$.val);
+            $$.type->type_val = type_name;
         }
         | HEX_INT_CONST {
-            $$.val = $1;
+            $$.is_const = true;
+            $$.ori = $1;
             $$.type = std::make_shared<node_type>();
             $$.type->is_ref = false;
-            auto type = std::make_shared<node_identifier>();
+            node_identifier type_name;
             auto value = $1.substr(2);
-            type->val = number_type(value, 16, $$.value);
-            $$.type->type_val = *type;
+            type_name.val = number_type(value, 16, $$.val);
+            $$.type->type_val = type_name;
         }
         | DEC_FLOAT_CONST { 
-            $$.val = $1;
+            $$.is_const = true;
+            $$.ori = $1;
             $$.type = std::make_shared<node_type>();
             $$.type->is_ref = false;
-            auto type = std::make_shared<node_identifier>();
-            type->val = float_type($1, 10, $$.value);
-            $$.type->type_val = *type;
+            node_identifier type_name;
+            type_name.val = float_type($1, 10, $$.val);
+            $$.type->type_val = type_name;
         }
         | HEX_FLOAT_CONST {
-            $$.val = $1;
+            $$.is_const = true;
+            $$.ori = $1;
             $$.type = std::make_shared<node_type>();
             $$.type->is_ref = false;
-            auto type = std::make_shared<node_identifier>();
+            node_identifier type_name;
             auto value = $1.substr(2);
-            type->val = float_type(value, 16, $$.value);
-            $$.type->type_val = *type;
+            type_name.val = float_type(value, 16, $$.val);
+            $$.type->type_val = type_name;
         }
         | CHAR_CONST { 
-            $$.val = $1; 
+            $$.is_const = true;
+            $$.ori = $1; 
             $$.type = std::make_shared<node_type>();
             $$.type->is_ref = false;
-            auto type_name = std::make_shared<node_identifier>();
-            type_name->val = "char";
-            $$.type->type_val = *type_name;
-            $$.value = 'a';
+            node_identifier type_name;
+            type_name.val = "char";
+            $$.type->type_val = type_name;
+            $$.val = to_char($1);
         }
         | STRING_CONST { 
-            $$.val = $1;
+            $$.is_const = true;
+            $$.ori = trim($1, '\"');
+            $$.type = std::make_shared<node_type>();
+            $$.type->is_ref = false;
+            node_identifier type_name;
+            type_name.val = "char&";
+            $$.type->type_val = type_name;
+            $$.val = trim($1, '\"');
         };
 
 %type <node_identifier> identifier;

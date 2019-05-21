@@ -14,8 +14,8 @@ std::string myprintf(const char *format, ...);
 std::string obj_to_string(vec_str keys, vec_str values);
 
 std::string bin_type(const std::string &s);
-std::string number_type(const std::string &s, int base, std::variant<unsigned long long, double, float, char, long double> &val);
-std::string float_type(const std::string &s, int base, std::variant<unsigned long long, double, float, char, long double> &val);
+std::string number_type(const std::string &s, int base, std::variant<unsigned long long, double, float, long double, char, std::string> &val);
+std::string float_type(const std::string &s, int base, std::variant<unsigned long long, double, float, long double, char, std::string> &val);
 float cal_float(const std::string &s, int base);
 double cal_double(const std::string &s, int base);
 long double cal_ldouble(const std::string &s, int base);
@@ -75,12 +75,29 @@ inline std::string to_string(bool x)
     return (x ? std::string("\"true\"") : std::string("\"false\""));
 }
 
-inline bool is_unsigned(const std::string &s) {
+inline bool is_unsigned(const std::string &s) 
+{
     if(s.find("u") != std::string::npos)
         return true;
     if(s.find("U") != std::string::npos)
         return true;
     return false;
+}
+
+inline std::string trim(const std::string& s, char c)
+{
+    auto pos_front = s.find_first_not_of(c, 0);
+    auto pos_end = s.find_last_not_of(c);
+    if(pos_front != std::string::npos && pos_end != std::string::npos)
+        return s.substr(pos_front, pos_end-pos_front+1);
+    else
+        return std::string("");
+}
+
+inline char to_char(const std::string& s)
+{
+    assert(s.size() <= 3);
+    return s[1];   
 }
 
 // to_string for vector

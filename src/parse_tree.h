@@ -31,14 +31,15 @@ using node_expression_list = std::vector<std::shared_ptr<node_expression>>;
 // node_constant
 struct node_constant
 {
+    bool is_const;
     std::shared_ptr<node_type> type;
-    std::string val;
-    std::variant<unsigned long long, double, float, char, long double> value;
+    std::string ori;
+    std::variant<unsigned long long, double, float, long double, char, std::string> val;
 };
 
 inline std::string to_string(const node_constant &node)
 {
-    return obj_to_string(vec_str{"const_type", "origin", "value"}, vec_str{to_string(node.type),to_string(node.val), to_string(node.value)});
+    return obj_to_string(vec_str{"is_const", "const_type", "origin", "value"}, vec_str{to_string(node.is_const), to_string(node.type), to_string(node.ori), to_string(node.val)});
 }
 /*
 // node_var_name_type

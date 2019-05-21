@@ -68,7 +68,7 @@ unsigned long long bin_to_value(const std::string &s)
     return tmp;
 }
 
-std::string number_type(const std::string &s, int base, std::variant<unsigned long long, double, float, char, long double> &val)
+std::string number_type(const std::string &s, int base, std::variant<unsigned long long, double, float, long double, char, std::string> &val)
 {
     auto pos = s.find_last_not_of("uUlL");
     auto suffix = s.substr(pos+1);
@@ -175,7 +175,7 @@ unsigned long long number_to_value(const std::string &s, int base)
     return tmp;
 }
 
-std::string float_type(const std::string &s, int base, std::variant<unsigned long long, double, float, char, long double> &val) 
+std::string float_type(const std::string &s, int base, std::variant<unsigned long long, double, float, long double, char, std::string> &val) 
 {
     auto pos = s.find_last_of("fFlL");
     if(pos != std::string::npos)
