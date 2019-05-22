@@ -28,6 +28,8 @@ struct syntax_stmt;
 
 struct syntax_expr
 {
+    syntax_type type;
+    std::variant<std::shared_ptr<syntax_fun_call>> val; // todo: constant
 };
 
 struct syntax_if_block
