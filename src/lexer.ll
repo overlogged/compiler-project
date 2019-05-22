@@ -22,12 +22,12 @@ hex_digit_seq          {hex_digit}+
 float_suffix           [fFlL]
 int_suffix             ([uU]?([lL]|"ll"|"LL"))|(([lL]|"ll"|"LL")?[uU])
 hex_prefix             [0][xX]
-dec_float_const        ((({digit_seq}?\.{digit_seq})|({digit_seq}\.)|{digit_seq})(([eE][+-]?{digit_seq})?{float_suffix}?))
-hex_float_const        ({hex_prefix}(({hex_digit_seq}?\.{hex_digit_seq})|({hex_digit_seq}\.)|{hex_digit_seq})(([p][+-]?{digit_seq})?{float_suffix}?))
-dec_int_const          {non_zero_digit}{digit}*{int_suffix}?
+dec_int_const          (({non_zero_digit}{digit}*)|{digit}){int_suffix}?
 hex_int_const          {hex_prefix}{hex_digit}+{int_suffix}?
 oct_int_const          [0]oct_digit+{int_suffix}?
 bin_int_const          [0][bB][0-1]+
+dec_float_const        ((({digit_seq}?\.{digit_seq})|({digit_seq}\.)|{digit_seq})(([eE][+-]?{digit_seq})?{float_suffix}?))
+hex_float_const        ({hex_prefix}(({hex_digit_seq}?\.{hex_digit_seq})|({hex_digit_seq}\.)|{hex_digit_seq})(([p][+-]?{digit_seq})?{float_suffix}?))
 simple_escape_seq      [\\]['"abfnrtv\\]
 octal_escape_seq       [\\]{oct_digit}|[\\]{oct_digit}{2}|[\\]{oct_digit}{3}
 hex_escape_seq         [\\]"x"{hex_digit}{2}
