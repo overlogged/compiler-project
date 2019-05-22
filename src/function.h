@@ -10,10 +10,9 @@ struct syntax_fun
     std::vector<syntax_stmt> stmts;
 };
 
-struct syntax_func_call
+struct syntax_fun_call
 {
     std::string fun_name;
-    
 };
 
 class function_table
@@ -28,5 +27,5 @@ public:
         user_def_fun[name] = func;
     }
 
-    void infer_ret_type(const std::string &func_name, )
+    void infer_ret_type(const std::string &func_name, const syntax_fun_call &call);
 };
