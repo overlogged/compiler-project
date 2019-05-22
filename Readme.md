@@ -70,3 +70,4 @@
     - 对于整数, 考虑到整数的表示仅为位数的不同, 目前为unsigned long long, 在后续语义分析中可以方便的转换
     - 对于浮点数, float-f32, double-f64, long double-f128
 - 字面量显示在json中时可能由于std::to_string的调用有位数差异(整数比较大或者浮点精度问题), 在实际存储的val中并没有这个问题
+- 有两个 reduce/reduce 冲突
