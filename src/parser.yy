@@ -411,12 +411,23 @@ while_statement:
     };
 %type <node_if_statement> if_statement;
 if_statement:
-    KW_IF expression LANGLE statement_list RANGLE KW_ELSE LANGLE statement_list RANGLE
+    KW_IF expression LANGLE statement_list RANGLE else_if_statement KW_ELSE LANGLE statement_list RANGLE
     {
-        $$.condition = *$2;
+        $$.if_condition = *$2;
         $$.if_statement = *$4;
-        $$.else_statement = *$8;
+        $$.else_statement = *$9;
+        $$.else_if_statement = $6;
     };
+%type <node_else_if_statement> else_if_statement;
+else_if_statement:
+    else_if_statement KW_ELSE KW_IF LPAREN expression RPAREN LANGLE statement_list RANGLE
+    {
+        $1.else_if_condition.push_back(*$5);
+        $1.else_if_statement.push_back(*$8);
+        $$ = std::move($1);
+    }|
+    %empty
+    {}
 %type <std::shared_ptr<std::vector<node_statement>>> statement_list;
 statement_list:
     %empty {$$ = std::make_shared<std::vector<node_statement>>();} |

@@ -222,15 +222,27 @@ inline std::string to_string(const node_return_statement& node)
 {
     return obj_to_string(vec_str{"ret_expr"},vec_str{to_string(node.expr)});
 }
+struct node_else_if_statement
+{
+    std::vector<node_expression> else_if_condition;
+    std::vector<std::vector<node_statement>> else_if_statement;
+};
+inline std::string to_string(const node_else_if_statement& node)
+{
+    return obj_to_string(vec_str{"else_if_condition","else_if_statement"}
+        ,vec_str{to_string(node.else_if_condition),to_string(node.else_if_statement)});
+}
 struct node_if_statement
 {
-    node_expression condition;
+    node_expression if_condition;
     std::vector<node_statement> if_statement;
     std::vector<node_statement> else_statement;
+    node_else_if_statement else_if_statement;
 };
 inline std::string to_string(const node_if_statement& node)
 {
-    return obj_to_string(vec_str{"if_codition","if_stmt_list","else_stmt_list"},vec_str{to_string(node.condition),to_string(node.if_statement),to_string(node.else_statement)});
+    return obj_to_string(vec_str{"if_codition","if_stmt_list","else_if","else_stmt_list"},
+        vec_str{to_string(node.if_condition),to_string(node.if_statement),to_string(node.else_if_statement),to_string(node.else_statement)});
 }
 struct node_while_statement
 {
