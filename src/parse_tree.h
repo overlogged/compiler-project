@@ -274,6 +274,7 @@ inline std::string to_string(const node_var_def_statement& node)
 {
     return obj_to_string(vec_str{"is_immutable","var_list","var_type","initial_exp"},vec_str{to_string(node.is_immutable),to_string(node.var_list),to_string(node.var_type),to_string(node.initial_exp)});
 }
+using node_global_var_def_block = std::vector<node_var_def_statement>;
 struct node_statement
 {
      std::variant<
@@ -326,7 +327,7 @@ inline std::string to_string(const node_function_block &node)
 }
 
 // node_block
-using node_block = std::variant<node_function_block>;
+using node_block = std::variant<node_function_block,node_global_var_def_block>;
 
 // node_module
 struct node_module

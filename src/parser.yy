@@ -162,8 +162,26 @@ module: %empty { }
       | module block { $1.blocks.push_back($2); $$ = std::move($1); };
 
 %type <node_block> block;
-block: functionBlock { $$ = $1;}
-
+block: 
+    functionBlock 
+    {
+        $$ = $1;
+    }|
+    global_var_def_block
+    {
+        $$ = $1;
+    };
+%type <node_global_var_def_block> global_var_def_block;
+global_var_def_block:
+    global_var_def_block var_def_statement SEMICOLON
+    {
+        $1.push_back($2);
+        $$ = std::move($1);
+    }|
+    var_def_statement SEMICOLON
+    {
+        $$.push_back($1);
+    };
 %type <node_fun_param> fun_param;
 fun_param:
     LPAREN RPAREN{
@@ -420,10 +438,10 @@ if_statement:
     };
 %type <node_else_if_statement> else_if_statement;
 else_if_statement:
-    else_if_statement KW_ELSE KW_IF LPAREN expression RPAREN LANGLE statement_list RANGLE
+    else_if_statement KW_ELSE KW_IF expression LANGLE statement_list RANGLE
     {
-        $1.else_if_condition.push_back(*$5);
-        $1.else_if_statement.push_back(*$8);
+        $1.else_if_condition.push_back(*$4);
+        $1.else_if_statement.push_back(*$6);
         $$ = std::move($1);
     }|
     %empty
@@ -460,9 +478,18 @@ product_type_tuple:
     };    
 %type <node_sum_type> sum_type;
 sum_type:
-    LPAREN sum_type_tuple RPAREN{
+    LPAREN sum_type_tuple UNION_OP identifier COLON type RPAREN
+    {
         $$ = std::move($2);
-    };
+        $$.lables.push_back($4.val);
+        $$.element.push_back($6);
+    }|
+    LPAREN sum_type_tuple UNION_OP type RPAREN
+    {
+        $$ = std::move($2);
+        $$.lables.push_back("_"+std::to_string($$.lables.size()));
+        $$.element.push_back($4);
+    }
 %type <node_sum_type> sum_type_tuple;
 sum_type_tuple:
     sum_type_tuple UNION_OP identifier COLON type{

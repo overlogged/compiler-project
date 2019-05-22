@@ -1,4 +1,10 @@
-fn main() (i8,i8) {
+val x:(i32) =0;
+var y:(u16) =0;
+fn fun() (i8)
+{
+	x=1;
+}
+fn main() (i8) {
 	if(x>1)
 	{
 		y=1;
