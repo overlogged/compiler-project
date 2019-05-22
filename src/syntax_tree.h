@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "parse_tree.h"
 #include "type.h"
+#include "function.h"
 
 struct syntax_var_def
 {
@@ -24,14 +25,6 @@ struct syntax_type_def
 };
 
 struct syntax_stmt;
-
-struct syntax_func
-{
-    std::string fun_name;
-    syntax_type ret_type;
-    std::vector<std::pair<std::string, syntax_type>> parameters;
-    std::vector<syntax_stmt> stmts;
-};
 
 struct syntax_expr
 {
