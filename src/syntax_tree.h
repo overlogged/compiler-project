@@ -9,17 +9,7 @@
 #include <variant>
 #include "utils.h"
 #include "parse_tree.h"
-
-struct syntax_type
-{
-    std::variant<
-        std::string,
-        std::vector<
-            std::pair<
-                std::string,
-                std::shared_ptr<syntax_type>>>>
-        type;
-};
+#include "type.h"
 
 struct syntax_var_def
 {
