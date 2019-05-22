@@ -199,7 +199,8 @@ functionBlock: KW_FN identifier fun_param type LANGLE statement_list RANGLE
         .fun_name = $2,
         .params = $3,
         .ret_type = *$4.get(),
-        .statement_list = std::move(*$6)
+        .statement_list = std::move(*$6),
+        .no_ret =false
     };
 }| 
 KW_FN identifier fun_param LANGLE statement_list RANGLE 
@@ -207,7 +208,8 @@ KW_FN identifier fun_param LANGLE statement_list RANGLE
     $$ = node_function_block { 
         .fun_name = $2,
         .params = $3,
-        .statement_list = std::move(*$5)
+        .statement_list = std::move(*$5),
+        .no_ret = true
     };   
 };
 /*

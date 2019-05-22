@@ -314,17 +314,26 @@ struct node_function_block
     node_fun_param params;
     node_type ret_type;
     std::vector<node_statement> statement_list;
+    bool no_ret;
 };
 
 inline std::string to_string(const node_function_block &node)
 {
-    return obj_to_string(
-        vec_str{"fun_name", "params", "ret_type", "statement_list"},
+    if(node.no_ret)
+        return obj_to_string(
+        vec_str{"fun_name", "params","statement_list"},
         vec_str{
             to_string(node.fun_name),
             to_string(node.params),
-            to_string(node.ret_type),
             to_string(node.statement_list)});
+    else
+        return obj_to_string(
+            vec_str{"fun_name", "params", "ret_type", "statement_list"},
+            vec_str{
+                to_string(node.fun_name),
+                to_string(node.params),
+                to_string(node.ret_type),
+                to_string(node.statement_list)});
 }
 
 // node_block
