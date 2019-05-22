@@ -44,3 +44,5 @@ sumType = "(" [identifier ":"] type  {"|" [identifier ":"] type } ")"
 productType = "(" [identifier ":"] type  {"," [identifier ":"] type } ")"
 
 type = (identifier | sumType | productType) "*"?
+
+typeDef = "type" identifier "=" type ";"

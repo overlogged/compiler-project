@@ -16,16 +16,16 @@ todo: package，module
 - 复合类型
   - 结构体
   ```
-  data year = (i32,i32 | u32)
-  data month = (month:i32)
+  type year = (i32,i32 | u32)
+  type month = (month:i32)
 
-  data A[T] = (x:bool, y:i32, z:T)
-  data B = (bool,y:i32) == (_1:bool,y:i32)
+  type A[T] = (x:bool, y:i32, z:T)
+  type B = (bool,y:i32) == (_1:bool,y:i32)
   val x:B = (false,3)
   ```
   - 联合
   ```
-  data Maybe[T] = (x:bool | a:B | z:T)
+  type Maybe[T] = (x:bool | a:B | z:T)
   ```
 
 
