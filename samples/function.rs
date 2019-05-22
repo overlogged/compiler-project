@@ -1,6 +1,6 @@
 val x:(i32) =0;
 var y:(u16) =0;
-fn fun() (i8)
+fn fun()
 {
 	x=1;
 }
