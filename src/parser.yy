@@ -420,10 +420,10 @@ if_statement:
     };
 %type <node_else_if_statement> else_if_statement;
 else_if_statement:
-    else_if_statement KW_ELSE KW_IF LPAREN expression RPAREN LANGLE statement_list RANGLE
+    else_if_statement KW_ELSE KW_IF expression LANGLE statement_list RANGLE
     {
-        $1.else_if_condition.push_back(*$5);
-        $1.else_if_statement.push_back(*$8);
+        $1.else_if_condition.push_back(*$4);
+        $1.else_if_statement.push_back(*$6);
         $$ = std::move($1);
     }|
     %empty

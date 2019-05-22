@@ -11,7 +11,7 @@ fn fun(x:i32) i8 {
     }
 }
 
-fn main() unit {
+fn main() {
     val y:i32 = 1;
     val z = fun(y);
 }
