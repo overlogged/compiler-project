@@ -10,6 +10,7 @@ int main(int argc, char *argv[])
     int res = 0;
     driver drv;
     for (int i = 1; i < argc; ++i)
+    {
         if (argv[i] == string("-p"))
         {
             drv.trace_parsing = true;
@@ -30,5 +31,6 @@ int main(int argc, char *argv[])
         {
             res = 1;
         }
+    }
     return res;
 }

@@ -30,4 +30,14 @@ struct sum_type
 struct syntax_type
 {
     std::variant<primary_type, product_type, sum_type> type;
+
+    // 失败返回 ""
+    std::string get_primary() const
+    {
+        auto p = std::get_if<primary_type>(&type);
+        return p->name;
+    }
+
+    // todo: subtyping 判定
+    bool subtyping(const syntax_type &t) const;
 };
