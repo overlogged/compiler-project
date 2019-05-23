@@ -1,5 +1,7 @@
 val x:(i32) =0;
 var y:(u16) =0;
+type t1 = (x:i32,y:i32);
+type t2 = (x:i32|y:i32);
 fn fun()
 {
 	x=1;

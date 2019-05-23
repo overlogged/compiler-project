@@ -290,6 +290,17 @@ inline std::string to_string(const node_statement &node)
 {
     return to_string(node.statement);
 }
+//type def statetment
+struct node_type_def_statement
+{
+    std::string type_name;
+    node_type type;
+};
+inline std::string to_string(const node_type_def_statement& node)
+{
+    return obj_to_string(vec_str{"type_name","type"},vec_str{to_string(node.type_name),to_string(node.type)});
+}
+using node_global_type_def_block = std::vector<node_type_def_statement>;
 //node fun_param
 struct node_fun_param
 {
@@ -335,9 +346,8 @@ inline std::string to_string(const node_function_block &node)
                 to_string(node.ret_type),
                 to_string(node.statement_list)});
 }
-
 // node_block
-using node_block = std::variant<node_function_block,node_global_var_def_block>;
+using node_block = std::variant<node_function_block,node_global_var_def_block,node_global_type_def_block>;
 
 // node_module
 struct node_module
