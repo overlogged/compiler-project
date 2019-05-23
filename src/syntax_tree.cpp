@@ -6,14 +6,23 @@ void syntax_analysis(node_module module)
 
     // 第一步：扫描所有类型定义，生成全局类型表（固定）
     // 需要封装类型表的功能，以支持 built-in 类型
-    std::map<std::string, syntax_type> type_table;
+    type_table env_type;
+    // todo:
 
     // 第二步：扫描所有函数定义，生成全局函数表（固定）
     // 需要封装函数表的功能，以支持 built-in 类型
+    function_table env_fun;
+
     for (auto &block : module.blocks)
     {
         if (auto pfun_block = std::get_if<node_function_block>(&block))
         {
+            auto fun = syntax_fun{
+                // .fun_name = pfun_block->fun_name.val,
+                // .ret_type = pfun_block->ret_type
+
+            };
+            // pfun_block->env_fun.add_func();
         }
     }
 
