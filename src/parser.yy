@@ -37,6 +37,7 @@
   KW_ELSE  "else"
   KW_VAR   "var"
   KW_VAL  "val"
+  KW_TYPE "type"
   LANGLE  "{"
   RANGLE  "}"
   LSQUARE "["
@@ -170,6 +171,28 @@ block:
     global_var_def_block
     {
         $$ = $1;
+    }|
+    global_type_def_block
+    {
+        $$ = $1;
+    } ;
+%type <node_type_def_statement> type_def_statement;
+type_def_statement:
+    KW_TYPE identifier EQUAL type
+    {
+        $$.type_name = $2.val;
+        $$.type =*$4;
+    };
+%type <node_global_type_def_block> global_type_def_block;
+global_type_def_block:
+    global_type_def_block type_def_statement SEMICOLON
+    {
+        $1.push_back($2);
+        $$ = std::move($1);
+    }|
+    type_def_statement SEMICOLON
+    {
+        $$.push_back($1);
     };
 %type <node_global_var_def_block> global_var_def_block;
 global_var_def_block:

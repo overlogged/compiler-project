@@ -81,6 +81,7 @@ question_mark          "?"
 "else"          return yy::parser::make_KW_ELSE (loc);
 "var"           return yy::parser::make_KW_VAR (loc);
 "val"           return yy::parser::make_KW_VAL (loc);
+"type"          return yy::parser::make_KW_TYPE(loc);
 {equal}         return yy::parser::make_EQUAL (loc);
 {question_mark} return yy::parser::make_QUESTION_MARK (loc);
 {referrence_op} return yy::parser::make_REFERRENCE_OP (loc);
