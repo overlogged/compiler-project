@@ -7,7 +7,14 @@ void syntax_analysis(node_module module)
     // 第一步：扫描所有类型定义，生成全局类型表（固定）
     // 需要封装类型表的功能，以支持 built-in 类型
     type_table env_type;
-    // todo:
+
+    for(auto &block : module.blocks) {
+        if(auto type_def_block = std::get_if<node_global_type_def_block>(&block)) {
+            for(auto type_def_statm : *(type_def_block)) {
+                env_type.add_type(type_def_statm.type_name, env_type.type_check(type_def_statm.type));
+            }
+        }
+    }
 
     // 第二步：扫描所有函数定义，生成全局函数表（固定）
     // 需要封装函数表的功能，以支持 built-in 类型
