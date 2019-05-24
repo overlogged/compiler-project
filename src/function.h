@@ -1,5 +1,6 @@
 #pragma once
 #include "type.h"
+#include "parse_tree.h"
 #include <map>
 
 struct syntax_expr;
@@ -9,6 +10,7 @@ struct syntax_fun
     std::string fun_name;
     syntax_type ret_type;
     std::vector<std::pair<std::string, syntax_type>> parameters;
+    std::vector<node_statement> origin_stmts;
     // std::vector<syntax_stmt> stmts;
 };
 

@@ -50,6 +50,8 @@ class type_table
     std::map<std::string, syntax_type> user_def_type;
 
 public:
+    const syntax_type primary_unit{primary_type{"unit", 1}};
+
     void add_type(std::string type_name, const syntax_type &t)
     {
         user_def_type[type_name] = t;
@@ -77,6 +79,7 @@ public:
         return it->second;
     }
 
+    
     syntax_type type_check(const node_type &node)
     {
         if (auto p_id = std::get_if<node_identifier>(&node.type_val))
