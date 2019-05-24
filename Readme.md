@@ -71,3 +71,22 @@
     - 对于浮点数, float-f32, double-f64, long double-f128
 - 字面量显示在json中时可能由于std::to_string的调用有位数差异(整数比较大或者浮点精度问题), 在实际存储的val中并没有这个问题
 - 有两个 reduce/reduce 冲突
+- 语义分析，类型检查伪代码
+    例子：
+        type A = u8;
+        type S = (u32,A,B);
+        type B = char;
+
+    用领接表维护一个有向图
+
+    map<string, int> str2nodeid;
+    vector<node_type> node_arr;
+    vector<vector<int>> adj_list;
+    adj_list[u] 维护的是 u 点出发的所有边。
+
+    for 每个类型定义（node_type）：
+        尝试 type_check node_type
+        如果成功，则在类型表中加入：类型名 -> syntax_type
+        如果失败，且失败的原因是因为存在尚未定义的类型集合（B)。则在有向图中加入相关的点和边。
+
+    对上述有向图运行拓扑排序，逐个进行语法分析，若判断成环，则报错。
