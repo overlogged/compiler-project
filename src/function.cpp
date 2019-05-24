@@ -100,7 +100,7 @@ function_table::function_table()
         {
             for(int k=0;k<param_type.size();k++)
             {
-                create_bin_op_fun(op[i],param_type[j],(j/2+1)*4,param_type[j],(k/2+1)*4,param_type[j],(k/2+1)*4);
+                create_bin_op_fun(op[i],param_type[j],(j/2+1)*4,param_type[j],(j/2+1)*4,param_type[k],(k/2+1)*4);
             }
         }
     }
