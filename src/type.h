@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <variant>
+#include <exception>
 #include "parse_tree.h"
 #include <iostream>
 
@@ -28,6 +29,52 @@ struct sum_type
     std::vector<std::shared_ptr<syntax_type>> types;
     size_t size; // include 4 bytes tag
 };
+
+struct top_graph
+{
+    int in_node_num;
+    int seq_num;
+    std::map<int, std::string> name_table;
+    std::map<std::string, int> type_reg_table;
+    std::map<int, node_type> arr;
+    std::map<int, std::vector<int>> adj_list;
+    bool changed;
+    top_graph() : seq_num(0), in_node_num(0),changed(false) {}
+    void add_node(std::string type_name) {
+        if(type_reg_table.count(type_name) == 0) {
+            ++seq_num;
+            type_reg_table[type_name] = seq_num;
+            name_table[seq_num] = type_name;
+            adj_list[seq_num].push_back(in_node_num); 
+        } else {
+            adj_list[type_reg_table[type_name]].push_back(in_node_num);
+        }
+    }
+    void add_node(std::string type_name, const node_type &node) {
+        if(type_reg_table.count(type_name) == 0) {
+            type_reg_table[type_name] = in_node_num;
+            name_table[in_node_num] = type_name;
+            arr[in_node_num] = node;
+        } else {
+            arr[type_reg_table[type_name]] = node;
+        }
+        ++seq_num;
+        in_node_num = seq_num;
+    }
+    bool contain(std::string type_name) {
+        return type_reg_table.count(type_name) != 0;
+    }
+
+    void set_internal_index(std::string type_name) {
+        seq_num--;
+        in_node_num = type_reg_table[type_name];
+    }
+    void reset_internal_index() {
+        seq_num++;
+        in_node_num = seq_num;
+    }
+};
+
 
 struct syntax_type
 {
@@ -161,7 +208,7 @@ public:
         auto it = user_def_type.find(name);
         if (it == user_def_type.end())
         {
-            throw new std::string("no such type");
+            throw std::string("no such type");
         }
         return it->second;
     }
@@ -169,12 +216,22 @@ public:
     // size和offset暂时先放一下, 等想出比较好的方式的时候就加上
     // 大致需要先得到出现过的最大built-in类型的内存长度
     // 然后对各个类型进行布局/内存对齐
-    syntax_type type_check(const node_type &node)
+    syntax_type type_check(const node_type &node, top_graph* dependency_graph=nullptr)
     {
         if (auto p_id = std::get_if<node_identifier>(&node.type_val)) {
             auto type_name = p_id->val;
-            auto type = get_type(type_name);
-            return type;
+            try {
+                auto type = get_type(type_name);
+                return type;
+            } catch(std::string &e) {
+                if(dependency_graph == nullptr) {
+                    throw e;
+                } else {
+                    dependency_graph->changed = true;
+                    dependency_graph->add_node(type_name);
+                    return syntax_type();
+                }
+            }
         }
         else if (auto p_prod = std::get_if<node_product_type>(&node.type_val)) {
             product_type prod_t;
@@ -183,11 +240,20 @@ public:
                 prod_t.fields.push_back(p_prod->lables[i]);
                 if(auto type = std::get_if<node_identifier>(&(p_prod->element[i]))) {
                     auto type_name = type->val;
-                    auto type_ret = get_type(type_name);
+                    try {
+                        auto type_ret = get_type(type_name);
+                        prod_t.types.push_back(std::make_shared<syntax_type>(type_ret));
+                    } catch(std::string &e) {
+                        if(dependency_graph == nullptr) {
+                            throw e;
+                        } else {
+                            dependency_graph->changed = true;
+                            dependency_graph->add_node(type_name);
+                        }
+                    }
                     // size += type_ret.get_size();
-                    prod_t.types.push_back(std::make_shared<syntax_type>(type_ret));
                 } else if(auto type = std::get_if<std::shared_ptr<node_type>>(&(p_prod->element[i]))) {
-                    auto type_ret = type_check(*(type->get()));
+                    auto type_ret = type_check(*(type->get()), dependency_graph);
                     // size += type_ret.get_size();
                     prod_t.types.push_back(std::make_shared<syntax_type>(type_ret));
                 } else
@@ -204,13 +270,22 @@ public:
                 sum_t.alters.push_back(p_sum->lables[i]);
                 if(auto type = std::get_if<node_identifier>(&(p_sum->element[i]))) {
                     auto type_name = type->val;
-                    auto type_ret = get_type(type_name);
+                    try {
+                        auto type_ret = get_type(type_name);
+                        sum_t.types.push_back(std::make_shared<syntax_type>(type_ret));
+                    } catch(std::string &e) {
+                        if(dependency_graph == nullptr) {
+                            throw e;
+                        } else {
+                            dependency_graph->changed = true;
+                            dependency_graph->add_node(type_name);
+                        }
+                    }
                     // auto tmp_size = type_ret.get_size();
                     // if(size < tmp_size)
                     //     size = tmp_size;
-                    sum_t.types.push_back(std::make_shared<syntax_type>(type_ret));
                 } else if(auto type = std::get_if<std::shared_ptr<node_type>>(&(p_sum->element[i]))) {
-                    auto type_ret = type_check(*(type->get()));
+                    auto type_ret = type_check(*(type->get()), dependency_graph);
                     // auto tmp_size = type_ret.get_size();
                     // if(size < tmp_size)
                     //     size = tmp_size;

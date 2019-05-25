@@ -52,3 +52,5 @@ struct syntax_environment
 };
 
 void syntax_analysis(node_module module);
+
+void fix_lookahead(type_table &env_type, top_graph &dependency_graph);
