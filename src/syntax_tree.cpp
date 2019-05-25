@@ -7,11 +7,23 @@ void syntax_analysis(node_module module)
     // 第一步：扫描所有类型定义，生成全局类型表（固定）
     // 需要封装类型表的功能，以支持 built-in 类型
     type_table env_type;
-
+    // std::map<std::string, int> type_reg_table;
+    // std::vector<node_type> arr;
+    // std::vector<std::vector<int>> adj_list;
+    // int seq_num = 0;
     for(auto &block : module.blocks) {
         if(auto type_def_block = std::get_if<node_global_type_def_block>(&block)) {
             for(auto type_def_statm : *(type_def_block)) {
+                // try {
                 env_type.add_type(type_def_statm.type_name, env_type.type_check(type_def_statm.type));
+                // } catch(const std::string& e) {
+                //     if(type_reg_table.count(type_def_statm.type_name) == 0) {
+                //         type_reg_table[type_def_statm.type_name] = seq_num++;
+                //         arr.push_back(type_def_statm.type);
+                //     } else {
+
+                //     }
+                // }
             }
         }
     }
@@ -47,7 +59,7 @@ void syntax_analysis(node_module module)
                 .parameters = params,
                 .origin_stmts = pfun_block->statement_list};
 
-            env_fun.add_func(pfun_block->fun_name.val, fun);
+            env_fun.add_func(fun);
         }
     }
 

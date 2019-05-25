@@ -13,7 +13,7 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
     *p_call = call;
     // inline function
     try{
-        p_ret->type = infer_type_in_list(func_name, call, normal_inline);
+        p_ret->type = infer_type_in_list(func_name, call, inline_fun);
         return p_ret;
     }
     catch(std::string exception){
@@ -105,9 +105,9 @@ function_table::function_table()
         }
     }
 }
-void create_bin_op_fun(std::string op,std::string ret_type ,size_t ret_size,std::string param1_type ,size_t param1_size,std::string param2_type ,size_t param2_size)
+void function_table::create_bin_op_fun(std::string op,std::string ret_type ,size_t ret_size,std::string param1_type ,size_t param1_size,std::string param2_type ,size_t param2_size)
 {
-    inline_fun.push_back(syntax_fun{.name = op,
+    inline_fun[op].push_back(syntax_fun{.fun_name = op,
                         .ret_type = syntax_type{.type =primary_type{.name = ret_type,.size = ret_size}},
                         .parameters = std::vector<std::pair<std::string, syntax_type>>{
                             std::pair<std::string, syntax_type>("_0",syntax_type{.type =primary_type{.name = param1_type,.size = param1_size}}),

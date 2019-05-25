@@ -4,6 +4,7 @@
 #include <memory>
 #include <variant>
 #include "parse_tree.h"
+#include <iostream>
 
 struct syntax_type;
 
@@ -34,6 +35,32 @@ struct syntax_type
 
     syntax_type() = default;
 
+    void print() {
+        if(auto p = std::get_if<primary_type>(&type)) {
+            std::cout << p->name;
+        } else if(auto p = std::get_if<product_type>(&type)) {
+            std::cout << "(";
+            for(auto i = 0; i < p->types.size(); i++) {
+                if(i != 0) {
+                    std::cout << ',';
+                }
+                p->types[i].get()->print();
+            }
+            std::cout << ")";
+        } else if(auto p = std::get_if<sum_type>(&type)) {
+            std::cout << "(";
+            for(auto i = 0; i < p->types.size(); i++) {
+                if(i != 0) {
+                    std::cout << '|';
+                }
+                std::cout << p->alters[i] << ":";
+                p->types[i].get()->print();
+            }
+            std::cout << ")";
+        } else 
+            assert(false);
+    }
+
     // 失败返回 ""
     std::string get_primary() const
     {
@@ -58,7 +85,7 @@ struct syntax_type
     // type is subtype of t or not
     bool subtyping(const syntax_type &t) const
     {
-        if(!get_primary().empty() && !t.get_primary().empty) {
+        if(!get_primary().empty() && !t.get_primary().empty()) {
             if(get_primary() == t.get_primary())
                 return true;
             else
@@ -78,7 +105,7 @@ struct syntax_type
             } else
                 return false;
         } else if(auto p = std::get_if<sum_type>(&type)) {
-            if(auto q = std::get_if<sum_type>(&type)) {
+            if(auto q = std::get_if<sum_type>(&t.type)) {
                 if(p->types.size() > q->types.size())
                     return false;
                 for(auto i = 0; i < p->types.size();i++) {
@@ -100,9 +127,17 @@ struct syntax_type
 class type_table
 {
     std::map<std::string, syntax_type> user_def_type;
-
+    
 public:
     const syntax_type primary_unit{primary_type{"unit", 1}};
+
+    void print_type_table() {
+        for(auto it : user_def_type) {
+            std::cout << it.first << " : ";
+            it.second.print();
+            std::cout << '\n';
+        }
+    }
 
     void add_type(std::string type_name, const syntax_type &t)
     {

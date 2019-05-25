@@ -526,16 +526,18 @@ sum_type:
 %type <node_sum_type> sum_type_tuple;
 sum_type_tuple:
     sum_type_tuple UNION_OP identifier COLON type{
-        $$.lables.push_back($3.val);
-        $$.element.push_back($5);
+        $1.lables.push_back($3.val);
+        $1.element.push_back($5);
+        $$ = std::move($1);
     }|
     identifier COLON type{
         $$.lables.push_back($1.val);
         $$.element.push_back($3);
     }|
     sum_type_tuple UNION_OP type{
-        $$.lables.push_back("_"+std::to_string($$.lables.size()));
-        $$.element.push_back($3);
+        $1.lables.push_back("_"+std::to_string($$.lables.size()));
+        $1.element.push_back($3);
+        $$ = std::move($1);
     }|
     type{
         $$.lables.push_back("_"+std::to_string($$.lables.size()));
