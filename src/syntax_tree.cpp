@@ -8,26 +8,35 @@ void syntax_analysis(node_module module)
     // 需要封装类型表的功能，以支持 built-in 类型
     type_table env_type;
     top_graph dependency_graph;
-    for(auto &block : module.blocks) {
-        if(auto type_def_block = std::get_if<node_global_type_def_block>(&block)) {
-            for(auto type_def_statm : *(type_def_block)) {
-                if(dependency_graph.contain(type_def_statm.type_name))
+    for (auto &block : module.blocks)
+    {
+        if (auto type_def_block = std::get_if<node_global_type_def_block>(&block))
+        {
+            for (auto type_def_statm : *(type_def_block))
+            {
+                if (dependency_graph.contain(type_def_statm.type_name))
                     dependency_graph.set_internal_index(type_def_statm.type_name);
                 syntax_type syntax_t = env_type.type_check(type_def_statm.type, &dependency_graph);
-                if(!dependency_graph.changed) {
-                    if(dependency_graph.contain(type_def_statm.type_name))
+                if (!dependency_graph.changed)
+                {
+                    if (dependency_graph.contain(type_def_statm.type_name))
                         dependency_graph.reset_internal_index();
                     env_type.add_type(type_def_statm.type_name, syntax_t);
-                } else {
+                }
+                else
+                {
                     dependency_graph.changed = false;
                     dependency_graph.add_node(type_def_statm.type_name, type_def_statm.type);
                 }
             }
         }
     }
-    try {
+    try
+    {
         fix_lookahead(env_type, dependency_graph);
-    } catch(std::string &e) {
+    }
+    catch (std::string &e)
+    {
         std::cout << e << '\n';
     }
 
@@ -69,55 +78,75 @@ void syntax_analysis(node_module module)
     }
 
     // 第三步：扫描全局变量的声明，生成全局变量符号和类型定义，此处需要类型推导。生成初始化函数 __init
-    
+
     // 第四步：进入每个 block，完成语义分析
 }
 
-void fix_lookahead(type_table &env_type, top_graph &dependency_graph) {
-    if(dependency_graph.seq_num == 0)
+void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
+{
+    if (dependency_graph.seq_num == 0)
         return;
 
-    int* in_degree = new int[dependency_graph.seq_num];
-    int* visit = new int[dependency_graph.seq_num];
+    int *in_degree = new int[dependency_graph.seq_num];
+    int *visit = new int[dependency_graph.seq_num];
 
-    for(auto i = 0; i < dependency_graph.seq_num; i++) {
+    for (auto i = 0; i < dependency_graph.seq_num; i++)
+    {
         in_degree[i] = 0;
         visit[i] = 0;
     }
     //init
-    for(auto it : dependency_graph.adj_list) {
-        for(auto edge : it.second) {
+    for (auto it : dependency_graph.adj_list)
+    {
+        for (auto edge : it.second)
+        {
             in_degree[edge]++;
         }
     }
 
-    for(auto i = 0; i < dependency_graph.seq_num; i++) {
-        for(auto j = 0; j < dependency_graph.seq_num; j++) {
-            if(visit[j] == 0 && in_degree[j] == 0) {
-                if(dependency_graph.arr.count(j) != 0) {
-                    try {
+    for (auto i = 0; i < dependency_graph.seq_num; i++)
+    {
+        for (auto j = 0; j < dependency_graph.seq_num; j++)
+        {
+            if (visit[j] == 0 && in_degree[j] == 0)
+            {
+                if (dependency_graph.arr.count(j) != 0)
+                {
+                    try
+                    {
                         env_type.add_type(dependency_graph.name_table[j], env_type.type_check(dependency_graph.arr[j]));
                         visit[j] = 1;
-                        for(auto tmp : dependency_graph.adj_list[j]) {
+                        for (auto tmp : dependency_graph.adj_list[j])
+                        {
                             in_degree[tmp]--;
                         }
                         break;
-                    } catch(std::string &e) {
+                    }
+                    catch (std::string &e)
+                    {
                         throw e;
                     }
-                } else {
-                    try {
+                }
+                else
+                {
+                    try
+                    {
                         env_type.get_type(dependency_graph.name_table[j]);
                         visit[j] = 1;
-                        for(auto tmp : dependency_graph.adj_list[j]) {
+                        for (auto tmp : dependency_graph.adj_list[j])
+                        {
                             in_degree[tmp]--;
                         }
                         break;
-                    } catch(std::string &e) {
+                    }
+                    catch (std::string &e)
+                    {
                         throw std::string("no such type " + dependency_graph.name_table[i]);
                     }
                 }
-            } else if(j == dependency_graph.seq_num - 1) {
+            }
+            else if (j == dependency_graph.seq_num - 1)
+            {
                 throw std::string("exists loop type define");
             }
         }

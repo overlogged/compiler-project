@@ -39,42 +39,52 @@ struct top_graph
     std::map<int, node_type> arr;
     std::map<int, std::vector<int>> adj_list;
     bool changed;
-    top_graph() : seq_num(0), in_node_num(0),changed(false) {}
-    void add_node(std::string type_name) {
-        if(type_reg_table.count(type_name) == 0) {
+    top_graph() : seq_num(0), in_node_num(0), changed(false) {}
+    void add_node(std::string type_name)
+    {
+        if (type_reg_table.count(type_name) == 0)
+        {
             ++seq_num;
             type_reg_table[type_name] = seq_num;
             name_table[seq_num] = type_name;
-            adj_list[seq_num].push_back(in_node_num); 
-        } else {
+            adj_list[seq_num].push_back(in_node_num);
+        }
+        else
+        {
             adj_list[type_reg_table[type_name]].push_back(in_node_num);
         }
     }
-    void add_node(std::string type_name, const node_type &node) {
-        if(type_reg_table.count(type_name) == 0) {
+    void add_node(std::string type_name, const node_type &node)
+    {
+        if (type_reg_table.count(type_name) == 0)
+        {
             type_reg_table[type_name] = in_node_num;
             name_table[in_node_num] = type_name;
             arr[in_node_num] = node;
-        } else {
+        }
+        else
+        {
             arr[type_reg_table[type_name]] = node;
         }
         ++seq_num;
         in_node_num = seq_num;
     }
-    bool contain(std::string type_name) {
+    bool contain(std::string type_name)
+    {
         return type_reg_table.count(type_name) != 0;
     }
 
-    void set_internal_index(std::string type_name) {
+    void set_internal_index(std::string type_name)
+    {
         seq_num--;
         in_node_num = type_reg_table[type_name];
     }
-    void reset_internal_index() {
+    void reset_internal_index()
+    {
         seq_num++;
         in_node_num = seq_num;
     }
 };
-
 
 struct syntax_type
 {
@@ -82,36 +92,47 @@ struct syntax_type
 
     syntax_type() = default;
 
-    void print() {
-        if(auto p = std::get_if<primary_type>(&type)) {
+    void print()
+    {
+        if (auto p = std::get_if<primary_type>(&type))
+        {
             std::cout << p->name;
-        } else if(auto p = std::get_if<product_type>(&type)) {
+        }
+        else if (auto p = std::get_if<product_type>(&type))
+        {
             std::cout << "(";
-            for(auto i = 0; i < p->types.size(); i++) {
-                if(i != 0) {
+            for (auto i = 0; i < p->types.size(); i++)
+            {
+                if (i != 0)
+                {
                     std::cout << ',';
                 }
                 p->types[i].get()->print();
             }
             std::cout << ")";
-        } else if(auto p = std::get_if<sum_type>(&type)) {
+        }
+        else if (auto p = std::get_if<sum_type>(&type))
+        {
             std::cout << "(";
-            for(auto i = 0; i < p->types.size(); i++) {
-                if(i != 0) {
+            for (auto i = 0; i < p->types.size(); i++)
+            {
+                if (i != 0)
+                {
                     std::cout << '|';
                 }
                 std::cout << p->alters[i] << ":";
                 p->types[i].get()->print();
             }
             std::cout << ")";
-        } else 
+        }
+        else
             assert(false);
     }
 
     // 失败返回 ""
     std::string get_primary() const
     {
-        if(auto p = std::get_if<primary_type>(&type))
+        if (auto p = std::get_if<primary_type>(&type))
             return p->name;
         else
             return "";
@@ -132,40 +153,53 @@ struct syntax_type
     // type is subtype of t or not
     bool subtyping(const syntax_type &t) const
     {
-        if(!get_primary().empty() && !t.get_primary().empty()) {
-            if(get_primary() == t.get_primary())
+        if (!get_primary().empty() && !t.get_primary().empty())
+        {
+            if (get_primary() == t.get_primary())
                 return true;
             else
                 return false;
-        } else if(auto p = std::get_if<product_type>(&type)) {
-            if(auto q = std::get_if<product_type>(&t.type)) {
-                if(q->types.size() > p->types.size())
+        }
+        else if (auto p = std::get_if<product_type>(&type))
+        {
+            if (auto q = std::get_if<product_type>(&t.type))
+            {
+                if (q->types.size() > p->types.size())
                     return false;
-                for(auto i = 0; i < q->types.size();i++) {
-                    if(p->fields[i] != q->fields[i])
+                for (auto i = 0; i < q->types.size(); i++)
+                {
+                    if (p->fields[i] != q->fields[i])
                         return false;
                     auto type_sub = p->types[i];
-                    if(!type_sub->subtyping(*(q->types[i])))
+                    if (!type_sub->subtyping(*(q->types[i])))
                         return false;
                 }
                 return true;
-            } else
+            }
+            else
                 return false;
-        } else if(auto p = std::get_if<sum_type>(&type)) {
-            if(auto q = std::get_if<sum_type>(&t.type)) {
-                if(p->types.size() > q->types.size())
+        }
+        else if (auto p = std::get_if<sum_type>(&type))
+        {
+            if (auto q = std::get_if<sum_type>(&t.type))
+            {
+                if (p->types.size() > q->types.size())
                     return false;
-                for(auto i = 0; i < p->types.size();i++) {
-                    if(p->alters[i] != q->alters[i])
+                for (auto i = 0; i < p->types.size(); i++)
+                {
+                    if (p->alters[i] != q->alters[i])
                         return false;
                     auto type_sub = q->types[i];
-                    if(!type_sub->subtyping(*(p->types[i])))
+                    if (!type_sub->subtyping(*(p->types[i])))
                         return false;
                 }
                 return true;
-            } else
+            }
+            else
                 return false;
-        } else {
+        }
+        else
+        {
             assert(false);
         }
     }
@@ -174,12 +208,14 @@ struct syntax_type
 class type_table
 {
     std::map<std::string, syntax_type> user_def_type;
-    
+
 public:
     const syntax_type primary_unit{primary_type{"unit", 1}};
 
-    void print_type_table() {
-        for(auto it : user_def_type) {
+    void print_type_table()
+    {
+        for (auto it : user_def_type)
+        {
             std::cout << it.first << " : ";
             it.second.print();
             std::cout << '\n';
@@ -216,67 +252,95 @@ public:
     // size和offset暂时先放一下, 等想出比较好的方式的时候就加上
     // 大致需要先得到出现过的最大built-in类型的内存长度
     // 然后对各个类型进行布局/内存对齐
-    syntax_type type_check(const node_type &node, top_graph* dependency_graph=nullptr)
+    syntax_type type_check(const node_type &node, top_graph *dependency_graph = nullptr)
     {
-        if (auto p_id = std::get_if<node_identifier>(&node.type_val)) {
+        if (auto p_id = std::get_if<node_identifier>(&node.type_val))
+        {
             auto type_name = p_id->val;
-            try {
+            try
+            {
                 auto type = get_type(type_name);
                 return type;
-            } catch(std::string &e) {
-                if(dependency_graph == nullptr) {
+            }
+            catch (std::string &e)
+            {
+                if (dependency_graph == nullptr)
+                {
                     throw e;
-                } else {
+                }
+                else
+                {
                     dependency_graph->changed = true;
                     dependency_graph->add_node(type_name);
                     return syntax_type();
                 }
             }
         }
-        else if (auto p_prod = std::get_if<node_product_type>(&node.type_val)) {
+        else if (auto p_prod = std::get_if<node_product_type>(&node.type_val))
+        {
             product_type prod_t;
             // size_t size = 0;
-            for(auto i = 0; i < p_prod->element.size(); i++) {
+            for (auto i = 0; i < p_prod->element.size(); i++)
+            {
                 prod_t.fields.push_back(p_prod->lables[i]);
-                if(auto type = std::get_if<node_identifier>(&(p_prod->element[i]))) {
+                if (auto type = std::get_if<node_identifier>(&(p_prod->element[i])))
+                {
                     auto type_name = type->val;
-                    try {
+                    try
+                    {
                         auto type_ret = get_type(type_name);
                         prod_t.types.push_back(std::make_shared<syntax_type>(type_ret));
-                    } catch(std::string &e) {
-                        if(dependency_graph == nullptr) {
+                    }
+                    catch (std::string &e)
+                    {
+                        if (dependency_graph == nullptr)
+                        {
                             throw e;
-                        } else {
+                        }
+                        else
+                        {
                             dependency_graph->changed = true;
                             dependency_graph->add_node(type_name);
                         }
                     }
                     // size += type_ret.get_size();
-                } else if(auto type = std::get_if<std::shared_ptr<node_type>>(&(p_prod->element[i]))) {
+                }
+                else if (auto type = std::get_if<std::shared_ptr<node_type>>(&(p_prod->element[i])))
+                {
                     auto type_ret = type_check(*(type->get()), dependency_graph);
                     // size += type_ret.get_size();
                     prod_t.types.push_back(std::make_shared<syntax_type>(type_ret));
-                } else
+                }
+                else
                     assert(false);
                 // prod_t.offsets.push_back(size);
             }
             // prod_t.size = size;
             return syntax_type{prod_t};
         }
-        else if (auto p_sum = std::get_if<node_sum_type>(&node.type_val)) {
+        else if (auto p_sum = std::get_if<node_sum_type>(&node.type_val))
+        {
             sum_type sum_t;
             // size_t size = 0;
-            for(auto i = 0; i < p_sum->element.size(); i++) {
+            for (auto i = 0; i < p_sum->element.size(); i++)
+            {
                 sum_t.alters.push_back(p_sum->lables[i]);
-                if(auto type = std::get_if<node_identifier>(&(p_sum->element[i]))) {
+                if (auto type = std::get_if<node_identifier>(&(p_sum->element[i])))
+                {
                     auto type_name = type->val;
-                    try {
+                    try
+                    {
                         auto type_ret = get_type(type_name);
                         sum_t.types.push_back(std::make_shared<syntax_type>(type_ret));
-                    } catch(std::string &e) {
-                        if(dependency_graph == nullptr) {
+                    }
+                    catch (std::string &e)
+                    {
+                        if (dependency_graph == nullptr)
+                        {
                             throw e;
-                        } else {
+                        }
+                        else
+                        {
                             dependency_graph->changed = true;
                             dependency_graph->add_node(type_name);
                         }
@@ -284,19 +348,23 @@ public:
                     // auto tmp_size = type_ret.get_size();
                     // if(size < tmp_size)
                     //     size = tmp_size;
-                } else if(auto type = std::get_if<std::shared_ptr<node_type>>(&(p_sum->element[i]))) {
+                }
+                else if (auto type = std::get_if<std::shared_ptr<node_type>>(&(p_sum->element[i])))
+                {
                     auto type_ret = type_check(*(type->get()), dependency_graph);
                     // auto tmp_size = type_ret.get_size();
                     // if(size < tmp_size)
                     //     size = tmp_size;
                     sum_t.types.push_back(std::make_shared<syntax_type>(type_ret));
-                } else
+                }
+                else
                     assert(false);
             }
             // sum_t.size = size;
             return syntax_type{sum_t};
         }
-        else {
+        else
+        {
             assert(false);
         }
     }
