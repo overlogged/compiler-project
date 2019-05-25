@@ -16,8 +16,9 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
         p_ret->type = infer_type_in_list(func_name, call, inline_fun);
         return p_ret;
     }
-    catch(std::string exception){
-        if(exception == "ambigious function definition")
+    catch(std::string exception)
+    {
+        if(exception == "parameters not match")
             throw(exception);
     }
     // normal function
@@ -33,40 +34,40 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, con
     {
         throw new string("no such function " + func_name);
     }
-
-    bool already_match = false;
-
-    for (auto &fun : it->second)
+    auto &fun = it->second;
+    bool match = true;
+    if (fun.parameters.size() == call.parameters.size())
     {
-        bool match = true;
-        if (fun.parameters.size() == call.parameters.size())
+        for (auto i = 0; i < fun.parameters.size(); i++)
         {
-            for (auto i = 0; i < fun.parameters.size(); i++)
+            auto t1 = fun.parameters[i].second;
+            auto t2 = call.parameters[i]->type;
+            auto t1p= fun.parameters[i].second.get_primary();
+            auto t2p= call.parameters[i]->type.get_primary();
+            if (t1p == "" || t2p == "")
+            {                    
+                if(!t2.subtyping(t1))
+                 {
+                    match = false;
+                    break;
+                 }
+            }
+            else if(t1p!="" && t2p!="")
             {
-                // todo: subtyping
-                auto t1 = fun.parameters[i].second.get_primary();
-                auto t2 = call.parameters[i]->type.get_primary();
-                if (t1 == "" || t1 != t2)
+                if(!primary_match(t1p,t2p))
                 {
                     match = false;
                     break;
                 }
             }
-        }
-        else
-        {
-            match = false;
-        }
-
-        if (match)
-        {
-            if (already_match)
+            else
             {
-                throw new string("ambigious function definition");
+                match = false;
+                break;
             }
-            already_match = true;
-            ret_type = fun.ret_type;
         }
+        if(!match)
+            throw string("parameters not match");
     }
     return ret_type;
 }
@@ -76,20 +77,12 @@ function_table::function_table()
     for(int i =0;i<op.size();i++)
     {
         create_bin_op_fun(op[i],"i8",1,"i8",1,"i8",1);
-        create_bin_op_fun(op[i],"u8",1,"i8",1,"u8",1);
-        create_bin_op_fun(op[i],"u8",1,"u8",1,"i8",1);
         create_bin_op_fun(op[i],"u8",1,"u8",1,"u8",1);
         create_bin_op_fun(op[i],"i16",2,"i16",2,"i16",2);
-        create_bin_op_fun(op[i],"u16",2,"i16",2,"u16",2);
-        create_bin_op_fun(op[i],"u16",2,"u16",2,"i16",2);
         create_bin_op_fun(op[i],"u16",2,"u16",2,"u16",2);
         create_bin_op_fun(op[i],"i32",4,"i32",4,"i32",4);
-        create_bin_op_fun(op[i],"u32",4,"i32",4,"u32",4);
-        create_bin_op_fun(op[i],"u32",4,"u32",4,"i32",4);
         create_bin_op_fun(op[i],"u32",4,"u32",4,"u32",4);
         create_bin_op_fun(op[i],"i64",8,"i64",8,"i64",8);
-        create_bin_op_fun(op[i],"u64",8,"i64",8,"u64",8);
-        create_bin_op_fun(op[i],"u64",8,"u64",8,"i64",8);
         create_bin_op_fun(op[i],"u64",8,"u64",8,"u64",8);
     }
     op = {"<<",">>",">>=","<<="};
@@ -113,4 +106,20 @@ void function_table::create_bin_op_fun(std::string op,std::string ret_type ,size
                             std::pair<std::string, syntax_type>("_0",syntax_type{.type =primary_type{.name = param1_type,.size = param1_size}}),
                             std::pair<std::string, syntax_type>("_1",syntax_type{.type =primary_type{.name = param2_type,.size = param2_size}})}
                         });    
+}
+bool function_table::primary_match(std::string t1,std::string t2)
+{
+    vector<string> type = {"u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64"};
+    int i1=-1;
+    int i2=-1;
+    for(auto i = 0 ; i < type.size() ; i++)
+    {
+        if(t1 == type[i])
+            i1 = i;
+        if(t2 == type[i])
+            i2 = i;
+    }
+    if(i1 == -1 || i2 == -1)
+        return t1 == t2;
+    return (i1==i2||i1-i2>=2) && (((i1-i2)%2==0)||((i1-i2)%2==1 && i2%2==0));
 }
