@@ -36,38 +36,41 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, con
     }
     auto &fun = it->second;
     bool match = true;
-    if (fun.parameters.size() == call.parameters.size())
+    for(auto i =0;i<fun.size();i++)
     {
-        for (auto i = 0; i < fun.parameters.size(); i++)
+        if (fun[i].parameters.size() == call.parameters.size())
         {
-            auto t1 = fun.parameters[i].second;
-            auto t2 = call.parameters[i]->type;
-            auto t1p= fun.parameters[i].second.get_primary();
-            auto t2p= call.parameters[i]->type.get_primary();
-            if (t1p == "" || t2p == "")
-            {                    
-                if(!t2.subtyping(t1))
-                 {
-                    match = false;
-                    break;
-                 }
-            }
-            else if(t1p!="" && t2p!="")
+            for (auto j = 0; j < fun[j].parameters.size(); j++)
             {
-                if(!primary_match(t1p,t2p))
+                auto t1 = fun[i].parameters[j].second;
+                auto t2 = call.parameters[j]->type;
+                auto t1p= fun[i].parameters[j].second.get_primary();
+                auto t2p= call.parameters[j]->type.get_primary();
+                if (t1p == "" || t2p == "")
+                {                    
+                    if(!t2.subtyping(t1))
+                     {
+                        match = false;
+                        break;
+                     }
+                }
+                else if(t1p!="" && t2p!="")
+                {
+                    if(!primary_match(t1p,t2p))
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+                else
                 {
                     match = false;
                     break;
                 }
             }
-            else
-            {
-                match = false;
-                break;
-            }
+            if(!match)
+                throw string("parameters not match");
         }
-        if(!match)
-            throw string("parameters not match");
     }
     return ret_type;
 }
