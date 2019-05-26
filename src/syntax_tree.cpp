@@ -87,15 +87,9 @@ void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
     if (dependency_graph.seq_num == 0)
         return;
 
-    int *in_degree = new int[dependency_graph.seq_num];
-    int *visit = new int[dependency_graph.seq_num];
-
-    for (auto i = 0; i < dependency_graph.seq_num; i++)
-    {
-        in_degree[i] = 0;
-        visit[i] = 0;
-    }
-    //init
+    std::vector<int> in_degree(dependency_graph.seq_num);
+    std::vector<int> visit(dependency_graph.seq_num);
+    
     for (auto it : dependency_graph.adj_list)
     {
         for (auto edge : it.second)
@@ -151,6 +145,4 @@ void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
             }
         }
     }
-    delete[] visit;
-    delete[] in_degree;
 }
