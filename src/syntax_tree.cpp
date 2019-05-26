@@ -39,6 +39,8 @@ void syntax_analysis(node_module module)
     {
         std::cout << e << '\n';
     }
+    std::cout << env_type.get_type("t6").subtyping(env_type.get_type("t5")) << '\n';
+    std::cout << env_type.get_type("t7").subtyping(env_type.get_type("t8")) << '\n';
 
     // env_type.print_type_table();
 

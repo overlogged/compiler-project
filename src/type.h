@@ -153,10 +153,30 @@ struct syntax_type
     // type is subtype of t or not
     bool subtyping(const syntax_type &t) const
     {
+        static std::map<std::string, int> table = {
+            {"i8", 0}, {"u8", 1},
+            {"i16", 2}, {"u16", 3},
+            {"i32", 4}, {"u32", 5},
+            {"i64", 6}, {"u64", 7}
+            };
         if (!get_primary().empty() && !t.get_primary().empty())
         {
             if (get_primary() == t.get_primary())
                 return true;
+            else if(table[get_primary()]%2 == table[t.get_primary()]%2) 
+            {
+                if(table[get_primary()] < table[t.get_primary()])
+                    return true;
+                else
+                    return false;
+            }
+            else if(table[get_primary()]%2 == 1 && table[t.get_primary()]%2 == 0) 
+            {
+                if(table[get_primary()] < table[t.get_primary()])
+                    return true;
+                else
+                    return false;
+            }
             else
                 return false;
         }
@@ -171,7 +191,7 @@ struct syntax_type
                     if (p->fields[i] != q->fields[i])
                         return false;
                     auto type_sub = p->types[i];
-                    if (!type_sub->subtyping(*(q->types[i])))
+                    if (!type_sub->type_equal(*(q->types[i])))
                         return false;
                 }
                 return true;
@@ -190,7 +210,7 @@ struct syntax_type
                     if (p->alters[i] != q->alters[i])
                         return false;
                     auto type_sub = q->types[i];
-                    if (!type_sub->subtyping(*(p->types[i])))
+                    if (!type_sub->type_equal(*(p->types[i])))
                         return false;
                 }
                 return true;
@@ -202,6 +222,54 @@ struct syntax_type
         {
             assert(false);
         }
+    }
+
+    bool type_equal(const syntax_type &t) const {
+        if(!get_primary().empty() && !t.get_primary().empty()) {
+            if(get_primary() == t.get_primary())
+                return true;
+            else
+                return false;
+        }
+        else if(auto p = std::get_if<product_type>(&type)) 
+        {
+            if(auto q = std::get_if<product_type>(&t.type)) 
+            {
+                if(p->types.size() != q->types.size())
+                    return false;
+                for(auto i = 0; i < p->types.size(); i++) {
+                    if(p->fields[i] != q->fields[i])
+                        return false;
+                    auto type = p->types[i];
+                    if(!type->type_equal(*(q->types[i])))
+                        return false;
+                }
+                return true;
+            }
+            else
+                return false;
+        }
+        else if(auto p = std::get_if<sum_type>(&type))
+        {
+            if(auto q = std::get_if<sum_type>(&t.type))
+            {
+                if(p->types.size() != q->types.size())
+                    return false;
+                for(auto i = 0; i < p->types.size(); i++)
+                {
+                    if(p->alters[i] != q->alters[i])
+                        return false;
+                    auto type = p->types[i];
+                    if(!type->type_equal(*(q->types[i])))
+                        return false;
+                }
+                return true;
+            }
+            else 
+                return false;
+        }
+        else
+            assert(false);
     }
 };
 
