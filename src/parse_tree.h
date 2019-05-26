@@ -170,7 +170,16 @@ inline std::string to_string(const node_assign_expr &node)
                 to_string(node.op),
                 to_string(node.rval)});
 }
-
+//node_construct_expr
+struct node_construct_expr
+{
+    std::vector<std::string> lable;
+    std::vector<std::shared_ptr<node_expression>> init_val;
+};
+inline std::string to_string(const node_construct_expr& node)
+{
+    return obj_to_string(vec_str{"lable","init_val"},vec_str{to_string(node.lable),to_string(node.init_val)});
+}
 struct node_sum_type
 {
     std::vector<std::string> lables;
@@ -207,7 +216,7 @@ inline std::string to_string(const node_type &node)
 struct node_statement;
 struct node_expression
 {
-    std::variant<node_binary_expr, node_assign_expr> expr;
+    std::variant<node_binary_expr, node_assign_expr,node_construct_expr> expr;
 };
 
 inline std::string to_string(const node_expression &node)

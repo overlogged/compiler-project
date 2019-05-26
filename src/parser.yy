@@ -338,6 +338,43 @@ binaryExpr:
         $$.vars.push_back($3);
         $$.ops.push_back("|");
     } ;
+%type<node_construct_expr> construct_expr;
+construct_expr:
+    LANGLE construct_element RANGLE
+    {
+        $$ = $2;
+    }|
+    LANGLE no_lable_construct_element RANGLE
+    {
+        $$ = $2;
+    }
+%type<node_construct_expr> no_lable_construct_element;
+no_lable_construct_element:
+    no_lable_construct_element COLON expression
+    {
+        $1.lable.push_back("_"+std::to_string($$.lable.size()));
+        $1.init_val.push_back($3);
+        $$ =$1;
+    }|
+    expression
+    {
+        $$.lable.push_back("_"+std::to_string($$.lable.size()));
+        $$.init_val.push_back($1);
+    }
+
+%type<node_construct_expr> construct_element;
+construct_element:
+    construct_element COLON identifier EQUAL expression
+    {
+        $1.lable.push_back($3.val);
+        $1.init_val.push_back($5);
+        $$ = $1;
+    }|
+    identifier EQUAL expression
+    {
+        $$.lable.push_back($1.val);
+        $$.init_val.push_back($3);
+    }
 
 %type <std::shared_ptr<node_expression>> expression;
 expression:
@@ -363,7 +400,12 @@ expression:
             .rval = $3
         };
         $$ = data;
-    };
+    }|
+    construct_expr{
+        auto data = std::make_shared<node_expression>();
+        data->expr = $1;
+        $$ = data;
+    }
 %type <node_expression_list> expression_list;
 expression_list: 
     %empty {} |
