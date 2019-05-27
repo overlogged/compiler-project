@@ -25,13 +25,14 @@ int main(int argc, char *argv[])
             ofstream fout("samples/out.json");
             fout << json;
             fout.close();
+            syntax_module module;
             try
             {
-                syntax_analysis(drv.parse_tree);
+                module.syntax_analysis(drv.parse_tree);
             }
             catch (std::string &s)
             {
-                
+
                 std::cout << "[error] " << s << std::endl;
             }
         }

@@ -1,12 +1,13 @@
 #include "syntax_tree.h"
 
-void syntax_analysis(node_module module)
+static void fix_lookahead(type_table &env_type, top_graph &dependency_graph);
+
+void syntax_module::syntax_analysis(node_module module)
 {
     // 对于每一个可以定义函数的“环境”
 
     // 第一步：扫描所有类型定义，生成全局类型表（固定）
     // 需要封装类型表的功能，以支持 built-in 类型
-    type_table env_type;
     top_graph dependency_graph;
     for (auto &block : module.blocks)
     {
@@ -48,8 +49,6 @@ void syntax_analysis(node_module module)
 
     // 第二步：扫描所有函数定义，生成全局函数表（固定）
     // 需要封装函数表的功能，以支持 built-in 类型
-    function_table env_fun;
-
     for (auto &block : module.blocks)
     {
         if (auto pfun_block = std::get_if<node_function_block>(&block))
@@ -86,7 +85,7 @@ void syntax_analysis(node_module module)
     // 第四步：进入每个 block，完成语义分析
 }
 
-void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
+static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
 {
     if (dependency_graph.seq_num == 0)
         return;

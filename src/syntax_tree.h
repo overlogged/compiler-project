@@ -47,10 +47,11 @@ struct syntax_if_block
 {
 };
 
-struct syntax_environment
+class syntax_module
 {
+public:
+    type_table env_type;
+    function_table env_fun;
+
+    void syntax_analysis(node_module module);
 };
-
-void syntax_analysis(node_module module);
-
-void fix_lookahead(type_table &env_type, top_graph &dependency_graph);

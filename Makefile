@@ -4,7 +4,9 @@
 BASE = bin/main
 CXX = g++
 FLEX = flex
-CXXFLAGS = -std=c++17 -g
+CXXFLAGS = -g -I$(shell llvm-config --includedir) -std=c++17
+LLVMLIBS = support core irreader executionengine interpreter mc mcjit bitwriter x86codegen target
+LDFLAGS = $(shell llvm-config --ldflags --libs $(LLVMLIBS)) $(shell llvm-config --system-libs) -lffi
 
 all: bin $(BASE)
 
@@ -22,7 +24,7 @@ bin/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(BASE): bin/main.o bin/parser.o bin/lexer.o bin/driver.o bin/utils.o bin/syntax_tree.o bin/function.o
-	$(CXX) -o $@ $^
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 %.json: %.rs
 	bash -c "bin/main $^ > $@"
