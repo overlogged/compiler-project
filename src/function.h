@@ -30,12 +30,13 @@ class function_table
 
 public:
     function_table();
+
     void add_func(const syntax_fun &func)
     {
         // assert name is identifier
         // assert name is not used
-        if(normal_fun[func.fun_name].size()>0)
-            throw "redifine funciton"+func.fun_name;
+        if (normal_fun[func.fun_name].size() > 0)
+            throw "redifine funciton" + func.fun_name;
         normal_fun[func.fun_name].push_back(func);
     }
 

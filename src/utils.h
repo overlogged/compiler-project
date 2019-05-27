@@ -10,6 +10,8 @@
 
 using vec_str = std::vector<std::string>;
 
+extern bool debug_flag;
+
 std::string myprintf(const char *format, ...);
 std::string obj_to_string(vec_str keys, vec_str values);
 
@@ -25,11 +27,11 @@ unsigned long long number_to_value(const std::string &s, int base);
 inline int char_to_integer(char c)
 {
     int tmp = 0;
-    if(c >= '0' && c <= '9')
+    if (c >= '0' && c <= '9')
         tmp = c - '0';
-    else if(c >= 'a' && c <= 'f')
+    else if (c >= 'a' && c <= 'f')
         tmp = c - 'a' + 10;
-    else if(c >= 'A' && c <= 'F')
+    else if (c >= 'A' && c <= 'F')
         tmp = c - 'A' + 10;
     else
         assert(false);
@@ -52,7 +54,7 @@ inline std::string to_string(long double x)
 }
 
 // to_string for long long
-inline std::string to_string(unsigned long long x) 
+inline std::string to_string(unsigned long long x)
 {
     return std::to_string(x);
 }
@@ -70,34 +72,34 @@ inline std::string to_string(float x)
 }
 
 // to_string for bool
-inline std::string to_string(bool x) 
+inline std::string to_string(bool x)
 {
     return (x ? std::string("\"true\"") : std::string("\"false\""));
 }
 
-inline bool is_unsigned(const std::string &s) 
+inline bool is_unsigned(const std::string &s)
 {
-    if(s.find("u") != std::string::npos)
+    if (s.find("u") != std::string::npos)
         return true;
-    if(s.find("U") != std::string::npos)
+    if (s.find("U") != std::string::npos)
         return true;
     return false;
 }
 
-inline std::string trim(const std::string& s, char c)
+inline std::string trim(const std::string &s, char c)
 {
     auto pos_front = s.find_first_not_of(c, 0);
     auto pos_end = s.find_last_not_of(c);
-    if(pos_front != std::string::npos && pos_end != std::string::npos)
-        return s.substr(pos_front, pos_end-pos_front+1);
+    if (pos_front != std::string::npos && pos_end != std::string::npos)
+        return s.substr(pos_front, pos_end - pos_front + 1);
     else
         return std::string("");
 }
 
-inline char to_char(const std::string& s)
+inline char to_char(const std::string &s)
 {
     assert(s.size() <= 3);
-    return s[1];   
+    return s[1];
 }
 
 // to_string for vector
@@ -164,7 +166,7 @@ std::string to_string(const std::variant<T1, T2, T3> &node)
 //
 
 //to_string for 4 types variant
-template <typename T1, typename T2, typename T3,typename T4>
+template <typename T1, typename T2, typename T3, typename T4>
 std::string to_string(const std::variant<T1, T2, T3, T4> &node)
 {
     auto pval1 = std::get_if<T1>(&node);
@@ -184,7 +186,7 @@ std::string to_string(const std::variant<T1, T2, T3, T4> &node)
 }
 
 //to_string for 5 types variant
-template <typename T1, typename T2, typename T3,typename T4, typename T5>
+template <typename T1, typename T2, typename T3, typename T4, typename T5>
 std::string to_string(const std::variant<T1, T2, T3, T4, T5> &node)
 {
     auto pval1 = std::get_if<T1>(&node);
@@ -207,7 +209,7 @@ std::string to_string(const std::variant<T1, T2, T3, T4, T5> &node)
 }
 
 //to_string for 6 types variant
-template <typename T1, typename T2, typename T3,typename T4, typename T5,typename T6>
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
 std::string to_string(const std::variant<T1, T2, T3, T4, T5, T6> &node)
 {
     auto pval1 = std::get_if<T1>(&node);
@@ -249,24 +251,24 @@ void cal_float(const std::string &s, int base, T &res)
     bool mul = true;
     std::stack<int> fraction;
     bool integer_flag = true;
-    for(auto i = 0; i < s.size(); i++)
+    for (auto i = 0; i < s.size(); i++)
     {
-        if(s[i] == '.')
+        if (s[i] == '.')
             integer_flag = false;
-        else if(s[i] == 'p' || s[i] == 'e' || s[i] == 'E')
+        else if (s[i] == 'p' || s[i] == 'e' || s[i] == 'E')
             exp_flag = true;
-        else if(s[i] == '+')
+        else if (s[i] == '+')
             mul = true;
-        else if(s[i] == '-')
+        else if (s[i] == '-')
             mul = false;
         else
         {
-            if(exp_flag)
+            if (exp_flag)
             {
                 exp_part *= 10;
                 exp_part += char_to_integer(s[i]);
             }
-            else if(integer_flag)
+            else if (integer_flag)
             {
                 res *= base;
                 res += char_to_integer(s[i]);
@@ -278,17 +280,17 @@ void cal_float(const std::string &s, int base, T &res)
         }
     }
     T fraction_part = 0.0;
-    while(!fraction.empty())
-    {   
+    while (!fraction.empty())
+    {
         fraction_part += fraction.top();
         fraction_part /= base;
         fraction.pop();
     }
     res += fraction_part;
 
-    if(exp_flag)
+    if (exp_flag)
     {
-        if(mul)
+        if (mul)
             res *= pow(exp_base, exp_part);
         else
             res /= pow(exp_base, exp_part);

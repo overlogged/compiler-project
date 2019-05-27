@@ -1,5 +1,5 @@
-val x:i32 = 0;
-val y = fun(3+3*6);
+val x:i32 =0;
+var y = fun(3+3*6);
 
 fn fun(x:i32) i8 {
     if x==0 {
@@ -11,7 +11,7 @@ fn fun(x:i32) i8 {
     }
 }
 
-fn main() unit {
+fn main() {
     val y:i32 = 1;
     val z = fun(y);
 }

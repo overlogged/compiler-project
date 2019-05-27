@@ -39,10 +39,12 @@ void syntax_analysis(node_module module)
     {
         std::cout << e << '\n';
     }
-    std::cout << env_type.get_type("t6").subtyping(env_type.get_type("t5")) << '\n';
-    std::cout << env_type.get_type("t7").subtyping(env_type.get_type("t8")) << '\n';
 
-    // env_type.print_type_table();
+    if (debug_flag)
+    {
+        std::cout << "type_table:\n";
+        env_type.print_type_table();
+    }
 
     // 第二步：扫描所有函数定义，生成全局函数表（固定）
     // 需要封装函数表的功能，以支持 built-in 类型
@@ -91,7 +93,7 @@ void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
 
     std::vector<int> in_degree(dependency_graph.seq_num);
     std::vector<int> visit(dependency_graph.seq_num);
-    
+
     for (auto it : dependency_graph.adj_list)
     {
         for (auto edge : it.second)

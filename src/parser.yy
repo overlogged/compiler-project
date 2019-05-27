@@ -231,6 +231,10 @@ KW_FN identifier fun_param LANGLE statement_list RANGLE
     $$ = node_function_block { 
         .fun_name = $2,
         .params = $3,
+        .ret_type = node_type {
+            .is_ref = false,
+            .type_val = node_identifier { .val = "unit"}
+        },
         .statement_list = std::move(*$5),
         .no_ret = true
     };   
