@@ -4,6 +4,7 @@
 #include <map>
 
 struct syntax_expr;
+struct syntax_stmt;
 
 struct syntax_fun
 {
@@ -11,7 +12,7 @@ struct syntax_fun
     syntax_type ret_type;
     std::vector<std::pair<std::string, syntax_type>> parameters;
     std::vector<node_statement> origin_stmts;
-    // std::vector<syntax_stmt> stmts;
+    std::vector<syntax_stmt> stmts;
 };
 
 struct syntax_fun_call

@@ -43,8 +43,9 @@ void syntax_module::syntax_analysis(node_module module)
 
     if (debug_flag)
     {
-        std::cout << "type_table:\n";
+        std::cout << "================type_table===============\n";
         env_type.print_type_table();
+        std::cout << "===================end===================\n\n";
     }
 
     // 第二步：扫描所有函数定义，生成全局函数表（固定）
@@ -70,8 +71,13 @@ void syntax_module::syntax_analysis(node_module module)
                 }
             }
 
+            auto funname = pfun_block->fun_name.val;
+            if (funname == "main")
+            {
+                funname = ".main";
+            }
             auto fun = syntax_fun{
-                .fun_name = pfun_block->fun_name.val,
+                .fun_name = funname,
                 .ret_type = pfun_block->no_ret ? env_type.primary_unit : env_type.type_check(pfun_block->ret_type),
                 .parameters = params,
                 .origin_stmts = pfun_block->statement_list};
@@ -80,9 +86,58 @@ void syntax_module::syntax_analysis(node_module module)
         }
     }
 
-    // 第三步：扫描全局变量的声明，生成全局变量符号和类型定义，此处需要类型推导。生成初始化函数 __init
+    // 第三步：扫描全局变量的声明，生成全局变量符号和类型定义，此处需要类型推导。生成入口函数 main
+    syntax_fun main_fun;
+    main_fun.fun_name = "main";
+    main_fun.ret_type = env_type.get_type("i32");
+
+    env_var.push();
+    for (auto &block : module.blocks)
+    {
+        if (auto p_global_var_def = std::get_if<node_global_var_def_block>(&block))
+        {
+            for (auto &def : *p_global_var_def)
+            {
+                auto init_expr = expr_analysis(def.initial_exp);
+                std::shared_ptr<syntax_expr> rval;
+
+                syntax_type t = env_type.type_check(def.var_type);
+                if (t.is_auto())
+                {
+                    // 类型推导
+                    t = init_expr->type;
+                    rval = init_expr;
+                }
+                else
+                {
+                    // 隐式转换
+                    auto impl_convert = syntax_type_convert{.source_expr = init_expr, .target_type = t};
+                    rval->type = t;
+                    rval->val = impl_convert;
+                }
+
+                // 分配全局变量
+                for (auto &v : def.var_list)
+                {
+                    auto var = std::make_shared<syntax_expr>();
+                    var->val = syntax_var{.alloc_type = syntax_var::STATIC};
+
+                    // 声明
+                    env_var.insert(v.val, var);
+
+                    // 初始化
+                    syntax_assign assign{.lval = var, .rval = rval};
+                    main_fun.stmts.push_back(syntax_stmt{.stmt = assign});
+                }
+            }
+        }
+    }
+
+    env_fun.add_func(main_fun);
 
     // 第四步：进入每个 block，完成语义分析
+    // - 变量的分析（参考全局变量部分）
+    // - 控制流 if, while 的分析
 }
 
 static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
@@ -148,4 +203,10 @@ static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
             }
         }
     }
+}
+
+// todo: 补全该函数
+std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression &node)
+{
+    return nullptr;
 }

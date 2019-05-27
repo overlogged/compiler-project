@@ -8,9 +8,7 @@ using namespace std;
 std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_name, const syntax_fun_call &call)
 {
     auto p_ret = make_shared<syntax_expr>();
-    auto p_call = make_shared<syntax_fun_call>();
-    p_ret->val = p_call;
-    *p_call = call;
+    p_ret->val = call;
     // inline function
     try
     {

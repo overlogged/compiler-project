@@ -233,7 +233,7 @@ KW_FN identifier fun_param LANGLE statement_list RANGLE
         .params = $3,
         .ret_type = node_type {
             .is_ref = false,
-            .type_val = node_identifier { .val = "unit"}
+            .type_val = node_identifier { .val = "auto"}
         },
         .statement_list = std::move(*$5),
         .no_ret = true

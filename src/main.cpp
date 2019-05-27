@@ -1,5 +1,6 @@
 #include "driver.h"
 #include "syntax_tree.h"
+#include "codegen.h"
 #include <iostream>
 #include <fstream>
 
@@ -26,13 +27,14 @@ int main(int argc, char *argv[])
             fout << json;
             fout.close();
             syntax_module module;
+            codegen_llvm llvm(module);
             try
             {
                 module.syntax_analysis(drv.parse_tree);
+                llvm.codegen();
             }
             catch (std::string &s)
             {
-
                 std::cout << "[error] " << s << std::endl;
             }
         }

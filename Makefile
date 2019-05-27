@@ -23,7 +23,7 @@ src/lexer.cpp: src/lexer.ll
 bin/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-$(BASE): bin/main.o bin/parser.o bin/lexer.o bin/driver.o bin/utils.o bin/syntax_tree.o bin/function.o
+$(BASE): bin/main.o bin/parser.o bin/lexer.o bin/driver.o bin/utils.o bin/syntax_tree.o bin/function.o bin/codegen_llvm.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 %.json: %.rs
