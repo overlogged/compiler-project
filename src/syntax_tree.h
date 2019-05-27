@@ -79,7 +79,7 @@ struct syntax_stmt
 
 class syntax_module
 {
-    std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node);
+    std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts);
 
 public:
     type_table env_type;

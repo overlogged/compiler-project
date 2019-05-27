@@ -98,7 +98,7 @@ void syntax_module::syntax_analysis(node_module module)
         {
             for (auto &def : *p_global_var_def)
             {
-                auto init_expr = expr_analysis(def.initial_exp);
+                auto init_expr = expr_analysis(def.initial_exp, main_fun.stmts);
                 std::shared_ptr<syntax_expr> rval;
 
                 syntax_type t = env_type.type_check(def.var_type);
@@ -206,7 +206,7 @@ static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
 }
 
 // todo: 补全该函数
-std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression &node)
+std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts)
 {
     return nullptr;
 }
