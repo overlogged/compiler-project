@@ -39,6 +39,7 @@ struct syntax_var
     static const int STACK = 0;
     static const int HEAP = 1;
     static const int STATIC = 2;
+    static const int PARAMETER = 3;
 };
 
 struct syntax_type_convert
@@ -59,6 +60,11 @@ struct syntax_assign
     std::shared_ptr<syntax_expr> lval, rval;
 };
 
+struct syntax_return
+{
+    std::shared_ptr<syntax_expr> val;
+};
+
 struct syntax_if_block
 {
     std::shared_ptr<syntax_expr> condition;
@@ -74,17 +80,23 @@ struct syntax_while_block
 
 struct syntax_stmt
 {
-    std::variant<std::shared_ptr<syntax_expr>, syntax_if_block, syntax_while_block, syntax_assign> stmt;
+    std::variant<std::shared_ptr<syntax_expr>, syntax_if_block, syntax_while_block, syntax_assign, syntax_return> stmt;
 };
 
 class syntax_module
 {
     std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts);
+    void typedef_analysis(const node_module &module);
+    std::vector<syntax_fun> fundef_analysis(const node_module &module);
+    void global_var_analysis(const node_module &module);
+
+    void function_analysis(const syntax_fun &node);
 
 public:
     type_table env_type;
     function_table env_fun;
+    std::vector<std::pair<std::string, std::vector<syntax_stmt>>> fun_impl;
     stack_map<std::shared_ptr<syntax_expr>> env_var;
 
-    void syntax_analysis(node_module module);
+    void syntax_analysis(const node_module &module);
 };
