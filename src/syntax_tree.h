@@ -86,11 +86,13 @@ struct syntax_stmt
 class syntax_module
 {
     std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts);
-    void typedef_analysis(const node_module &module);
     std::vector<syntax_fun> fundef_analysis(const node_module &module);
+    void typedef_analysis(const node_module &module);
     void global_var_analysis(const node_module &module);
-
     void function_analysis(const syntax_fun &node);
+
+    syntax_stmt if_analysis(const node_if_statement &node);
+    syntax_stmt while_analysis(const node_while_statement &node);
 
 public:
     type_table env_type;

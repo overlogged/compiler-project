@@ -131,8 +131,26 @@ void syntax_module::global_var_analysis(const node_module &module)
             }
         }
     }
+    // todo: fun 调用 .main
     fun_impl.emplace_back(std::make_pair("main", std::move(stmts)));
     env_fun.add_func(main_fun);
+}
+
+// todo:
+syntax_stmt syntax_module::if_analysis(const node_if_statement &node)
+{
+    syntax_if_block block;
+    env_var.push();
+    env_var.pop();
+    return {block};
+}
+
+syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
+{
+    syntax_while_block block;
+    env_var.push();
+    env_var.pop();
+    return {block};
 }
 
 void syntax_module::syntax_analysis(const node_module &module)
@@ -245,25 +263,66 @@ void syntax_module::function_analysis(const syntax_fun &node)
     for (auto &node_stmt : node.origin_stmts)
     {
         auto ps = &node_stmt.statement;
-        if (auto expr = std::get_if<node_var_def_statement>(ps))
+        if (auto def = std::get_if<node_var_def_statement>(ps))
         {
+            auto init_expr = expr_analysis(def->initial_exp, stmts);
+            std::shared_ptr<syntax_expr> rval;
+
+            syntax_type t = env_type.type_check(def->var_type);
+            if (t.is_auto())
+            {
+                // 类型推导
+                t = init_expr->type;
+                rval = init_expr;
+            }
+            else
+            {
+                // 隐式转换
+                auto impl_convert = syntax_type_convert{.source_expr = init_expr, .target_type = t};
+                rval->type = t;
+                rval->val = impl_convert;
+            }
+
+            // 分配局部变量
+            for (auto &v : def->var_list)
+            {
+                auto var = std::make_shared<syntax_expr>();
+                var->val = syntax_var{.alloc_type = syntax_var::STACK};
+
+                // 声明
+                env_var.insert(v.val, var);
+
+                // 初始化
+                syntax_assign assign{.lval = var, .rval = rval};
+                stmts.push_back(syntax_stmt{.stmt = assign});
+            }
         }
         else if (auto ifb = std::get_if<node_if_statement>(ps))
         {
+            stmts.emplace_back(if_analysis(*ifb));
         }
         else if (auto whileb = std::get_if<node_while_statement>(ps))
         {
-        }
-        else if (auto assign = std::get_if<node_expression>(ps))
-        {
-        }
-        else if (auto ret = std::get_if<node_return_statement>(ps))
-        {
+            stmts.emplace_back(while_analysis(*whileb));
         }
         else if (auto forb = std::get_if<node_for_statement>(ps))
         {
+            // todo:
+            throw std::string("unsupported for statement");
+        }
+        else if (auto expr = std::get_if<node_expression>(ps))
+        {
+            auto e = expr_analysis(*expr, stmts);
+            stmts.emplace_back(syntax_stmt{e});
+        }
+        else if (auto ret = std::get_if<node_return_statement>(ps))
+        {
+            auto ret_e = expr_analysis(ret->expr, stmts);
+            stmts.emplace_back(syntax_stmt{syntax_return{ret_e}});
         }
     }
 
+    // 分析结束，保存函数实现
     fun_impl.emplace_back(std::make_pair(node.fun_name, std::move(stmts)));
+    env_var.pop();
 }
