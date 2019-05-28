@@ -141,15 +141,17 @@ syntax_stmt syntax_module::if_analysis(const node_if_statement &node)
 {
     syntax_if_block block;
     env_var.push();
-    block.condition.push_back(expr_analysis(node.if_condition));
+    block.condition_stmt.push_back(std::vector<syntax_stmt>());
+    block.condition.push_back(expr_analysis(node.if_condition,block.condition_stmt[0]));
     block.branch.push_back(statement_analysis(node.if_statement));
-    block.defaul_branch.push_back(statement_analysis(node.else_statement));
+    block.defaul_branch = statement_analysis(node.else_statement);
     auto it_condition = node.else_if_statement.else_if_condition.begin();
     auto it_statement = node.else_if_statement.else_if_statement.begin();
-    for(;it_condition!=node.else_if_statement.else_if_condition.end();it_condition++,it_statement++)
+    for(int i=1;it_condition!=node.else_if_statement.else_if_condition.end();it_condition++,it_statement++,i++)
     {
-        block.condition.push_back(expr_analysis(*it_condition));
-        block.branch.push_back(statement_analysis(&it_statement));
+        block.condition_stmt.push_back(std::vector<syntax_stmt>());
+        block.condition.push_back(expr_analysis(*it_condition,block.condition_stmt[i]));
+        block.branch.push_back(statement_analysis(*it_statement));
     }
     env_var.pop();
     return {block};
@@ -159,11 +161,13 @@ syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
 {
     syntax_while_block block;
     env_var.push();
-    block.while_condition = expr_analysis(node.while_condition);
+    block.condition = expr_analysis(node.while_condition,block.condition_stmt);
     //add while condition to the statement
-    node.loop_statement.push_back(node_statement{.statement = node.while_condition});
+    auto new_node = node;
+    auto condition_stmt = node_statement{.statement = node.while_condition};
+    new_node.loop_statement.push_back(condition_stmt);
     //-------------------------------------
-    block.body = statement_analysis(node.loop_statement);
+    block.body = statement_analysis(new_node.loop_statement);
     env_var.pop();
     return {block};
 }
@@ -275,7 +279,7 @@ void syntax_module::function_analysis(const syntax_fun &node)
         env_var.insert(arg.first, exp);
     }
 
-    stmts = statement_analysis(origin_stmts);
+    stmts = statement_analysis(node.origin_stmts);
 
     // 分析结束，保存函数实现
     fun_impl.emplace_back(std::make_pair(node.fun_name, std::move(stmts)));
@@ -284,7 +288,7 @@ void syntax_module::function_analysis(const syntax_fun &node)
 std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_statement> origin_stmts)
 {
     std::vector<syntax_stmt> stmts;
-    for (auto &node_stmt : node.origin_stmts)
+    for (auto &node_stmt : origin_stmts)
     {
         auto ps = &node_stmt.statement;
         if (auto def = std::get_if<node_var_def_statement>(ps))

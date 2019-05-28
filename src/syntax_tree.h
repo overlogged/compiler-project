@@ -68,6 +68,7 @@ struct syntax_return
 struct syntax_if_block
 {
     std::vector<std::shared_ptr<syntax_expr>> condition;
+    std::vector<std::vector<syntax_stmt>> condition_stmt;
     std::vector<std::vector<syntax_stmt>> branch;
     std::vector<syntax_stmt> defaul_branch;
 };
@@ -75,6 +76,7 @@ struct syntax_if_block
 struct syntax_while_block
 {
     std::shared_ptr<syntax_expr> condition;
+    std::vector<syntax_stmt> condition_stmt;
     std::vector<syntax_stmt> body;
 };
 
