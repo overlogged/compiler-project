@@ -67,9 +67,9 @@ struct syntax_return
 
 struct syntax_if_block
 {
-    std::shared_ptr<syntax_expr> condition;
-    std::vector<syntax_stmt> true_branch;
-    std::vector<syntax_stmt> false_branch;
+    std::vector<std::shared_ptr<syntax_expr>> condition;
+    std::vector<std::vector<syntax_stmt>> branch;
+    std::vector<syntax_stmt> defaul_branch;
 };
 
 struct syntax_while_block
@@ -93,7 +93,7 @@ class syntax_module
 
     syntax_stmt if_analysis(const node_if_statement &node);
     syntax_stmt while_analysis(const node_while_statement &node);
-
+    std::vector<syntax_stmt> statement_analysis(std::vector<node_statement> origin_stmts);
 public:
     type_table env_type;
     function_table env_fun;
