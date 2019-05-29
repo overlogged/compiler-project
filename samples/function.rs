@@ -1,4 +1,4 @@
-val x:(i32) =0;
+val x:(i32) =3+2-3;
 var y:(u16) =0;
 type t2 = (t1|z:i8|a:u8);
 type t1 = (t3, y:i32);

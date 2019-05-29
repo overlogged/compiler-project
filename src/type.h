@@ -112,6 +112,7 @@ struct syntax_type
                 {
                     std::cout << ',';
                 }
+                std::cout << p->fields[i] << ":";
                 p->types[i].get()->print();
             }
             std::cout << ")";

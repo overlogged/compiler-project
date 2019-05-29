@@ -31,7 +31,7 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, con
     auto it = func_list.find(func_name);
     if (it == func_list.end())
     {
-        throw new string("no such function " + func_name);
+        throw string("no such function " + func_name);
     }
     auto &fun = it->second;
     bool match = true;
@@ -39,7 +39,8 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, con
     {
         if (fun[i].parameters.size() == call.parameters.size())
         {
-            for (auto j = 0; j < fun[j].parameters.size(); j++)
+            match = true;
+            for (auto j = 0; j < fun[i].parameters.size(); j++)
             {
                 auto t1 = fun[i].parameters[j].second;
                 auto t2 = call.parameters[j]->type;
@@ -67,10 +68,15 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, con
                     break;
                 }
             }
-            if (!match)
-                throw string("parameters not match");
+            if(match)
+            {
+                ret_type = fun[i].ret_type;
+                break;
+            }
         }
     }
+    if (!match)
+        throw string("parameters not match");
     return ret_type;
 }
 

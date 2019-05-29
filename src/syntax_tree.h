@@ -79,12 +79,13 @@ struct syntax_stmt
 
 class syntax_module
 {
-    std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node);
-
+    std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts);
+    std::shared_ptr<syntax_expr> binary_expr_analysis(const node_binary_expr &node, std::vector<syntax_stmt> &stmts);
+    std::shared_ptr<syntax_expr> unary_expr_analysis(const node_unary_expr &node, std::vector<syntax_stmt> &stmts);
+    std::shared_ptr<syntax_expr> post_expr_analysis(const node_post_expr &node, std::vector<syntax_stmt> &stmts);
 public:
     type_table env_type;
     function_table env_fun;
     stack_map<std::shared_ptr<syntax_expr>> env_var;
-
     void syntax_analysis(node_module module);
 };
