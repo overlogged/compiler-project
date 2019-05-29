@@ -25,8 +25,10 @@ class function_table
     std::map<std::string, std::vector<syntax_fun>> normal_fun;
     std::map<std::string, std::vector<syntax_fun>> inline_fun;
     void create_bin_op_fun(std::string op, std::string ret_type, size_t ret_size, std::string param1_type, size_t param1_size, std::string param2_type, size_t param2_size);
-    syntax_type infer_type_in_list(const std::string &func_name, const syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list);
+    syntax_type infer_type_in_list(const std::string &func_name,syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list);
     bool primary_match(std::string t1, std::string t2);
+    void implicit_conv(std::shared_ptr<syntax_expr> param1,std::shared_ptr<syntax_expr> param2);
+    void implicit_conv(std::shared_ptr<syntax_expr> param,const syntax_type fun_param_type);
 
 public:
     function_table();
@@ -41,5 +43,5 @@ public:
     }
 
     // 进行类型推导，并分析是否进行隐式类型转换
-    std::shared_ptr<syntax_expr> infer_type(const std::string &func_name, const syntax_fun_call &call);
+    std::shared_ptr<syntax_expr> infer_type(const std::string &func_name, syntax_fun_call &call);
 };

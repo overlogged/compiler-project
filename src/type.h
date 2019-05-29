@@ -301,8 +301,8 @@ public:
 
     syntax_type get_type(std::string name)
     {
-        static const std::string builtin_types[] = {"u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "char", "unit", "auto"};
-        static const size_t builtin_size[] = {1, 1, 2, 2, 4, 4, 8, 8, 1, 1, 0};
+        static const std::string builtin_types[] = {"u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "char", "unit", "auto","bool"};
+        static const size_t builtin_size[] = {1, 1, 2, 2, 4, 4, 8, 8, 1, 1, 0, 1};
         static const size_t builtin_n = sizeof(builtin_size) / sizeof(size_t);
         for (auto i = 0; i < builtin_n; i++)
         {

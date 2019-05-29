@@ -5,10 +5,29 @@
 
 using namespace std;
 
-std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_name, const syntax_fun_call &call)
+std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_name, syntax_fun_call &call)
 {
     auto p_ret = make_shared<syntax_expr>();
+    p_ret->type =  syntax_type{.type = primary_type{.name = "bool",.size = 1}};
     p_ret->val = call;
+    std::string t1 = call.parameters[0]->type.get_primary();
+    std::string t2 = call.parameters[1]->type.get_primary();
+    // == !=
+    if(func_name == "==" || func_name == "!=")
+    {
+        if(call.parameters.size() != 2)
+            throw("parameters not match");
+        if(call.parameters[0]->type.type_equal(call.parameters[1]->type))
+        {
+            return p_ret;
+        }
+        else if(t1 != "" && t2 != "")
+        {
+            implicit_conv(call.parameters[0],call.parameters[1]);
+        }
+        else 
+            throw("parameters not match");
+    }
     // inline function
     try
     {
@@ -25,7 +44,7 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
     return p_ret;
 }
 
-syntax_type function_table::infer_type_in_list(const std::string &func_name, const syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list)
+syntax_type function_table::infer_type_in_list(const std::string &func_name,syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list)
 {
     syntax_type ret_type;
     auto it = func_list.find(func_name);
@@ -55,11 +74,8 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, con
                 }
                 else if (t1p != "" && t2p != "")
                 {
-                    if (!primary_match(t1p, t2p))
-                    {
-                        match = false;
-                        break;
-                    }
+                    //implicit_conv(call.parameters[j],fun[i].parameters[j].second());
+                    implicit_conv(call.parameters[j],fun[i].parameters[j].second);
                 }
                 else
                 {
@@ -67,7 +83,11 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, con
                     break;
                 }
             }
-            if (!match)
+            if (match)
+            {
+                ret_type = fun[i].ret_type;
+            }
+            else
                 throw string("parameters not match");
         }
     }
@@ -76,7 +96,7 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, con
 
 function_table::function_table()
 {
-    vec_str op = {"+", "-", "*", "/", "%", "&", "|", "^", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^="};
+    vec_str op = {"+", "-", "*", "/", "%", "&", "|", "^", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",">","<",">=","<="};
     for (int i = 0; i < op.size(); i++)
     {
         create_bin_op_fun(op[i], "i8", 1, "i8", 1, "i8", 1);
@@ -126,4 +146,44 @@ bool function_table::primary_match(std::string t1, std::string t2)
     if (i1 == -1 || i2 == -1)
         return t1 == t2;
     return (i1 == i2 || i1 - i2 >= 2) && (((i1 - i2) % 2 == 0) || ((i1 - i2) % 2 == 1 && i2 % 2 == 0));
+}
+
+void function_table::implicit_conv(std::shared_ptr<syntax_expr> param1,std::shared_ptr<syntax_expr> param2)
+{
+    std::string t1 = param1->type.get_primary();
+    std::string t2 = param2->type.get_primary();
+    if(primary_match(t1,t2))
+    {
+        auto conv = std::make_shared<syntax_expr>();
+        conv->val = syntax_type_convert{.source_expr = param2,
+                                        .target_type = param1->type};
+        conv->type = param1->type;
+        param2 = conv;
+    }
+    else if(primary_match(t2,t1))
+    {
+        auto conv = std::make_shared<syntax_expr>();
+        conv->val = syntax_type_convert{.source_expr = param1,
+                                        .target_type = param2->type};
+        conv->type = param2->type;
+        param1 = conv;
+    }
+    else
+        throw("parameters not match");
+}
+
+void function_table::implicit_conv(std::shared_ptr<syntax_expr> param,const syntax_type fun_param_type)
+{
+    std::string t1 = param->type.get_primary();
+    std::string t2 = fun_param_type.get_primary();
+    if(primary_match(t2,t1))
+    {
+        auto conv = std::make_shared<syntax_expr>();
+        conv->val = syntax_type_convert{.source_expr = param,
+                                        .target_type = fun_param_type};
+        conv->type = fun_param_type;
+        param = conv;
+    }
+    else
+        throw("parameters not match");
 }
