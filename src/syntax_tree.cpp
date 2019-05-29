@@ -114,7 +114,6 @@ void syntax_module::global_var_analysis(const node_module &module)
                 //         std::cout << t_3->fun_name << '\n';
                 //     }
                 // }
-
                 std::shared_ptr<syntax_expr> rval;
                 syntax_type t = env_type.type_check(def.var_type);
                 if (t.is_auto())
@@ -284,7 +283,21 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
     }
     else if(auto p = std::get_if<node_assign_expr>(&node.expr))
     {
-
+        auto syntax_node_r = expr_analysis(*(p->rval), stmts);
+        auto syntax_node_l = is_left_value(p->lval);
+        if(p->op != "=")
+        {
+            auto syntax_fun_node = syntax_fun_call{.fun_name = p->op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
+            auto syntax_node = env_fun.infer_type(p->op.substr(0, 1), syntax_fun_node);
+            stmts.push_back(syntax_stmt{.stmt=syntax_node});
+            stmts.push_back(syntax_stmt{.stmt=syntax_assign{.lval = syntax_node_l, .rval = syntax_node}});
+            return syntax_node_l;
+        }
+        else
+        {
+            stmts.push_back(syntax_stmt{.stmt=syntax_assign{.lval = syntax_node_l, .rval = syntax_node_r}});
+            return syntax_node_l;
+        }
     }
     else if(auto p = std::get_if<node_construct_expr>(&node.expr))
     {
@@ -292,7 +305,6 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
     }
     else
         assert(false);
-
 }
 
 std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_binary_expr &node, std::vector<syntax_stmt> &stmts)
@@ -305,6 +317,10 @@ std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_bina
         {"<<", 5}, {">>", 5}, {"+", 6},
         {"-", 6}, {"*", 7}, {"/", 7}, {"%", 7}
     };
+    if(node.ops.empty())
+    {
+        return unary_expr_analysis(node.vars[0], stmts);
+    }
     std::vector<std::variant<node_unary_expr, std::shared_ptr<syntax_expr>>> expr_stack;
     std::vector<std::string> op_stack;
     op_stack.push_back(node.ops[0]);
@@ -583,4 +599,23 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
         }
     }
     return stmts;
+}
+
+std::shared_ptr<syntax_expr> syntax_module::is_left_value(const node_unary_expr& node)
+{
+    if(auto p = std::get_if<node_primary_expr>(&node.post_expr->expr))
+    {
+        if(auto q = std::get_if<node_identifier>(p))
+        {
+            return env_var.find(q->val);
+        }
+        else
+        {
+            throw std::string("not lval");
+        }
+    }
+    else
+    {
+        throw std::string("not lval");
+    }
 }
