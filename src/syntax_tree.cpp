@@ -90,16 +90,16 @@ void syntax_module::syntax_analysis(node_module module)
     syntax_fun main_fun;
     main_fun.fun_name = "main";
     main_fun.ret_type = env_type.get_type("i32");
-
     env_var.push();
+    std::vector<syntax_stmt> stmts;
     for (auto &block : module.blocks)
     {
         if (auto p_global_var_def = std::get_if<node_global_var_def_block>(&block))
         {
             for (auto &def : *p_global_var_def)
             {
-                // std::vector<syntax_stmt> s;
-                auto init_expr = expr_analysis(def.initial_exp);
+                auto init_expr = expr_analysis(def.initial_exp, stmts);
+                // test remove!!
                 // std::cout << s.size() << '\n';
                 // for(auto it : s)
                 // {
@@ -116,7 +116,6 @@ void syntax_module::syntax_analysis(node_module module)
                 //         std::cout << t_3->fun_name << '\n';
                 //     }
                 // }
-
 
                 std::shared_ptr<syntax_expr> rval;
                 syntax_type t = env_type.type_check(def.var_type);
@@ -226,46 +225,13 @@ static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
 // todo: 补全该函数
 std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts)
 {
-    static std::map<std::string, int> precedence = {
-        {"+", 0}, {"-", 0}, {"*", 1}, {"/", 1}
-    };
     if(auto p = std::get_if<node_binary_expr>(&node.expr)) 
     {
-        std::cout << "bin" << '\n';
-        auto syntax_exp = unary_expr_analysis(p->vars[0], stmts);
-        // auto syntax_exp = std::make_shared<syntax_expr>();
-        // auto oprand1 = std::get_if<node_primary_expr>(&(p->vars[0].post_expr)->expr);
-        // auto constant = std::get_if<node_constant>(oprand1);
-        // syntax_literal t;
-        // t.type = syntax_type{.type = primary_type{.name = std::get_if<node_identifier>(&constant->type->type_val)->val}};
-        // t.val = constant->val;
-        // syntax_exp->type = t.type;
-        // syntax_exp->val = t;
-        // stmts.push_back(syntax_stmt{.stmt = syntax_exp});
-        for(auto i = 1; i < p->vars.size(); i++)
-        {
-            auto syntax_tmp = unary_expr_analysis(p->vars[i], stmts);
-            // auto syntax_tmp = std::make_shared<syntax_expr>();
-            // auto oprand_tmp = std::get_if<node_primary_expr>(&(p->vars[i].post_expr)->expr);
-            // auto constant_tmp = std::get_if<node_constant>(oprand_tmp);
-            // syntax_literal tmp;
-            // tmp.type = syntax_type{.type = primary_type{.name = std::get_if<node_identifier>(&constant_tmp->type->type_val)->val}};
-            // tmp.val = constant_tmp->val;
-            // syntax_tmp->type = tmp.type;
-            // syntax_tmp->val = tmp;
-            // stmts.push_back(syntax_stmt{.stmt = syntax_tmp});
-            syntax_fun_call call_tmp;
-            call_tmp.fun_name = p->ops[i-1];
-            call_tmp.parameters.push_back(syntax_exp);
-            call_tmp.parameters.push_back(syntax_tmp);
-            syntax_exp = env_fun.infer_type(p->ops[i-1], call_tmp);
-            stmts.push_back(syntax_stmt{.stmt = syntax_exp});
-        }
-        return syntax_exp;
+        return binary_expr_analysis(*p, stmts);
     }
     else if(auto p = std::get_if<node_assign_expr>(&node.expr))
     {
-        // std::cout << "assign" << '\n';
+
         return nullptr;
     }
     else if(auto p = std::get_if<node_construct_expr>(&node.expr))
@@ -280,7 +246,129 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
 
 std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_binary_expr &node, std::vector<syntax_stmt> &stmts)
 {
-    return nullptr;
+    static std::map<std::string,int> precedence = 
+    {
+        {"||", 0}, {"&&", 1}, {"^", 2},
+        {"==", 3}, {"!=", 3}, {">", 4},
+        {"<", 4}, {"<=", 4}, {">=", 4},
+        {"<<", 5}, {">>", 5}, {"+", 6},
+        {"-", 6}, {"*", 7}, {"/", 7}, {"%", 7}
+    };
+    std::vector<std::variant<node_unary_expr, std::shared_ptr<syntax_expr>>> expr_stack;
+    std::vector<std::string> op_stack;
+    op_stack.push_back(node.ops[0]);
+    expr_stack.push_back(node.vars[0]);
+    expr_stack.push_back(node.vars[1]);
+    for(auto i = 1; i < node.ops.size(); i++)
+    {
+        if(precedence[op_stack[op_stack.size()-1]] >= precedence[node.ops[i]])
+        {
+            std::shared_ptr<syntax_expr> syntax_node;
+            auto fun_name = op_stack[op_stack.size()-1];
+            auto lexp = expr_stack[expr_stack.size()-2];
+            auto rexp = expr_stack[expr_stack.size()-1];
+            if(auto p = std::get_if<node_unary_expr>(&lexp))
+            {
+                if(auto q = std::get_if<node_unary_expr>(&rexp))
+                {
+                    auto syntax_node_l = unary_expr_analysis(*p, stmts);
+                    auto syntax_node_r = unary_expr_analysis(*q, stmts);
+                    auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters={syntax_node_l, syntax_node_r}};
+                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                }
+                else if(auto q = std::get_if<std::shared_ptr<syntax_expr>>(&rexp))
+                {
+                    auto syntax_node_l = unary_expr_analysis(*p, stmts);
+                    auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters={syntax_node_l, *q}};
+                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                }
+                else
+                    assert(false);
+            }
+            else if(auto p = std::get_if<std::shared_ptr<syntax_expr>>(&lexp))
+            {
+                if(auto q = std::get_if<std::shared_ptr<syntax_expr>>(&rexp))
+                {
+                    auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters={*p, *q}};
+                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                }
+                else if(auto q = std::get_if<node_unary_expr>(&rexp))
+                {
+                    auto syntax_node_r = unary_expr_analysis(*q, stmts);
+                    auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters={*p, syntax_node_r}};
+                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                }
+                else
+                    assert(false);
+            }
+            else
+                assert(false);
+            stmts.push_back(syntax_stmt{.stmt = syntax_node});
+            expr_stack.pop_back();
+            expr_stack.pop_back();
+            op_stack.pop_back();
+            op_stack.push_back(node.ops[i]);
+            expr_stack.push_back(syntax_node);
+            expr_stack.push_back(node.vars[i+1]);
+        }
+        else
+        {
+            op_stack.push_back(node.ops[i]);
+            expr_stack.push_back(node.vars[i+1]);
+        }
+    }
+    while(!op_stack.empty())
+    {
+        std::shared_ptr<syntax_expr> syntax_node;
+        auto fun_name = op_stack[op_stack.size()-1];
+        auto lexp = expr_stack[expr_stack.size()-2];
+        auto rexp = expr_stack[expr_stack.size()-1];
+        if(auto p = std::get_if<node_unary_expr>(&lexp))
+        {
+            if(auto q = std::get_if<node_unary_expr>(&rexp))
+            {
+                auto syntax_node_l = unary_expr_analysis(*p, stmts);
+                auto syntax_node_r = unary_expr_analysis(*q, stmts);
+                auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters={syntax_node_l, syntax_node_r}};
+                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+            }
+            else if(auto q = std::get_if<std::shared_ptr<syntax_expr>>(&rexp))
+            {
+                auto syntax_node_l = unary_expr_analysis(*p, stmts);
+                auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters={syntax_node_l, *q}};
+                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+            }
+            else
+                assert(false);
+        }
+        else if(auto p = std::get_if<std::shared_ptr<syntax_expr>>(&lexp))
+        {
+            if(auto q = std::get_if<std::shared_ptr<syntax_expr>>(&rexp))
+            {
+                auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters={*p, *q}};
+                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+            }
+            else if(auto q = std::get_if<node_unary_expr>(&rexp))
+            {
+                auto syntax_node_r = unary_expr_analysis(*q, stmts);
+                auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters={*p, syntax_node_r}};
+                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+            }
+            else
+                assert(false);
+        }
+        else
+            assert(false);
+        stmts.push_back(syntax_stmt{.stmt = syntax_node});
+        expr_stack.pop_back();
+        expr_stack.pop_back();
+        op_stack.pop_back();
+        expr_stack.push_back(syntax_node);
+    }
+    if(auto ret = std::get_if<std::shared_ptr<syntax_expr>>(&expr_stack[0]))
+    {
+        return *ret;
+    }
 }
 
 std::shared_ptr<syntax_expr> syntax_module::unary_expr_analysis(const node_unary_expr &node, std::vector<syntax_stmt> &stmts)
@@ -305,7 +393,15 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     {
         if(auto q = std::get_if<node_identifier>(p))
         {
-            return nullptr;
+            try
+            {
+                stmts.push_back(syntax_stmt{.stmt=env_var.find(q->val)}); 
+                return env_var.find(q->val);
+            }
+            catch(const std::string& e)
+            {
+                throw e;
+            }
         }
         else if(auto q = std::get_if<node_constant>(p))
         {
@@ -327,7 +423,16 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     }
     else if(auto p = std::get_if<node_post_call_expr>(&node.expr))
     {
-        return nullptr;
+        auto fun_name_ptr = std::get_if<node_primary_expr>(&p->callable->expr);
+        auto fun_name = std::get_if<node_identifier>(fun_name_ptr);
+        auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name->val};
+        for(auto para: p->exp_list)
+        {
+            syntax_fun_node.parameters.push_back(expr_analysis(*para, stmts));
+        }
+        auto syntax_node = env_fun.infer_type(fun_name->val, syntax_fun_node);
+        stmts.push_back(syntax_stmt{.stmt = syntax_node});
+        return syntax_node;
     }
     else if(auto p = std::get_if<node_post_dot_expr>(&node.expr))
     {

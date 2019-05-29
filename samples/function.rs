@@ -1,4 +1,4 @@
-val x:(i32) =3+2-3;
+val x:(i32) = (x = y = 2);
 var y:(u16) =0;
 type t2 = (t1|z:i8|a:u8);
 type t1 = (t3, y:i32);
@@ -15,7 +15,7 @@ fn fun()
 fn main() (i8,i32,u8) {
 	if(x>1)
 	{
-		y=1;
+		y=fun();
 	}
 	else if(x>2)
 	{

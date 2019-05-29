@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 
 #include <vector>
 #include <map>
@@ -31,6 +31,19 @@ public:
             }
         }
         return t;
+    }
+
+    T find(const std::string &name)
+    {
+        for (auto rit = stack.rbegin(); rit != stack.rend(); rit++)
+        {
+            auto it = rit->find(name);
+            if (it != rit->end())
+            {
+                return it->second;
+            }
+        }
+        throw std::string("not found");
     }
 
     void insert(const std::string &name, const T &t)
