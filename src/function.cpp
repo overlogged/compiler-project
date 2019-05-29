@@ -54,11 +54,12 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name,synt
     }
     auto &fun = it->second;
     bool match = true;
+    bool match_flag = false;
     for (auto i = 0; i < fun.size(); i++)
     {
         if (fun[i].parameters.size() == call.parameters.size())
-        {
-            for (auto j = 0; j < fun[j].parameters.size(); j++)
+        { 
+            for (auto j = 0; j < fun[i].parameters.size(); j++)
             {
                 auto t1 = fun[i].parameters[j].second;
                 auto t2 = call.parameters[j]->type;
@@ -83,15 +84,22 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name,synt
                     break;
                 }
             }
-            if (match)
-            {
-                ret_type = fun[i].ret_type;
-            }
-            else
-                throw string("parameters not match");
+        }
+        if (match)
+        {
+            ret_type = fun[i].ret_type;
+            match_flag =true;
+            break;
+        }
+        else
+        {
+            match = true;
         }
     }
-    return ret_type;
+    if(match_flag)
+        return ret_type;
+    else
+        throw("parameters not match");
 }
 
 function_table::function_table()
