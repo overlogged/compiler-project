@@ -2,11 +2,8 @@
 
 static void fix_lookahead(type_table &env_type, top_graph &dependency_graph);
 
-void syntax_module::syntax_analysis(node_module module)
+void syntax_module::typedef_analysis(const node_module &module)
 {
-    // 对于每一个可以定义函数的“环境”
-
-    // 第一步：扫描所有类型定义，生成全局类型表（固定）
     // 需要封装类型表的功能，以支持 built-in 类型
     top_graph dependency_graph;
     for (auto &block : module.blocks)
@@ -32,14 +29,7 @@ void syntax_module::syntax_analysis(node_module module)
             }
         }
     }
-    try
-    {
-        fix_lookahead(env_type, dependency_graph);
-    }
-    catch (std::string &e)
-    {
-        std::cout << e << '\n';
-    }
+    fix_lookahead(env_type, dependency_graph);
 
     if (debug_flag)
     {
@@ -47,8 +37,12 @@ void syntax_module::syntax_analysis(node_module module)
         env_type.print_type_table();
         std::cout << "===================end===================\n\n";
     }
+}
 
-    // 第二步：扫描所有函数定义，生成全局函数表（固定）
+std::vector<syntax_fun> syntax_module::fundef_analysis(const node_module &module)
+{
+    std::vector<syntax_fun> fun_lst;
+
     // 需要封装函数表的功能，以支持 built-in 类型
     for (auto &block : module.blocks)
     {
@@ -82,16 +76,20 @@ void syntax_module::syntax_analysis(node_module module)
                 .parameters = params,
                 .origin_stmts = pfun_block->statement_list};
 
+            fun_lst.push_back(fun);
             env_fun.add_func(fun);
         }
     }
+    return fun_lst;
+}
 
-    // 第三步：扫描全局变量的声明，生成全局变量符号和类型定义，此处需要类型推导。生成入口函数 main
+void syntax_module::global_var_analysis(const node_module &module)
+{
+    std::vector<syntax_stmt> stmts;
     syntax_fun main_fun;
     main_fun.fun_name = "main";
     main_fun.ret_type = env_type.get_type("i32");
     env_var.push();
-    std::vector<syntax_stmt> stmts;
     for (auto &block : module.blocks)
     {
         if (auto p_global_var_def = std::get_if<node_global_var_def_block>(&block))
@@ -100,22 +98,22 @@ void syntax_module::syntax_analysis(node_module module)
             {
                 auto init_expr = expr_analysis(def.initial_exp, stmts);
                 // test remove!!
-                // std::cout << s.size() << '\n';
-                // for(auto it : s)
-                // {
-                //     auto tmp = std::get_if<std::shared_ptr<syntax_expr>>(&it.stmt);
-                //     if(auto t_1 = std::get_if<syntax_literal>(&tmp->get()->val))
-                //     {
-                //         if(auto t_2 = std::get_if<unsigned long long>(&t_1->val))
-                //         {
-                //             std::cout << *t_2 << '\n';
-                //         }
-                //     }
-                //     else if(auto t_3 = std::get_if<syntax_fun_call>(&tmp->get()->val))
-                //     {
-                //         std::cout << t_3->fun_name << '\n';
-                //     }
-                // }
+                std::cout << stmts.size() << '\n';
+                for(auto it : stmts)
+                {
+                    auto tmp = std::get_if<std::shared_ptr<syntax_expr>>(&it.stmt);
+                    if(auto t_1 = std::get_if<syntax_literal>(&tmp->get()->val))
+                    {
+                        if(auto t_2 = std::get_if<unsigned long long>(&t_1->val))
+                        {
+                            std::cout << *t_2 << '\n';
+                        }
+                    }
+                    else if(auto t_3 = std::get_if<syntax_fun_call>(&tmp->get()->val))
+                    {
+                        std::cout << t_3->fun_name << '\n';
+                    }
+                }
 
                 std::shared_ptr<syntax_expr> rval;
                 syntax_type t = env_type.type_check(def.var_type);
@@ -144,17 +142,72 @@ void syntax_module::syntax_analysis(node_module module)
 
                     // 初始化
                     syntax_assign assign{.lval = var, .rval = rval};
-                    main_fun.stmts.push_back(syntax_stmt{.stmt = assign});
+                    stmts.push_back(syntax_stmt{.stmt = assign});
                 }
             }
         }
     }
-
+    // todo: fun 调用 .main
+    fun_impl.emplace_back(std::make_pair("main", std::move(stmts)));
     env_fun.add_func(main_fun);
+}
+
+// todo:
+syntax_stmt syntax_module::if_analysis(const node_if_statement &node)
+{
+    syntax_if_block block;
+    env_var.push();
+    block.condition_stmt.push_back(std::vector<syntax_stmt>());
+    block.condition.push_back(expr_analysis(node.if_condition,block.condition_stmt[0]));
+    block.branch.push_back(statement_analysis(node.if_statement));
+    block.defaul_branch = statement_analysis(node.else_statement);
+    auto it_condition = node.else_if_statement.else_if_condition.begin();
+    auto it_statement = node.else_if_statement.else_if_statement.begin();
+    for(int i=1;it_condition!=node.else_if_statement.else_if_condition.end();it_condition++,it_statement++,i++)
+    {
+        block.condition_stmt.push_back(std::vector<syntax_stmt>());
+        block.condition.push_back(expr_analysis(*it_condition,block.condition_stmt[i]));
+        block.branch.push_back(statement_analysis(*it_statement));
+    }
+    env_var.pop();
+    return {block};
+}
+
+syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
+{
+    syntax_while_block block;
+    env_var.push();
+    block.condition = expr_analysis(node.while_condition,block.condition_stmt);
+    //add while condition to the statement
+    auto new_node = node;
+    auto condition_stmt = node_statement{.statement = node.while_condition};
+    new_node.loop_statement.push_back(condition_stmt);
+    //-------------------------------------
+    block.body = statement_analysis(new_node.loop_statement);
+    env_var.pop();
+    return {block};
+}
+
+void syntax_module::syntax_analysis(const node_module &module)
+{
+    // 对于每一个可以定义函数的“环境”
+
+    // 第一步：扫描所有类型定义，生成全局类型表（固定）
+    typedef_analysis(module);
+
+    // 第二步：扫描所有函数定义，生成全局函数表（固定）
+    auto fun_lst = fundef_analysis(module);
+
+    // 第三步：扫描全局变量的声明，生成全局变量符号和类型定义，此处需要类型推导。生成入口函数 main
+    global_var_analysis(module);
 
     // 第四步：进入每个 block，完成语义分析
     // - 变量的分析（参考全局变量部分）
     // - 控制流 if, while 的分析
+    for (auto &fun : fun_lst)
+    {
+        function_analysis(fun);
+    }
 }
 
 static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
@@ -444,4 +497,92 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     }
     else 
         assert(false);
+    return nullptr;
+}
+
+void syntax_module::function_analysis(const syntax_fun &node)
+{
+    env_var.push();
+    std::vector<syntax_stmt> stmts;
+
+    // 参数加入局部变量
+    for (auto &arg : node.parameters)
+    {
+        auto exp = std::make_shared<syntax_expr>();
+        exp->type = arg.second;
+        exp->val = syntax_var{syntax_var::PARAMETER};
+        env_var.insert(arg.first, exp);
+    }
+
+    stmts = statement_analysis(node.origin_stmts);
+
+    // 分析结束，保存函数实现
+    fun_impl.emplace_back(std::make_pair(node.fun_name, std::move(stmts)));
+    env_var.pop();
+}
+std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_statement> origin_stmts)
+{
+    std::vector<syntax_stmt> stmts;
+    for (auto &node_stmt : origin_stmts)
+    {
+        auto ps = &node_stmt.statement;
+        if (auto def = std::get_if<node_var_def_statement>(ps))
+        {
+            auto init_expr = expr_analysis(def->initial_exp, stmts);
+            std::shared_ptr<syntax_expr> rval;
+
+            syntax_type t = env_type.type_check(def->var_type);
+            if (t.is_auto())
+            {
+                // 类型推导
+                t = init_expr->type;
+                rval = init_expr;
+            }
+            else
+            {
+                // 隐式转换
+                auto impl_convert = syntax_type_convert{.source_expr = init_expr, .target_type = t};
+                rval->type = t;
+                rval->val = impl_convert;
+            }
+
+            // 分配局部变量
+            for (auto &v : def->var_list)
+            {
+                auto var = std::make_shared<syntax_expr>();
+                var->val = syntax_var{.alloc_type = syntax_var::STACK};
+
+                // 声明
+                env_var.insert(v.val, var);
+
+                // 初始化
+                syntax_assign assign{.lval = var, .rval = rval};
+                stmts.push_back(syntax_stmt{.stmt = assign});
+            }
+        }
+        else if (auto ifb = std::get_if<node_if_statement>(ps))
+        {
+            stmts.emplace_back(if_analysis(*ifb));
+        }
+        else if (auto whileb = std::get_if<node_while_statement>(ps))
+        {
+            stmts.emplace_back(while_analysis(*whileb));
+        }
+        else if (auto forb = std::get_if<node_for_statement>(ps))
+        {
+            // todo:
+            throw std::string("unsupported for statement");
+        }
+        else if (auto expr = std::get_if<node_expression>(ps))
+        {
+            auto e = expr_analysis(*expr, stmts);
+            stmts.emplace_back(syntax_stmt{e});
+        }
+        else if (auto ret = std::get_if<node_return_statement>(ps))
+        {
+            auto ret_e = expr_analysis(ret->expr, stmts);
+            stmts.emplace_back(syntax_stmt{syntax_return{ret_e}});
+        }
+    }
+    return stmts;
 }
