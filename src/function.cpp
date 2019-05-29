@@ -8,13 +8,67 @@ using namespace std;
 std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_name, syntax_fun_call &call)
 {
     auto p_ret = make_shared<syntax_expr>();
-    p_ret->type =  syntax_type{.type = primary_type{.name = "bool",.size = 1}};
     p_ret->val = call;
     std::string t1 = call.parameters[0]->type.get_primary();
     std::string t2 = call.parameters[1]->type.get_primary();
-    // == !=
-    if(func_name == "==" || func_name == "!=")
+    // .
+    if(func_name[0] == "." && func_name[func_name.size()-1] != "?")
     {
+        bool match = false;
+        std::string field_name = func_name.sub_str(1,func_name.size()-1);
+        if(call.parameters.size() != 1)
+            throw("parameters not match");
+        auto ptr_product_val = call.parameters[0];
+        auto ptr_product_type = std::get_if<product_type>(&ptr_product_val->type.type);
+        if(!ptr_product_type)
+            throw("parameters not match");
+        auto it_fields = ptr_product_type->fields.begin()
+        auto it_type = ptr_product_type->types.begin();;
+        for(;it_fields!=ptr_product_type->fields.end();it_fields++,it_type++)
+        {
+            if(field_name == *it_fields)
+                {
+                    match = true;
+                    p_ret->type = *it_type;
+                    break;
+                }
+        }
+        if(match)
+            return p_ret;
+        else
+            throw("parameters not match");
+    }
+    //.?
+    else if(func_name[0] == "." && func_name[func_name.size()-1] == "?")
+    {
+        bool match = false;
+        std::string alt_name = func_name.sub_str(1,func_name.size()-2);
+        if(call.parameters.size() != 1)
+            throw("parameters not match");
+        auto ptr_sum_val = call.parameters[0];
+        auto ptr_sum_type = std::get_if<sum_type>(&ptr_sum_val->type.type);
+        if(!ptr_product_type)
+            throw("parameters not match");
+        auto it_alt = ptr_sum_type->alters.begin();
+        auto it_type = ptr_sum_type->types.begin();
+        for(;it_alt!=ptr_sum_type->alters.end();it_alt++,it_type++)
+        {
+            if(alt_name == *it_alt)
+                {
+                    match = true;
+                    p_ret->type = *it_type;
+                    break;
+                }
+        }
+        if(match)
+            return p_ret;
+        else
+            throw("parameters not match");
+    }
+    // == !=
+    else if(func_name == "==" || func_name == "!=")
+    {
+        p_ret->type =  syntax_type{.type = primary_type{.name = "bool",.size = 1}};
         if(call.parameters.size() != 2)
             throw("parameters not match");
         if(call.parameters[0]->type.type_equal(call.parameters[1]->type))
@@ -65,7 +119,7 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name,synt
                 auto t2 = call.parameters[j]->type;
                 auto t1p = fun[i].parameters[j].second.get_primary();
                 auto t2p = call.parameters[j]->type.get_primary();
-                if (t1p == "" || t2p == "")
+                else if (t1p == "" || t2p == "")
                 {
                     if (!t2.subtyping(t1))
                     {
@@ -75,8 +129,8 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name,synt
                 }
                 else if (t1p != "" && t2p != "")
                 {
-                    //implicit_conv(call.parameters[j],fun[i].parameters[j].second());
-                    implicit_conv(call.parameters[j],fun[i].parameters[j].second);
+                    if(t1p != t2p)
+                        implicit_conv(call.parameters[j],fun[i].parameters[j].second);
                 }
                 else
                 {
@@ -104,7 +158,7 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name,synt
 
 function_table::function_table()
 {
-    vec_str op = {"+", "-", "*", "/", "%", "&", "|", "^", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",">","<",">=","<="};
+    vec_str op = {"+", "-", "*", "/", "%", "&", "|", "^",">","<",">=","<="};
     for (int i = 0; i < op.size(); i++)
     {
         create_bin_op_fun(op[i], "i8", 1, "i8", 1, "i8", 1);
