@@ -12,24 +12,24 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
     std::string t1 = call.parameters[0]->type.get_primary();
     std::string t2 = call.parameters[1]->type.get_primary();
     // .
-    if(func_name[0] == "." && func_name[func_name.size()-1] != "?")
+    if(func_name[0] == '.' && func_name[func_name.size()-1] != '?')
     {
         bool match = false;
-        std::string field_name = func_name.sub_str(1,func_name.size()-1);
+        std::string field_name = func_name.substr(1,func_name.size()-1);
         if(call.parameters.size() != 1)
             throw("parameters not match");
         auto ptr_product_val = call.parameters[0];
         auto ptr_product_type = std::get_if<product_type>(&ptr_product_val->type.type);
         if(!ptr_product_type)
             throw("parameters not match");
-        auto it_fields = ptr_product_type->fields.begin()
-        auto it_type = ptr_product_type->types.begin();;
+        auto it_fields = ptr_product_type->fields.begin();
+        auto it_type = ptr_product_type->types.begin();
         for(;it_fields!=ptr_product_type->fields.end();it_fields++,it_type++)
         {
             if(field_name == *it_fields)
                 {
                     match = true;
-                    p_ret->type = *it_type;
+                    p_ret->type = **it_type;
                     break;
                 }
         }
@@ -39,15 +39,15 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
             throw("parameters not match");
     }
     //.?
-    else if(func_name[0] == "." && func_name[func_name.size()-1] == "?")
+    else if(func_name[0] == '.' && func_name[func_name.size()-1] == '?')
     {
         bool match = false;
-        std::string alt_name = func_name.sub_str(1,func_name.size()-2);
+        std::string alt_name = func_name.substr(1,func_name.size()-2);
         if(call.parameters.size() != 1)
             throw("parameters not match");
         auto ptr_sum_val = call.parameters[0];
         auto ptr_sum_type = std::get_if<sum_type>(&ptr_sum_val->type.type);
-        if(!ptr_product_type)
+        if(!ptr_sum_type)
             throw("parameters not match");
         auto it_alt = ptr_sum_type->alters.begin();
         auto it_type = ptr_sum_type->types.begin();
@@ -56,7 +56,7 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
             if(alt_name == *it_alt)
                 {
                     match = true;
-                    p_ret->type = *it_type;
+                    p_ret->type = **it_type;
                     break;
                 }
         }
@@ -119,7 +119,7 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name,synt
                 auto t2 = call.parameters[j]->type;
                 auto t1p = fun[i].parameters[j].second.get_primary();
                 auto t2p = call.parameters[j]->type.get_primary();
-                else if (t1p == "" || t2p == "")
+                if (t1p == "" || t2p == "")
                 {
                     if (!t2.subtyping(t1))
                     {
