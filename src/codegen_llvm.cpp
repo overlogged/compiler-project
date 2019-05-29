@@ -45,6 +45,6 @@ void codegen_llvm::codegen()
 
     // 输出
     std::error_code c;
-    raw_fd_ostream fout(StringRef("samples/out.ll"), c);
+    raw_fd_ostream fout(StringRef("samples/out.ll"), c, sys::fs::F_Text);
     fout << *p_module;
 }

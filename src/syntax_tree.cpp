@@ -8,9 +8,9 @@ void syntax_module::typedef_analysis(const node_module &module)
     top_graph dependency_graph;
     for (auto &block : module.blocks)
     {
-        if (auto type_def_block = std::get_if<node_global_type_def_block>(&block))
+        if (auto type_def_block = std::get_if<node_global_type_def_block>(&block.val))
         {
-            for (auto type_def_statm : *(type_def_block))
+            for (auto type_def_statm : type_def_block->arr)
             {
                 if (dependency_graph.contain(type_def_statm.type_name))
                     dependency_graph.set_internal_index(type_def_statm.type_name);
@@ -46,12 +46,12 @@ std::vector<syntax_fun> syntax_module::fundef_analysis(const node_module &module
     // 需要封装函数表的功能，以支持 built-in 类型
     for (auto &block : module.blocks)
     {
-        if (auto pfun_block = std::get_if<node_function_block>(&block))
+        if (auto pfun_block = std::get_if<node_function_block>(&block.val))
         {
             std::vector<std::pair<std::string, syntax_type>> params;
             if (!pfun_block->params.empty_flag)
             {
-                auto type = env_type.type_check(node_type{false, pfun_block->params.params});
+                auto type = env_type.type_check(node_type{block.loc, false, pfun_block->params.params});
                 if (auto p_prod = std::get_if<product_type>(&type.type))
                 {
                     for (auto i = 0; i < p_prod->fields.size(); i++)
@@ -92,9 +92,9 @@ void syntax_module::global_var_analysis(const node_module &module)
     env_var.push();
     for (auto &block : module.blocks)
     {
-        if (auto p_global_var_def = std::get_if<node_global_var_def_block>(&block))
+        if (auto p_global_var_def = std::get_if<node_global_var_def_block>(&block.val))
         {
-            for (auto &def : *p_global_var_def)
+            for (auto &def : p_global_var_def->arr)
             {
                 auto init_expr = expr_analysis(def.initial_exp, stmts);
                 // test remove!!
@@ -157,15 +157,15 @@ syntax_stmt syntax_module::if_analysis(const node_if_statement &node)
     syntax_if_block block;
     env_var.push();
     block.condition_stmt.push_back(std::vector<syntax_stmt>());
-    block.condition.push_back(expr_analysis(node.if_condition,block.condition_stmt[0]));
+    block.condition.push_back(expr_analysis(node.if_condition, block.condition_stmt[0]));
     block.branch.push_back(statement_analysis(node.if_statement));
     block.defaul_branch = statement_analysis(node.else_statement);
     auto it_condition = node.else_if_statement.else_if_condition.begin();
     auto it_statement = node.else_if_statement.else_if_statement.begin();
-    for(int i=1;it_condition!=node.else_if_statement.else_if_condition.end();it_condition++,it_statement++,i++)
+    for (int i = 1; it_condition != node.else_if_statement.else_if_condition.end(); it_condition++, it_statement++, i++)
     {
         block.condition_stmt.push_back(std::vector<syntax_stmt>());
-        block.condition.push_back(expr_analysis(*it_condition,block.condition_stmt[i]));
+        block.condition.push_back(expr_analysis(*it_condition, block.condition_stmt[i]));
         block.branch.push_back(statement_analysis(*it_statement));
     }
     env_var.pop();
@@ -176,10 +176,10 @@ syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
 {
     syntax_while_block block;
     env_var.push();
-    block.condition = expr_analysis(node.while_condition,block.condition_stmt);
+    block.condition = expr_analysis(node.while_condition, block.condition_stmt);
     //add while condition to the statement
     auto new_node = node;
-    auto condition_stmt = node_statement{.statement = node.while_condition};
+    auto condition_stmt = node_statement{.loc = node.loc, .statement = node.while_condition};
     new_node.loop_statement.push_back(condition_stmt);
     //-------------------------------------
     block.body = statement_analysis(new_node.loop_statement);

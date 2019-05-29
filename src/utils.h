@@ -7,6 +7,8 @@
 #include <cassert>
 #include <variant>
 #include <memory>
+#include <sstream>
+#include "location.hh"
 
 using vec_str = std::vector<std::string>;
 
@@ -295,4 +297,21 @@ void cal_float(const std::string &s, int base, T &res)
         else
             res /= pow(exp_base, exp_part);
     }
+}
+
+inline std::string to_string(const yy::location &loc)
+{
+    std::stringstream ostr;
+    std::string s;
+    unsigned end_col = 0 < loc.end.column ? loc.end.column - 1 : 0;
+
+    ostr << "\033[1m";
+    if (loc.begin.filename)
+    {
+        ostr << *loc.begin.filename << ':';
+    }
+    ostr << loc.begin.line << ":" << loc.begin.column << ": \033[0m";
+
+    ostr >> s;
+    return s;
 }
