@@ -158,7 +158,7 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name,synt
 
 function_table::function_table()
 {
-    vec_str op = {"+", "-", "*", "/", "%", "&", "|", "^",">","<",">=","<="};
+    vec_str op = {"+", "-", "*", "/", "%", "&", "|", "^"};
     for (int i = 0; i < op.size(); i++)
     {
         create_bin_op_fun(op[i], "i8", 1, "i8", 1, "i8", 1);
@@ -169,6 +169,18 @@ function_table::function_table()
         create_bin_op_fun(op[i], "u32", 4, "u32", 4, "u32", 4);
         create_bin_op_fun(op[i], "i64", 8, "i64", 8, "i64", 8);
         create_bin_op_fun(op[i], "u64", 8, "u64", 8, "u64", 8);
+    }
+    op = {">","<",">=","<="};
+    for(int i =0;i<op.size();i++)
+    {
+        create_bin_op_fun(op[i], "bool", 1, "i8", 1, "i8", 1);
+        create_bin_op_fun(op[i], "bool", 1, "u8", 1, "u8", 1);
+        create_bin_op_fun(op[i], "bool", 1, "i16", 2, "i16", 2);
+        create_bin_op_fun(op[i], "bool", 1, "u16", 2, "u16", 2);
+        create_bin_op_fun(op[i], "bool", 1, "i32", 4, "i32", 4);
+        create_bin_op_fun(op[i], "bool", 1, "u32", 4, "u32", 4);
+        create_bin_op_fun(op[i], "bool", 1, "i64", 8, "i64", 8);
+        create_bin_op_fun(op[i], "bool", 1, "u64", 8, "u64", 8);
     }
     op = {"<<", ">>", ">>=", "<<="};
     vec_str param_type = {"i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"};
