@@ -458,7 +458,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
 {
     if(auto p = std::get_if<node_primary_expr>(&node.expr))
     {
-        if(auto q = std::get_if<node_identifier>(p))
+        if(auto q = std::get_if<node_identifier>(&p->val))
         {
             try
             {
@@ -470,7 +470,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
                 throw e;
             }
         }
-        else if(auto q = std::get_if<node_constant>(p))
+        else if(auto q = std::get_if<node_constant>(&p->val))
         {
             auto type_name = std::get_if<node_identifier>(&(q->type->type_val));
             auto type = syntax_type{.type = primary_type{.name = type_name->val}};
@@ -481,7 +481,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
             stmts.push_back(syntax_stmt{.stmt = syntax_node});
             return syntax_node;
         }
-        else if(auto q = std::get_if<std::shared_ptr<node_expression>>(p))
+        else if(auto q = std::get_if<std::shared_ptr<node_expression>>(&p->val))
         {
             return expr_analysis(*(q->get()), stmts);
         }
@@ -491,9 +491,9 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     else if(auto p = std::get_if<node_post_call_expr>(&node.expr))
     {
         auto fun_name_ptr = std::get_if<node_primary_expr>(&p->callable->expr);
-        auto fun_name = std::get_if<node_identifier>(fun_name_ptr);
+        auto fun_name = std::get_if<node_identifier>(&fun_name_ptr->val);
         auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name->val};
-        for(auto para: p->exp_list)
+        for(auto para: p->exp_list.arr)
         {
             syntax_fun_node.parameters.push_back(expr_analysis(*para, stmts));
         }
@@ -605,7 +605,7 @@ std::shared_ptr<syntax_expr> syntax_module::is_left_value(const node_unary_expr&
 {
     if(auto p = std::get_if<node_primary_expr>(&node.post_expr->expr))
     {
-        if(auto q = std::get_if<node_identifier>(p))
+        if(auto q = std::get_if<node_identifier>(&p->val))
         {
             return env_var.find(q->val);
         }
