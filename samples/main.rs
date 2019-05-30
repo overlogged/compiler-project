@@ -1,7 +1,7 @@
-val x:i32 =0;
+val x:i32 = 0;
 var y = fun(3+3*6);
 
-fn fun(x:i32) i8 {
+fn fun(x:i8) i8 {
     if x==0 {
         return 32;
     } else if x==1 {
@@ -12,6 +12,6 @@ fn fun(x:i32) i8 {
 }
 
 fn main() {
-    val y:i32 = 1;
+    val y:i8 = 1;
     val z = fun(y);
 }

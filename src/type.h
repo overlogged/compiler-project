@@ -157,6 +157,13 @@ struct syntax_type
             return "";
     }
 
+    int get_primary_size() const
+    {
+        if (auto p = std::get_if<primary_type>(&type))
+            return p->size;
+        else
+            return 0;
+    }
     // size_t get_size() const {
     //     if(auto p = std::get_if<primary_type>(&type)) {
     //         return p->size;

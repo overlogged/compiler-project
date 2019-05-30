@@ -27,6 +27,10 @@ class codegen_llvm
     llvm::Type *type_product(const product_type &t);
     llvm::Type *llvm_type(const syntax_type &s);
 
+    llvm::Value *get_value(const std::shared_ptr<syntax_expr> &expr);
+
+    llvm::IRBuilder<> *builder;
+
 public:
     codegen_llvm(const syntax_module &mod) : module(mod) {}
 

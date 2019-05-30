@@ -129,6 +129,8 @@ void syntax_module::global_var_analysis(const node_module &module)
                     auto impl_convert = syntax_type_convert{.source_expr = init_expr, .target_type = t};
                     rval->type = t;
                     rval->val = impl_convert;
+                    rval->reserved = (void *)1;
+                    stmts.emplace_back(syntax_stmt{rval});
                 }
 
                 // 分配全局变量
@@ -148,7 +150,25 @@ void syntax_module::global_var_analysis(const node_module &module)
             }
         }
     }
-    // todo: fun 调用 .main
+    // todo: main 函数类型检查
+    auto user_main_fun = env_fun.get_user_fun(".main");
+
+    auto call_main = std::make_shared<syntax_expr>();
+    auto call_struct = syntax_fun_call();
+    call_struct.fun_name = ".main";
+    call_main->type = user_main_fun.ret_type;
+    call_main->val = call_struct;
+
+    stmts.push_back(syntax_stmt{call_main});
+
+    // return 0
+    auto zero = std::make_shared<syntax_expr>();
+    auto i32 = env_type.get_type("i32");
+    zero->type = i32;
+    zero->val = syntax_literal{.type = i32, .val = (unsigned long long)0};
+    stmts.push_back(syntax_stmt{zero});
+    stmts.push_back(syntax_stmt{syntax_return{zero}});
+
     fun_impl.emplace_back(std::make_pair("main", std::move(stmts)));
     env_fun.add_func(main_fun);
 }
@@ -470,7 +490,11 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
         {
             try
             {
-                stmts.push_back(syntax_stmt{.stmt = env_var.find(q->val)});
+                // 这里不能加
+                // 因为加了就会有一次分配行为
+                // 而分配空间是在 val,var 语句里做的
+                // stmts.push_back(syntax_stmt{.stmt = env_var.find(q->val)});
+                // 这里应该是 load
                 return env_var.find(q->val);
             }
             catch (const std::string &e)
@@ -481,7 +505,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
         else if (auto q = std::get_if<node_constant>(&p->val))
         {
             auto type_name = std::get_if<node_identifier>(&(q->type->type_val));
-            auto type = syntax_type{.type = primary_type{.name = type_name->val}};
+            auto type = env_type.get_type(type_name->val);
             auto literal = syntax_literal{.type = type, .val = q->val};
             auto syntax_node = std::make_shared<syntax_expr>();
             syntax_node->type = type;
@@ -542,6 +566,7 @@ void syntax_module::function_analysis(const syntax_fun &node)
     fun_impl.emplace_back(std::make_pair(node.fun_name, std::move(stmts)));
     env_var.pop();
 }
+
 std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_statement> origin_stmts)
 {
     std::vector<syntax_stmt> stmts;
@@ -566,6 +591,7 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
                 auto impl_convert = syntax_type_convert{.source_expr = init_expr, .target_type = t};
                 rval->type = t;
                 rval->val = impl_convert;
+                stmts.emplace_back(syntax_stmt{rval});
             }
 
             // 分配局部变量
@@ -577,6 +603,7 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
 
                 // 声明
                 env_var.insert(v.val, var);
+                stmts.push_back(syntax_stmt{var});
 
                 // 初始化
                 syntax_assign assign{.lval = var, .rval = rval};
