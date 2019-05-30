@@ -16,11 +16,11 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
         bool match = false;
         std::string field_name = func_name.substr(1, func_name.size() - 1);
         if (call.parameters.size() != 1)
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN);
         auto ptr_product_val = call.parameters[0];
         auto ptr_product_type = std::get_if<product_type>(&ptr_product_val->type.type);
         if (!ptr_product_type)
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN);
         auto it_fields = ptr_product_type->fields.begin();
         auto it_type = ptr_product_type->types.begin();
         for (; it_fields != ptr_product_type->fields.end(); it_fields++, it_type++)
@@ -35,7 +35,7 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
         if (match)
             return p_ret;
         else
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN);
     }
     //.?
     else if (func_name[0] == '.' && func_name[func_name.size() - 1] == '?')
@@ -43,11 +43,11 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
         bool match = false;
         std::string alt_name = func_name.substr(1, func_name.size() - 2);
         if (call.parameters.size() != 1)
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN);
         auto ptr_sum_val = call.parameters[0];
         auto ptr_sum_type = std::get_if<sum_type>(&ptr_sum_val->type.type);
         if (!ptr_sum_type)
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN);
         auto it_alt = ptr_sum_type->alters.begin();
         auto it_type = ptr_sum_type->types.begin();
         for (; it_alt != ptr_sum_type->alters.end(); it_alt++, it_type++)
@@ -62,14 +62,14 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
         if (match)
             return p_ret;
         else
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN);
     }
     // == !=
     else if (func_name == "==" || func_name == "!=")
     {
         p_ret->type = syntax_type{.type = primary_type{.name = "bool", .size = 1}};
         if (call.parameters.size() != 2)
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN);
 
         std::string t1 = call.parameters[0]->type.get_primary();
         std::string t2 = call.parameters[1]->type.get_primary();
@@ -83,35 +83,30 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
             implicit_conv(call.parameters[0], call.parameters[1]);
         }
         else
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN);
     }
     else
     {
         // inline function
-        try
-        {
-            p_ret->type = infer_type_in_list(func_name, call, inline_fun);
+        bool find_flag =false;
+        p_ret->type = infer_type_in_list(func_name, call, inline_fun,find_flag);
+        if(find_flag)
             return p_ret;
-        }
-        catch (std::string exception)
-        {
-            if (exception == "parameters not match")
-                throw(exception);
-        }
         // normal function
-        p_ret->type = infer_type_in_list(func_name, call, normal_fun);
+        p_ret->type = infer_type_in_list(func_name, call, normal_fun,find_flag);
+        if(find_flag)
+            return p_ret;
+        //not find
+        throw inner_error(INNER_NO_MATCH_FUN);
     }
-    return p_ret;
 }
 
-syntax_type function_table::infer_type_in_list(const std::string &func_name, syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list)
+syntax_type function_table::infer_type_in_list(const std::string &func_name, syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list,bool& find_flag)
 {
     syntax_type ret_type;
     auto it = func_list.find(func_name);
     if (it == func_list.end())
-    {
-        throw string("no such function '" + func_name + "'");
-    }
+        return syntax_type();
     auto &fun = it->second;
     bool match = true;
     bool match_flag = false;
@@ -157,9 +152,12 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, syn
         }
     }
     if (match_flag)
+    {
+        find_flag =true;
         return ret_type;
+    }
     else
-        throw("parameters not match");
+        return syntax_type();
 }
 
 function_table::function_table()
@@ -249,7 +247,7 @@ void function_table::implicit_conv(std::shared_ptr<syntax_expr> param1, std::sha
         param1 = conv;
     }
     else
-        throw("parameters not match");
+        throw inner_error(INNER_NO_MATCH_FUN);
 }
 
 void function_table::implicit_conv(std::shared_ptr<syntax_expr> param, const syntax_type fun_param_type)
@@ -265,5 +263,5 @@ void function_table::implicit_conv(std::shared_ptr<syntax_expr> param, const syn
         param = conv;
     }
     else
-        throw("parameters not match");
+        throw inner_error(INNER_NO_MATCH_FUN);
 }

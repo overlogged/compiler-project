@@ -22,6 +22,7 @@ inline std::ostream &operator<<(std::ostream &out, const syntax_error &err)
 }
 
 const int INNER_NOT_INFER_TYPE = 1;
+const int INNER_NO_MATCH_FUN = 2;
 struct inner_error
 {
     int number;
