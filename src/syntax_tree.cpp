@@ -136,6 +136,7 @@ void syntax_module::global_var_analysis(const node_module &module)
                 {
                     auto var = std::make_shared<syntax_expr>();
                     var->val = syntax_var{.alloc_type = syntax_var::STATIC};
+                    var->type = t;
 
                     // 声明
                     env_var.insert(v.val, var);
@@ -539,7 +540,7 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
         if (auto def = std::get_if<node_var_def_statement>(ps))
         {
             auto init_expr = expr_analysis(def->initial_exp, stmts);
-            std::shared_ptr<syntax_expr> rval;
+            auto rval = std::make_shared<syntax_expr>();
 
             syntax_type t = env_type.type_check(def->var_type);
             if (t.is_auto())
@@ -561,6 +562,7 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
             {
                 auto var = std::make_shared<syntax_expr>();
                 var->val = syntax_var{.alloc_type = syntax_var::STACK};
+                var->type = t;
 
                 // 声明
                 env_var.insert(v.val, var);

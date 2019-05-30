@@ -85,19 +85,22 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
         else
             throw("parameters not match");
     }
-    // inline function
-    try
+    else
     {
-        p_ret->type = infer_type_in_list(func_name, call, inline_fun);
-        return p_ret;
+        // inline function
+        try
+        {
+            p_ret->type = infer_type_in_list(func_name, call, inline_fun);
+            return p_ret;
+        }
+        catch (std::string exception)
+        {
+            if (exception == "parameters not match")
+                throw(exception);
+        }
+        // normal function
+        p_ret->type = infer_type_in_list(func_name, call, normal_fun);
     }
-    catch (std::string exception)
-    {
-        if (exception == "parameters not match")
-            throw(exception);
-    }
-    // normal function
-    p_ret->type = infer_type_in_list(func_name, call, normal_fun);
     return p_ret;
 }
 

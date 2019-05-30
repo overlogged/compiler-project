@@ -42,6 +42,10 @@ int main(int argc, char *argv[])
             {
                 std::cerr << e;
             }
+            catch (inner_error &e)
+            {
+                std::cerr << "unhandled inner error: " << e.number << std::endl;
+            }
         }
         else
         {
