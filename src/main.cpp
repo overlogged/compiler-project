@@ -1,6 +1,7 @@
 #include "driver.h"
 #include "syntax_tree.h"
 #include "codegen.h"
+#include "exception.h"
 #include <iostream>
 #include <fstream>
 
@@ -35,7 +36,11 @@ int main(int argc, char *argv[])
             }
             catch (std::string &s)
             {
-                std::cout << "[error] " << s << std::endl;
+                std::cerr << "error: " << s << std::endl;
+            }
+            catch (syntax_error &e)
+            {
+                std::cerr << e;
             }
         }
         else
