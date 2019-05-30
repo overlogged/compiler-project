@@ -50,4 +50,9 @@ public:
     {
         stack.back()[name] = t;
     }
+
+    const std::map<std::string, T> &base() const
+    {
+        return stack.at(0);
+    }
 };

@@ -26,7 +26,8 @@ const int INNER_NO_MATCH_FUN = 2;
 struct inner_error
 {
     int number;
+    std::string info;
 
     inner_error() : number() {}
-    inner_error(int x) : number(x) {}
+    inner_error(int x, std::string msg = "") : number(x), info(msg) {}
 };

@@ -32,7 +32,7 @@ void syntax_module::typedef_analysis(const node_module &module)
     }
     fix_lookahead(env_type, dependency_graph);
 
-    if (debug_flag)
+    if (verbose_flag)
     {
         std::cout << "================type_table===============\n";
         env_type.print_type_table();
@@ -279,34 +279,44 @@ static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
 // todo: 补全该函数
 std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts)
 {
-    if (auto p = std::get_if<node_binary_expr>(&node.expr))
+    try
     {
-        return binary_expr_analysis(*p, stmts);
-    }
-    else if (auto p = std::get_if<node_assign_expr>(&node.expr))
-    {
-        auto syntax_node_r = expr_analysis(*(p->rval), stmts);
-        auto syntax_node_l = is_left_value(p->lval);
-        if (p->op != "=")
+        if (auto p = std::get_if<node_binary_expr>(&node.expr))
         {
-            auto syntax_fun_node = syntax_fun_call{.fun_name = p->op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
-            auto syntax_node = env_fun.infer_type(p->op.substr(0, 1), syntax_fun_node);
-            stmts.push_back(syntax_stmt{.stmt = syntax_node});
-            stmts.push_back(syntax_stmt{.stmt = syntax_assign{.lval = syntax_node_l, .rval = syntax_node}});
-            return syntax_node_l;
+            return binary_expr_analysis(*p, stmts);
+        }
+        else if (auto p = std::get_if<node_assign_expr>(&node.expr))
+        {
+            auto syntax_node_r = expr_analysis(*(p->rval), stmts);
+            auto syntax_node_l = is_left_value(p->lval);
+            if (p->op != "=")
+            {
+                auto syntax_fun_node = syntax_fun_call{.fun_name = p->op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
+                auto syntax_node = env_fun.infer_type(p->op.substr(0, 1), syntax_fun_node);
+                stmts.push_back(syntax_stmt{.stmt = syntax_node});
+                stmts.push_back(syntax_stmt{.stmt = syntax_assign{.lval = syntax_node_l, .rval = syntax_node}});
+                return syntax_node_l;
+            }
+            else
+            {
+                stmts.push_back(syntax_stmt{.stmt = syntax_assign{.lval = syntax_node_l, .rval = syntax_node_r}});
+                return syntax_node_l;
+            }
+        }
+        else if (auto p = std::get_if<node_construct_expr>(&node.expr))
+        {
+            return nullptr;
         }
         else
+            assert(false);
+    }
+    catch (inner_error &e)
+    {
+        if (e.number == INNER_NO_MATCH_FUN)
         {
-            stmts.push_back(syntax_stmt{.stmt = syntax_assign{.lval = syntax_node_l, .rval = syntax_node_r}});
-            return syntax_node_l;
+            throw syntax_error(node.loc, "no such function called '" + e.info + "'");
         }
     }
-    else if (auto p = std::get_if<node_construct_expr>(&node.expr))
-    {
-        return nullptr;
-    }
-    else
-        assert(false);
 }
 
 std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_binary_expr &node, std::vector<syntax_stmt> &stmts)
@@ -433,6 +443,7 @@ std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_bina
     {
         return *ret;
     }
+    throw std::string("binary_expr_analysis");
 }
 
 std::shared_ptr<syntax_expr> syntax_module::unary_expr_analysis(const node_unary_expr &node, std::vector<syntax_stmt> &stmts)

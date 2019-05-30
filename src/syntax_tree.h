@@ -96,11 +96,12 @@ class syntax_module
     void global_var_analysis(const node_module &module);
     void function_analysis(const syntax_fun &node);
 
-    std::shared_ptr<syntax_expr> is_left_value(const node_unary_expr& node);
+    std::shared_ptr<syntax_expr> is_left_value(const node_unary_expr &node);
 
     syntax_stmt if_analysis(const node_if_statement &node);
     syntax_stmt while_analysis(const node_while_statement &node);
     std::vector<syntax_stmt> statement_analysis(std::vector<node_statement> origin_stmts);
+
 public:
     type_table env_type;
     function_table env_fun;

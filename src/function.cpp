@@ -88,76 +88,73 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
     else
     {
         // inline function
-        bool find_flag =false;
-        p_ret->type = infer_type_in_list(func_name, call, inline_fun,find_flag);
-        if(find_flag)
+        bool find_flag = false;
+        p_ret->type = infer_type_in_list(func_name, call, inline_fun, find_flag);
+        if (find_flag)
             return p_ret;
         // normal function
-        p_ret->type = infer_type_in_list(func_name, call, normal_fun,find_flag);
-        if(find_flag)
+        p_ret->type = infer_type_in_list(func_name, call, normal_fun, find_flag);
+        if (find_flag)
             return p_ret;
-        //not find
-        throw inner_error(INNER_NO_MATCH_FUN);
     }
+    // not found
+    throw inner_error(INNER_NO_MATCH_FUN, func_name);
 }
 
-syntax_type function_table::infer_type_in_list(const std::string &func_name, syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list,bool& find_flag)
+syntax_type function_table::infer_type_in_list(const std::string &func_name, syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list, bool &find_flag)
 {
     syntax_type ret_type;
+
     auto it = func_list.find(func_name);
-    if (it == func_list.end())
-        return syntax_type();
-    auto &fun = it->second;
-    bool match = true;
     bool match_flag = false;
-    for (auto i = 0; i < fun.size(); i++)
+    if (it != func_list.end())
     {
-        if (fun[i].parameters.size() == call.parameters.size())
+        auto &fun = it->second;
+        bool match = true;
+        for (auto i = 0; i < fun.size(); i++)
         {
-            for (auto j = 0; j < fun[i].parameters.size(); j++)
+            if (fun[i].parameters.size() == call.parameters.size())
             {
-                auto t1 = fun[i].parameters[j].second;
-                auto t2 = call.parameters[j]->type;
-                auto t1p = fun[i].parameters[j].second.get_primary();
-                auto t2p = call.parameters[j]->type.get_primary();
-                if (t1p == "" || t2p == "")
+                for (auto j = 0; j < fun[i].parameters.size(); j++)
                 {
-                    if (!t2.subtyping(t1))
+                    auto t1 = fun[i].parameters[j].second;
+                    auto t2 = call.parameters[j]->type;
+                    auto t1p = fun[i].parameters[j].second.get_primary();
+                    auto t2p = call.parameters[j]->type.get_primary();
+                    if (t1p == "" || t2p == "")
+                    {
+                        if (!t2.subtyping(t1))
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+                    else if (t1p != "" && t2p != "")
+                    {
+                        if (t1p != t2p)
+                            implicit_conv(call.parameters[j], fun[i].parameters[j].second);
+                    }
+                    else
                     {
                         match = false;
                         break;
                     }
                 }
-                else if (t1p != "" && t2p != "")
-                {
-                    if (t1p != t2p)
-                        implicit_conv(call.parameters[j], fun[i].parameters[j].second);
-                }
-                else
-                {
-                    match = false;
-                    break;
-                }
+            }
+            if (match)
+            {
+                ret_type = fun[i].ret_type;
+                match_flag = true;
+                break;
+            }
+            else
+            {
+                match = true;
             }
         }
-        if (match)
-        {
-            ret_type = fun[i].ret_type;
-            match_flag = true;
-            break;
-        }
-        else
-        {
-            match = true;
-        }
     }
-    if (match_flag)
-    {
-        find_flag =true;
-        return ret_type;
-    }
-    else
-        return syntax_type();
+    find_flag = match_flag;
+    return ret_type;
 }
 
 function_table::function_table()

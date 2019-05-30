@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
             }
             catch (std::string &s)
             {
-                std::cerr << "error: " << s << std::endl;
+                std::cerr << "internel error: " << s << std::endl;
             }
             catch (syntax_error &e)
             {

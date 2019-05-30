@@ -2,7 +2,6 @@
 #include <fstream>
 #include "type.h"
 
-
 using namespace llvm;
 
 Type *codegen_llvm::type_primary(const primary_type &t)
@@ -26,7 +25,7 @@ Type *codegen_llvm::type_product(const product_type &t)
     std::vector<Type *> members;
     for (auto &fields : t.types)
     {
-        auto tf = type(*fields);
+        auto tf = llvm_type(*fields);
         members.push_back(tf);
     }
     return StructType::create(context, members);
@@ -37,7 +36,7 @@ Type *codegen_llvm::type_sum(const sum_type &t)
     unsigned int max_size = 0;
     for (auto &alters : t.types)
     {
-        auto tf = type(*alters);
+        auto tf = llvm_type(*alters);
         auto ts = tf->getPrimitiveSizeInBits();
         max_size = std::max(max_size, ts / 8);
         assert(ts % 8 == 0);
@@ -51,7 +50,7 @@ Type *codegen_llvm::type_sum(const sum_type &t)
     return StructType::create(context, members);
 }
 
-Type *codegen_llvm::type(const syntax_type &s)
+Type *codegen_llvm::llvm_type(const syntax_type &s)
 {
     if (auto p = std::get_if<primary_type>(&s.type))
     {
@@ -79,6 +78,23 @@ void codegen_llvm::codegen()
     InitializeNativeTarget();
 
     // 第一部分，生成全局变量的声明
+    auto global_var = module.env_var.base();
+    for (auto &pair : global_var)
+    {
+        auto name = pair.first;
+        auto exp = pair.second;
+        auto type = llvm_type(exp->type);
+
+        auto global_var = new GlobalVariable(
+            *p_module,
+            type,
+            false,
+            GlobalVariable::CommonLinkage,
+            nullptr,
+            name);
+
+        global_var->setAlignment(4);
+    }
 
     // 第二部分，生成函数的内部
 

@@ -25,7 +25,7 @@ class codegen_llvm
     llvm::Type *type_primary(const primary_type &t);
     llvm::Type *type_sum(const sum_type &t);
     llvm::Type *type_product(const product_type &t);
-    llvm::Type *type(const syntax_type &s);
+    llvm::Type *llvm_type(const syntax_type &s);
 
 public:
     codegen_llvm(const syntax_module &mod) : module(mod) {}
