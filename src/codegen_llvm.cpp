@@ -1,47 +1,86 @@
 #include "codegen.h"
 #include <fstream>
+#include "type.h"
 
-#include "llvm/IR/Verifier.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/ExecutionEngine/Interpreter.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/ValueSymbolTable.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/FileSystem.h"
 
 using namespace llvm;
 
+Type *codegen_llvm::type_primary(const primary_type &t)
+{
+    switch (t.size)
+    {
+    case 1:
+        return IntegerType::getInt8Ty(context);
+    case 2:
+        return IntegerType::getInt16Ty(context);
+    case 4:
+        return IntegerType::getInt32Ty(context);
+    case 8:
+        return IntegerType::getInt64Ty(context);
+    }
+    throw std::string("type error");
+}
+
+Type *codegen_llvm::type_product(const product_type &t)
+{
+    std::vector<Type *> members;
+    for (auto &fields : t.types)
+    {
+        auto tf = type(*fields);
+        members.push_back(tf);
+    }
+    return StructType::create(context, members);
+}
+
+Type *codegen_llvm::type_sum(const sum_type &t)
+{
+    unsigned int max_size = 0;
+    for (auto &alters : t.types)
+    {
+        auto tf = type(*alters);
+        auto ts = tf->getPrimitiveSizeInBits();
+        max_size = std::max(max_size, ts / 8);
+        assert(ts % 8 == 0);
+    }
+    if (max_size == 0)
+    {
+        throw std::string("max_size == 0");
+    }
+    auto unions = ArrayType::get(IntegerType::getInt8Ty(context), max_size);
+    std::vector<Type *> members{IntegerType::getInt32Ty(context), unions};
+    return StructType::create(context, members);
+}
+
+Type *codegen_llvm::type(const syntax_type &s)
+{
+    if (auto p = std::get_if<primary_type>(&s.type))
+    {
+        return type_primary(*p);
+    }
+    else if (auto p = std::get_if<sum_type>(&s.type))
+    {
+        return type_sum(*p);
+    }
+    else if (auto p = std::get_if<product_type>(&s.type))
+    {
+        return type_product(*p);
+    }
+    else
+    {
+        assert(false);
+    }
+    return nullptr;
+}
+
 void codegen_llvm::codegen()
 {
-    LLVMContext context;
     auto p_module = std::make_unique<Module>("main", context);
 
     InitializeNativeTarget();
 
-    // 第一部分，生成复合类型的类型定义
-    for (auto &type : module.env_type.user_def_type)
-    {
-    }
-    // 一个 type pair = (u32,u32); 的例子
-    if (debug_flag)
-    {
-        auto t_i32 = IntegerType::getInt32Ty(context);
-        Type *args[] = {t_i32, t_i32};
-        StructType::create(context, ArrayRef<Type *>(args, 2), "pair");
-        auto t_pair = p_module->getTypeByName("pair");
-        t_pair->print(outs());
-    }
+    // 第一部分，生成全局变量的声明
 
-    // 第二部分，生成全局变量的声明
-
-    // 第三部分，生成函数的内部
+    // 第二部分，生成函数的内部
 
     // 输出
     std::error_code c;

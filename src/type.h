@@ -22,6 +22,18 @@ struct product_type
     std::vector<std::shared_ptr<syntax_type>> types;
     std::vector<size_t> offsets;
     size_t size;
+
+    int get_index(const std::string &name)
+    {
+        for (auto i = 0; i < fields.size(); i++)
+        {
+            if (fields[i] == name)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
 };
 
 struct sum_type
