@@ -112,6 +112,16 @@ struct syntax_type
 
     syntax_type() = default;
 
+    bool is_sum() const
+    {
+        return std::get_if<sum_type>(&type) != nullptr;
+    }
+
+    bool is_product() const
+    {
+        return std::get_if<product_type>(&type) != nullptr;
+    }
+
     bool is_ref() const
     {
         return std::get_if<pointer_type>(&type) != nullptr;

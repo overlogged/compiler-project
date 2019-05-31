@@ -22,6 +22,8 @@ class codegen_llvm
     const syntax_module &module;
     llvm::LLVMContext context;
     std::shared_ptr<llvm::Module> llvm_module;
+    llvm::BasicBlock *block_return;
+    llvm::Value *ret_value;
 
     llvm::Type *type_primary(const primary_type &t);
     llvm::Type *type_sum(const sum_type &t);
@@ -30,9 +32,17 @@ class codegen_llvm
 
     llvm::Value *get_value(const std::shared_ptr<syntax_expr> &expr);
 
+    llvm::Value *get_lit(const syntax_literal &lit);
+    llvm::Value *get_call(const syntax_fun_call &call);
+    llvm::Value *get_convert(const syntax_type_convert &conv);
+    llvm::Value *get_dot(const syntax_dot &dot);
+
     llvm::IRBuilder<> *builder;
 
     void function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts);
+    void block(const std::vector<syntax_stmt> &stmts);
+
+    void expression(std::shared_ptr<syntax_expr> expr);
 
 public:
     codegen_llvm(const syntax_module &mod) : module(mod) {}
