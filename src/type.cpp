@@ -3,11 +3,11 @@
 bool syntax_type::subtyping(const syntax_type &t) const
 {
     // 指针类型
-    if (is_ref)
+    if (is_ref())
     {
-        if (t.is_ref)
+        if (t.is_ref())
         {
-            return get_primary() == "unit";
+            return de_ref().get_primary() == "unit";
         }
         else
         {
@@ -118,10 +118,15 @@ bool syntax_type::subtyping(const syntax_type &t) const
 
 bool syntax_type::type_equal(const syntax_type &t) const
 {
-    if (is_ref != t.is_ref)
+    if (is_ref() != t.is_ref())
+    {
         return false;
-
-    if (!get_primary().empty() && !t.get_primary().empty())
+    }
+    else if (is_ref() == t.is_ref())
+    {
+        return de_ref().type_equal(t.de_ref());
+    }
+    else if (!get_primary().empty() && !t.get_primary().empty())
     {
         return subtyping(t) && t.subtyping(*this);
     }
@@ -141,8 +146,6 @@ bool syntax_type::type_equal(const syntax_type &t) const
             }
             return true;
         }
-        else
-            return false;
     }
     else if (auto p = std::get_if<sum_type>(&type))
     {
@@ -160,11 +163,8 @@ bool syntax_type::type_equal(const syntax_type &t) const
             }
             return true;
         }
-        else
-            return false;
     }
-
-    throw std::string("type equal");
+    return false;
 }
 
 syntax_type type_table::get_type(std::string name)

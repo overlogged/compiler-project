@@ -41,6 +41,11 @@ struct sum_type
     std::vector<std::shared_ptr<syntax_type>> types;
 };
 
+struct pointer_type
+{
+    std::shared_ptr<syntax_type> type;
+};
+
 struct top_graph
 {
     int in_node_num;
@@ -93,7 +98,7 @@ struct top_graph
         seq_num--;
         in_node_num = type_reg_table[type_name];
     }
-    
+
     void reset_internal_index()
     {
         seq_num++;
@@ -103,12 +108,21 @@ struct top_graph
 
 struct syntax_type
 {
-    std::variant<primary_type, product_type, sum_type> type;
-    bool is_ref;
+    std::variant<primary_type, product_type, sum_type, pointer_type> type;
 
     syntax_type() = default;
 
-    bool is_auto()
+    bool is_ref() const
+    {
+        return std::get_if<pointer_type>(&type) != nullptr;
+    }
+
+    syntax_type de_ref() const
+    {
+        return *std::get_if<pointer_type>(&type)->type;
+    }
+
+    bool is_auto() const
     {
         return get_primary() == "auto";
     }
