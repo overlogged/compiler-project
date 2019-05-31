@@ -128,10 +128,14 @@
     - 后面一个是具体的存储空间
 
 - 数组
+    a[2] : a i32&
 
 - 外部链接
     链接 C 标准库
-    增加 new 和 delete 关键字，new type 或 new type[u64]，delete var
+    增加 new 和 delete 关键字，new type 或 new type[u64]，delete var，new 和 delete 都处理的 &，引用类型，就是不能变的指针。
     printf（就类型判断的时候特判就ok）
 
 - 字符串
+    当作 char 数组处理
+
+- for 循环，暂时只做 for i in range() ，
