@@ -115,11 +115,7 @@ void syntax_module::global_var_analysis(const node_module &module)
                 //         std::cout << t_3->fun_name << '\n';
                 //     }
                 // }
-<<<<<<< HEAD
-                std::shared_ptr<syntax_expr> rval = std::make_shared<syntax_expr>();
-=======
                 auto rval = std::make_shared<syntax_expr>();
->>>>>>> aea411cbb852345509770b565a1e6c73dd08cf80
                 syntax_type t = env_type.type_check(def.var_type);
                 if (t.is_auto())
                 {
