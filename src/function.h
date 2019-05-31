@@ -4,7 +4,6 @@
 #include <map>
 
 struct syntax_expr;
-struct syntax_stmt;
 
 struct syntax_fun
 {

@@ -1,6 +1,26 @@
 #include "syntax_tree.h"
 #include "exception.h"
 
+syntax_if_block syntax_merged_if_block::reduce(int index)
+{
+    syntax_if_block ret;
+    ret.condition = condition[index];
+    ret.cond_stmt = std::move(condition_stmt[index]);
+    ret.then_stmt = std::move(branch[index]);
+
+    // 最后一个 if
+    if (index == condition.size() - 1)
+    {
+        ret.else_stmt = std::move(default_branch);
+    }
+    else
+    {
+        ret.else_stmt.push_back(syntax_stmt{reduce(index + 1)});
+    }
+
+    return ret;
+}
+
 static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
 {
     if (dependency_graph.seq_num == 0)
@@ -215,12 +235,12 @@ void syntax_module::global_var_analysis(const node_module &module)
 
 syntax_stmt syntax_module::if_analysis(const node_if_statement &node)
 {
-    syntax_if_block block;
+    syntax_merged_if_block block;
     env_var.push();
     block.condition_stmt.push_back(std::vector<syntax_stmt>());
     block.condition.push_back(expr_analysis(node.if_condition, block.condition_stmt[0]));
     block.branch.push_back(statement_analysis(node.if_statement));
-    block.defaul_branch = statement_analysis(node.else_statement);
+    block.default_branch = statement_analysis(node.else_statement);
     auto it_condition = node.else_if_statement.else_if_condition.begin();
     auto it_statement = node.else_if_statement.else_if_statement.begin();
     for (int i = 1; it_condition != node.else_if_statement.else_if_condition.end(); it_condition++, it_statement++, i++)
@@ -230,7 +250,8 @@ syntax_stmt syntax_module::if_analysis(const node_if_statement &node)
         block.branch.push_back(statement_analysis(*it_statement));
     }
     env_var.pop();
-    return {block};
+
+    return {block.reduce(0)};
 }
 
 syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
@@ -329,4 +350,3 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
     }
     return stmts;
 }
-

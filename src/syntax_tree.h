@@ -89,10 +89,20 @@ struct syntax_return
 
 struct syntax_if_block
 {
+    std::shared_ptr<syntax_expr> condition;
+    std::vector<syntax_stmt> cond_stmt;
+    std::vector<syntax_stmt> then_stmt;
+    std::vector<syntax_stmt> else_stmt;
+};
+
+struct syntax_merged_if_block
+{
     std::vector<std::shared_ptr<syntax_expr>> condition;
     std::vector<std::vector<syntax_stmt>> condition_stmt;
     std::vector<std::vector<syntax_stmt>> branch;
-    std::vector<syntax_stmt> defaul_branch;
+    std::vector<syntax_stmt> default_branch;
+
+    syntax_if_block reduce(int index);
 };
 
 struct syntax_while_block

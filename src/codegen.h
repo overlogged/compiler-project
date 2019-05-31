@@ -22,8 +22,12 @@ class codegen_llvm
     const syntax_module &module;
     llvm::LLVMContext context;
     std::shared_ptr<llvm::Module> llvm_module;
+
+    // 与当前状态相关
+    llvm::Function *func;
     llvm::BasicBlock *block_return;
     llvm::Value *ret_value;
+    llvm::IRBuilder<> *builder;
 
     llvm::Type *type_primary(const primary_type &t);
     llvm::Type *type_sum(const sum_type &t);
@@ -37,12 +41,11 @@ class codegen_llvm
     llvm::Value *get_convert(const syntax_type_convert &conv);
     llvm::Value *get_dot(const syntax_dot &dot);
 
-    llvm::IRBuilder<> *builder;
-
     void function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts);
     void block(const std::vector<syntax_stmt> &stmts);
+    void block_if(const syntax_if_block &syntax_if);
 
-    void expression(std::shared_ptr<syntax_expr> expr);
+    llvm::Value *expression(std::shared_ptr<syntax_expr> expr);
 
 public:
     codegen_llvm(const syntax_module &mod) : module(mod) {}

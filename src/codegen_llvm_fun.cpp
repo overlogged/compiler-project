@@ -4,7 +4,7 @@ using namespace llvm;
 
 // todo: 完成字面量的处理
 // 包括整数，浮点，字符，字符串
-llvm::Value *codegen_llvm::get_lit(const syntax_literal &lit)
+Value *codegen_llvm::get_lit(const syntax_literal &lit)
 {
     auto type = llvm_type(lit.type);
     auto value = std::get<unsigned long long>(lit.val);
@@ -14,7 +14,7 @@ llvm::Value *codegen_llvm::get_lit(const syntax_literal &lit)
 // todo: 完成对函数调用的处理
 // 各种 builtin 函数
 // 注意判断有无符号
-llvm::Value *codegen_llvm::get_call(const syntax_fun_call &call)
+Value *codegen_llvm::get_call(const syntax_fun_call &call)
 {
     if (call.fun_name == "+")
     {
@@ -40,6 +40,12 @@ llvm::Value *codegen_llvm::get_call(const syntax_fun_call &call)
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateSDiv(arg1, arg2, "divtmp");
     }
+    else if (call.fun_name == "==")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmpEQ(arg1, arg2, "eq");
+    }
     else
     {
         // 普通函数
@@ -55,7 +61,7 @@ llvm::Value *codegen_llvm::get_call(const syntax_fun_call &call)
 
 // todo: 完成对类型转换的处理
 // sum type, product type 等等
-llvm::Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
+Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
 {
     auto t_size = conv.target_type.get_primary_size();
     if (t_size != 0)
@@ -65,7 +71,7 @@ llvm::Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
     throw std::string("convert failed");
 }
 
-llvm::Value *codegen_llvm::get_dot(const syntax_dot &dot)
+Value *codegen_llvm::get_dot(const syntax_dot &dot)
 {
     auto inner_val = dot.val;
     auto inner_type = inner_val->type;
@@ -90,7 +96,8 @@ llvm::Value *codegen_llvm::get_dot(const syntax_dot &dot)
     return builder->CreateGEP(inner_llvm_val, llvm_idx);
 }
 
-void codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
+// 处理 expression
+Value *codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
 {
     auto p_val = &expr->val;
 
@@ -114,9 +121,44 @@ void codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
     {
         expr->reserved = get_dot(*p_dot);
     }
-    assert(false);
+    else
+    {
+        assert(false);
+    }
+
+    return (Value *)expr->reserved;
 }
 
+void codegen_llvm::block_if(const syntax_if_block &syntax_if)
+{
+    // 计算条件
+    block(syntax_if.cond_stmt);
+    auto condv = expression(syntax_if.condition);
+
+    // 创建分支块
+    auto block_then = BasicBlock::Create(context, "then", func);
+    auto block_else = BasicBlock::Create(context, "else");
+    auto block_merge = BasicBlock::Create(context, "ifcont");
+
+    builder->CreateCondBr(condv, block_then, block_else);
+
+    // then
+    builder->SetInsertPoint(block_then);
+    block(syntax_if.then_stmt);
+    builder->CreateBr(block_merge);
+
+    // else
+    block_else->insertInto(func);
+    builder->SetInsertPoint(block_else);
+    block(syntax_if.else_stmt);
+    builder->CreateBr(block_merge);
+
+    // merge
+    block_merge->insertInto(func);
+    builder->SetInsertPoint(block_merge);
+}
+
+// 处理 block
 void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
 {
     for (auto &s : stmts)
@@ -137,13 +179,15 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
             builder->CreateStore(get_value(p_ret->val), ret_value);
             builder->CreateBr(block_return);
         }
-        // todo: if, for, while, new, delete
+        // todo: for, while, new, delete
         else if (auto p_if = std::get_if<syntax_if_block>(p_stmt))
         {
-                }
+            block_if(*p_if);
+        }
     }
 }
 
+// 处理函数
 void codegen_llvm::function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts)
 {
     // 定义函数体
@@ -155,10 +199,12 @@ void codegen_llvm::function(const std::string &fun_name, const std::vector<synta
     ret_value = builder->CreateAlloca(return_type, nullptr, "ret_value");
     builder->CreateStore(Constant::getNullValue(return_type), ret_value);
 
-    block_return = BasicBlock::Create(context, "return", func);
+    block_return = BasicBlock::Create(context, "return");
     builder->SetInsertPoint(block_return);
     builder->CreateRet(ret_value);
 
     builder->SetInsertPoint(block_entry);
     block(stmts);
+
+    block_return->insertInto(func);
 }
