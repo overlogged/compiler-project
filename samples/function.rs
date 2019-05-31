@@ -1,5 +1,6 @@
-val x:(i32) = 1*2+3*3;
-var y:(u16) =0;
+val x: (i8, i8) = y._1._2._3?;
+val z: i8 = (y._1 = 3);
+var y: u16 = 2*3;
 type t2 = (t1|z:i8|a:u8);
 type t1 = (t3, y:i32);
 type t4 = (x:i32|y:i32|z:i8);
