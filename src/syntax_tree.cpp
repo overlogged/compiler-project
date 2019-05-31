@@ -114,7 +114,7 @@ void syntax_module::global_var_analysis(const node_module &module)
                 //         std::cout << t_3->fun_name << '\n';
                 //     }
                 // }
-                std::shared_ptr<syntax_expr> rval;
+                std::shared_ptr<syntax_expr> rval = std::make_shared<syntax_expr>();
                 syntax_type t = env_type.type_check(def.var_type);
                 if (t.is_auto())
                 {
@@ -129,13 +129,11 @@ void syntax_module::global_var_analysis(const node_module &module)
                     rval->type = t;
                     rval->val = impl_convert;
                 }
-
                 // 分配全局变量
                 for (auto &v : def.var_list)
                 {
                     auto var = std::make_shared<syntax_expr>();
                     var->val = syntax_var{.alloc_type = syntax_var::STATIC};
-
                     // 声明
                     env_var.insert(v.val, var);
 
@@ -199,7 +197,6 @@ void syntax_module::syntax_analysis(const node_module &module)
 
     // 第三步：扫描全局变量的声明，生成全局变量符号和类型定义，此处需要类型推导。生成入口函数 main
     global_var_analysis(module);
-
     // 第四步：进入每个 block，完成语义分析
     // - 变量的分析（参考全局变量部分）
     // - 控制流 if, while 的分析
@@ -436,6 +433,7 @@ std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_bina
     {
         return *ret;
     }
+    assert(false);
 }
 
 std::shared_ptr<syntax_expr> syntax_module::unary_expr_analysis(const node_unary_expr &node, std::vector<syntax_stmt> &stmts)

@@ -1,4 +1,4 @@
-val x:i32 =0;
+val x:i32 = y._1?;
 var y = fun(3+3*6);
 
 fn fun(x:i32) i8 {

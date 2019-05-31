@@ -410,9 +410,9 @@ construct_expr:
     }
 %type<node_construct_expr> no_lable_construct_element;
 no_lable_construct_element:
-    no_lable_construct_element COLON expression
+    no_lable_construct_element COMMA expression
     {
-        $1.lable.push_back("_"+std::to_string($$.lable.size()));
+        $1.lable.push_back("_"+std::to_string($1.lable.size()));
         $1.init_val.push_back($3);
         $$ =$1;
         $$.loc = @$;
