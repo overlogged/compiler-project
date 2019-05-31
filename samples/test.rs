@@ -6,7 +6,5 @@ fn fun(x:i8) i8 {
 }
 
 fn main() {
-    val y:i8 = 1;
-    val z = (y = fun(y+2));
-    z = x = 3;
+    x = new i8***********;
 }

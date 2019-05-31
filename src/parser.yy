@@ -345,7 +345,19 @@ postfixExpr:
         };
         $$ = data; 
         $$->loc = @$;
+    }|
+    postfixExpr LSQUARE expression RSQUARE
+    {
+        auto data = std::make_shared<node_post_expr>();
+        data->expr = node_post_arr_expr{
+            .loc = @$,
+            .arr = $1,
+            .arr_index = $3
+        };
+        $$ = data;
+        $$->loc = @$;
     };
+
 %type <node_unary_expr> unaryExpr;
 unaryExpr: 
     postfixExpr {
@@ -490,6 +502,14 @@ new_expression:
     KW_NEW type
     {
         $$.new_type = *$2;
+        $$.single_flag = true;
+        $$.loc = @$;
+    }|
+    KW_NEW type LSQUARE expression RSQUARE
+    {
+        $$.new_type = *$2;
+        $$.single_flag = false;
+        $$.size = $4;
         $$.loc = @$;
     }
 
@@ -727,18 +747,17 @@ sum_type_tuple:
 
 %type <std::shared_ptr<node_type>> type;
 type:
+    type POINTER_OP
+    {
+        $$ = std::make_shared<node_type>();
+        $$->is_pointer = true;
+        $$->type_val = $1;
+        $$->loc = @$;
+    }|
     identifier
     {
         auto data = std::make_shared<node_type>();
         data->is_pointer = false;
-        data->type_val = $1;
-        $$ = data;
-        $$->loc = @$;
-    }|
-    identifier POINTER_OP
-    {
-        auto data = std::make_shared<node_type>();
-        data->is_pointer = true;
         data->type_val = $1;
         $$ = data;
         $$->loc = @$;
@@ -751,14 +770,6 @@ type:
         $$ = data;
         $$->loc = @$;
     }|
-    sum_type POINTER_OP
-    {
-        auto data = std::make_shared<node_type>();
-        data->is_pointer = true;
-        data->type_val = $1;
-        $$ = data;
-        $$->loc = @$;
-    }|
     product_type
     {
         auto data = std::make_shared<node_type>();
@@ -766,16 +777,7 @@ type:
         data->type_val = $1;
         $$ = data;
         $$->loc = @$;
-    }|
-    product_type POINTER_OP
-    {
-        auto data = std::make_shared<node_type>();
-        data->is_pointer = true;
-        data->type_val = $1;
-        $$ = data;
-        $$->loc = @$;
     };
-
 
 %%
 

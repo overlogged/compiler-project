@@ -112,11 +112,23 @@ inline std::string to_string(const node_post_call_expr &node)
         vec_str{to_string(node.callable), to_string(node.exp_list.arr)});
 }
 
+//node_post_arr_expr
+struct node_post_arr_expr
+{
+    yy::location loc;
+    std::shared_ptr<node_post_expr> arr;
+    std::shared_ptr<node_expression> arr_index;
+};
+inline std::string to_string(const node_post_arr_expr& node)
+{
+    return obj_to_string(vec_str{"arr","arr_index"},vec_str{to_string(node.arr),to_string(node.arr_index)});
+}
+
 // node_post_expr
 struct node_post_expr
 {
     yy::location loc;
-    std::variant<node_primary_expr, node_post_call_expr, node_post_dot_expr, node_post_check_expr> expr;
+    std::variant<node_primary_expr, node_post_call_expr, node_post_dot_expr, node_post_check_expr,node_post_arr_expr> expr;
 };
 
 inline std::string to_string(const node_post_expr &node)
@@ -210,7 +222,7 @@ struct node_type
 {
     yy::location loc;
     bool is_pointer;
-    std::variant<node_identifier, node_sum_type, node_product_type> type_val;
+    std::variant<node_identifier, node_sum_type, node_product_type, std::shared_ptr<node_type>> type_val;
 };
 inline std::string to_string(const node_type &node)
 {
@@ -235,10 +247,15 @@ struct node_new_expr
 {
     yy::location loc;
     node_type new_type;
+    bool single_flag;
+    std::shared_ptr<node_expression> size;
 };
 inline std::string to_string(const node_new_expr &node)
 {
-    return obj_to_string(vec_str{"new_type"},vec_str{to_string(node.new_type)});
+    if(node.single_flag)
+        return obj_to_string(vec_str{"new_type"},vec_str{to_string(node.new_type)});
+    else
+        return obj_to_string(vec_str{"new_type","size"},vec_str{to_string(node.new_type),to_string(node.size)});
 }
 
 
