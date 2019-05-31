@@ -188,7 +188,7 @@ syntax_type type_table::get_type(std::string name)
     return it->second;
 }
 
-syntax_type type_table::type_check(const node_type &node, top_graph *dependency_graph = nullptr)
+syntax_type type_table::type_check(const node_type &node, top_graph *dependency_graph)
 {
     if (auto p_id = std::get_if<node_identifier>(&node.type_val))
     {
