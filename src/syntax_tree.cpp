@@ -1,7 +1,7 @@
 #include "syntax_tree.h"
 #include "exception.h"
 
-syntax_if_block syntax_merged_if_block::reduce(int index)
+std::shared_ptr<syntax_if_block> syntax_merged_if_block::reduce(int index)
 {
     syntax_if_block ret;
     ret.condition = condition[index];
@@ -18,7 +18,7 @@ syntax_if_block syntax_merged_if_block::reduce(int index)
         ret.else_stmt.push_back(syntax_stmt{reduce(index + 1)});
     }
 
-    return ret;
+    return std::make_shared<syntax_if_block>(ret);
 }
 
 static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
@@ -229,7 +229,11 @@ void syntax_module::global_var_analysis(const node_module &module)
     // return main()
     auto i32 = env_type.get_type("i32");
     stmts.push_back(syntax_stmt{syntax_return{call_main}});
-    fun_impl.emplace_back(std::make_pair("main", std::move(stmts)));
+
+    fun_name.push_back("main");
+    fun_impl.emplace_back(std::move(stmts));
+    fun_args.push_back({});
+
     env_fun.add_func(main_fun);
 }
 
@@ -266,7 +270,7 @@ syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
     // -------------------------------------
     block.body = statement_analysis(new_node.loop_statement);
     env_var.pop();
-    return {block};
+    return {std::make_shared<syntax_while_block>(block)};
 }
 
 void syntax_module::syntax_analysis(const node_module &module)
@@ -294,6 +298,7 @@ void syntax_module::syntax_analysis(const node_module &module)
 void syntax_module::function_analysis(const syntax_fun &node)
 {
     env_var.push();
+    std::vector<std::shared_ptr<syntax_expr>> args;
     std::vector<syntax_stmt> stmts;
 
     // 参数加入局部变量
@@ -302,13 +307,17 @@ void syntax_module::function_analysis(const syntax_fun &node)
         auto exp = std::make_shared<syntax_expr>();
         exp->type = arg.second;
         exp->val = syntax_var();
+        args.push_back(exp);
         env_var.insert(arg.first, exp);
     }
 
     stmts = statement_analysis(node.origin_stmts);
 
     // 分析结束，保存函数实现
-    fun_impl.emplace_back(std::make_pair(node.fun_name, std::move(stmts)));
+    fun_name.push_back(node.fun_name);
+    fun_impl.emplace_back(std::move(stmts));
+    fun_args.push_back(std::move(args));
+
     env_var.pop();
 }
 

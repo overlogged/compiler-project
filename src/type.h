@@ -39,6 +39,18 @@ struct sum_type
 {
     std::vector<std::string> alters;
     std::vector<std::shared_ptr<syntax_type>> types;
+
+    int get_index(const std::string &name)
+    {
+        for (auto i = 0; i < alters.size(); i++)
+        {
+            if (alters[i] == name)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
 };
 
 struct pointer_type

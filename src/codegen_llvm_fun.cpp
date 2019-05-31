@@ -80,20 +80,30 @@ Value *codegen_llvm::get_dot(const syntax_dot &dot)
     if (inner_type.is_sum())
     {
         index = 1;
+        auto llvm_i32 = IntegerType::getInt32PtrTy(context);
+        auto llvm_idx = ConstantInt::get(llvm_i32, index);
+        auto gep = builder->CreateGEP(inner_llvm_val, llvm_idx);
+
+        auto sum = std::get<sum_type>(inner_type.type);
+        auto idx = sum.get_index(dot.field);
+        assert(idx != -1);
+        auto target_type = llvm_type(*sum.types[idx]);
+
+        return builder->CreateCast(Instruction::CastOps::BitCast, gep, target_type, sum.alters[idx]);
     }
     else if (inner_type.is_product())
     {
         auto prod = std::get<product_type>(inner_type.type);
         index = prod.get_index(dot.field);
         assert(index != -1);
+        auto llvm_i32 = IntegerType::getInt32PtrTy(context);
+        auto llvm_idx = ConstantInt::get(llvm_i32, index);
+        return builder->CreateGEP(inner_llvm_val, llvm_idx, prod.fields[index]);
     }
     else
     {
         throw std::string("invalid dot");
     }
-    auto llvm_i32 = IntegerType::getInt32PtrTy(context);
-    auto llvm_idx = ConstantInt::get(llvm_i32, index);
-    return builder->CreateGEP(inner_llvm_val, llvm_idx);
 }
 
 // 处理 expression
@@ -180,19 +190,26 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
             builder->CreateBr(block_return);
         }
         // todo: for, while, new, delete
-        else if (auto p_if = std::get_if<syntax_if_block>(p_stmt))
+        else if (auto p_if = std::get_if<std::shared_ptr<syntax_if_block>>(p_stmt))
         {
-            block_if(*p_if);
+            block_if(**p_if);
         }
     }
 }
 
 // 处理函数
-void codegen_llvm::function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts)
+void codegen_llvm::function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts, const std::vector<std::shared_ptr<syntax_expr>> &args)
 {
     // 定义函数体
     auto func = llvm_module->getFunction(fun_name);
     auto return_type = func->getReturnType();
+
+    // 初始化参数
+    for (auto &arg : func->args())
+    {
+        auto idx = arg.getArgNo();
+        args[idx]->reserved = (Value *)&arg;
+    }
 
     auto block_entry = BasicBlock::Create(context, "entry", func);
     builder->SetInsertPoint(block_entry);

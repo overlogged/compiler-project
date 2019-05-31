@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -24,8 +23,6 @@ struct syntax_type_def
     std::string name;
     syntax_type type;
 };
-
-struct syntax_stmt;
 
 struct syntax_literal
 {
@@ -87,6 +84,20 @@ struct syntax_return
     std::shared_ptr<syntax_expr> val;
 };
 
+struct syntax_if_block;
+struct syntax_while_block;
+
+struct syntax_stmt
+{
+    std::variant<
+        std::shared_ptr<syntax_expr>,
+        std::shared_ptr<syntax_if_block>,
+        std::shared_ptr<syntax_while_block>,
+        syntax_assign,
+        syntax_return>
+        stmt;
+};
+
 struct syntax_if_block
 {
     std::shared_ptr<syntax_expr> condition;
@@ -102,7 +113,7 @@ struct syntax_merged_if_block
     std::vector<std::vector<syntax_stmt>> branch;
     std::vector<syntax_stmt> default_branch;
 
-    syntax_if_block reduce(int index);
+    std::shared_ptr<syntax_if_block> reduce(int index);
 };
 
 struct syntax_while_block
@@ -110,11 +121,6 @@ struct syntax_while_block
     std::shared_ptr<syntax_expr> condition;
     std::vector<syntax_stmt> condition_stmt;
     std::vector<syntax_stmt> body;
-};
-
-struct syntax_stmt
-{
-    std::variant<std::shared_ptr<syntax_expr>, syntax_if_block, syntax_while_block, syntax_assign, syntax_return> stmt;
 };
 
 class syntax_module
@@ -144,7 +150,11 @@ class syntax_module
 public:
     type_table env_type;
     function_table env_fun;
-    std::vector<std::pair<std::string, std::vector<syntax_stmt>>> fun_impl;
+
+    std::vector<std::string> fun_name;
+    std::vector<std::vector<syntax_stmt>> fun_impl;
+    std::vector<std::vector<std::shared_ptr<syntax_expr>>> fun_args;
+
     stack_map<std::shared_ptr<syntax_expr>> env_var;
 
     void syntax_analysis(const node_module &module);
