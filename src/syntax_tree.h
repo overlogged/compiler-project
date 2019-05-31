@@ -35,11 +35,6 @@ struct syntax_literal
 
 struct syntax_var
 {
-    int alloc_type; // 0 for stack, 1 for heap, 2 for static
-    static const int STACK = 0;
-    static const int HEAP = 1;
-    static const int STATIC = 2;
-    static const int PARAMETER = 3;
 };
 
 struct syntax_type_convert
@@ -54,6 +49,20 @@ struct syntax_expr
     std::variant<syntax_fun_call, syntax_literal, syntax_var, syntax_type_convert> val;
     void *reserved = nullptr;
 };
+
+inline std::shared_ptr<syntax_expr> expr_convert_to(std::shared_ptr<syntax_expr> expr, const syntax_type &target)
+{
+    auto from_type = expr->type;
+    auto to_type = target;
+    if (from_type.subtyping(to_type))
+    {
+        auto ret = std::make_shared<syntax_expr>();
+        ret->type = to_type;
+        ret->val = syntax_type_convert{.source_expr = expr, .target_type = to_type};
+        return ret;
+    }
+    throw inner_error{INNER_CANT_CAST};
+}
 
 struct syntax_assign
 {
@@ -101,6 +110,8 @@ class syntax_module
     syntax_stmt if_analysis(const node_if_statement &node);
     syntax_stmt while_analysis(const node_while_statement &node);
     std::vector<syntax_stmt> statement_analysis(std::vector<node_statement> origin_stmts);
+
+    void add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts);
 
 public:
     type_table env_type;

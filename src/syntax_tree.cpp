@@ -1,11 +1,92 @@
 #include "syntax_tree.h"
 #include "exception.h"
 
-static void fix_lookahead(type_table &env_type, top_graph &dependency_graph);
+static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
+{
+    if (dependency_graph.seq_num == 0)
+        return;
+
+    std::vector<int> in_degree(dependency_graph.seq_num);
+    std::vector<int> visit(dependency_graph.seq_num);
+
+    for (auto it : dependency_graph.adj_list)
+    {
+        for (auto edge : it.second)
+        {
+            in_degree[edge]++;
+        }
+    }
+
+    for (auto i = 0; i < dependency_graph.seq_num; i++)
+    {
+        for (auto j = 0; j < dependency_graph.seq_num; j++)
+        {
+            if (visit[j] == 0 && in_degree[j] == 0)
+            {
+                if (dependency_graph.arr.count(j) != 0)
+                {
+                    env_type.add_type(dependency_graph.name_table[j], env_type.type_check(dependency_graph.arr[j]));
+                    visit[j] = 1;
+                    for (auto tmp : dependency_graph.adj_list[j])
+                    {
+                        in_degree[tmp]--;
+                    }
+                    break;
+                }
+                else
+                {
+                    env_type.get_type(dependency_graph.name_table[j]);
+                    visit[j] = 1;
+                    for (auto tmp : dependency_graph.adj_list[j])
+                    {
+                        in_degree[tmp]--;
+                    }
+                    break;
+                }
+            }
+            else if (j == dependency_graph.seq_num - 1)
+            {
+                throw inner_error{INNER_LOOP};
+            }
+        }
+    }
+}
+
+void syntax_module::add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts)
+{
+    auto init_expr = expr_analysis(def.initial_exp, stmts);
+    auto rval = std::make_shared<syntax_expr>();
+    syntax_type t = env_type.type_check(def.var_type);
+    if (t.is_auto())
+    {
+        // 类型推导
+        t = init_expr->type;
+        rval = init_expr;
+    }
+    else
+    {
+        // 隐式转换
+        rval = expr_convert_to(init_expr, t);
+        stmts.emplace_back(syntax_stmt{rval});
+    }
+    // 分配全局变量
+    for (auto &v : def.var_list)
+    {
+        auto var = std::make_shared<syntax_expr>();
+        var->val = syntax_var();
+        var->type = t;
+
+        // 声明
+        env_var.insert(v.val, var);
+
+        // 初始化
+        syntax_assign assign{.lval = var, .rval = rval};
+        stmts.push_back(syntax_stmt{.stmt = assign});
+    }
+}
 
 void syntax_module::typedef_analysis(const node_module &module)
 {
-    // 需要封装类型表的功能，以支持 built-in 类型
     top_graph dependency_graph;
     for (auto &block : module.blocks)
     {
@@ -30,7 +111,21 @@ void syntax_module::typedef_analysis(const node_module &module)
             }
         }
     }
-    fix_lookahead(env_type, dependency_graph);
+    try
+    {
+        fix_lookahead(env_type, dependency_graph);
+    }
+    catch (inner_error &e)
+    {
+        if (e.number == INNER_NO_SUCH_TYPE)
+        {
+            throw syntax_error(module.loc, "no such type '" + e.info + "'");
+        }
+        else if (e.number == INNER_LOOP)
+        {
+            throw syntax_error(module.loc, "exists loop in type defination");
+        }
+    }
 }
 
 std::vector<syntax_fun> syntax_module::fundef_analysis(const node_module &module)
@@ -90,44 +185,18 @@ void syntax_module::global_var_analysis(const node_module &module)
         {
             for (auto &def : p_global_var_def->arr)
             {
-                auto init_expr = expr_analysis(def.initial_exp, stmts);
-                auto rval = std::make_shared<syntax_expr>();
-                syntax_type t = env_type.type_check(def.var_type);
-                if (t.is_auto())
-                {
-                    // 类型推导
-                    t = init_expr->type;
-                    rval = init_expr;
-                }
-                else
-                {
-                    // 隐式转换
-                    auto impl_convert = syntax_type_convert{.source_expr = init_expr, .target_type = t};
-                    rval->type = t;
-                    rval->val = impl_convert;
-                    rval->reserved = (void *)1;
-                    stmts.emplace_back(syntax_stmt{rval});
-                }
-                // 分配全局变量
-                for (auto &v : def.var_list)
-                {
-                    auto var = std::make_shared<syntax_expr>();
-                    var->val = syntax_var{.alloc_type = syntax_var::STATIC};
-                    var->type = t;
-
-                    // 声明
-                    env_var.insert(v.val, var);
-
-                    // 初始化
-                    syntax_assign assign{.lval = var, .rval = rval};
-                    stmts.push_back(syntax_stmt{.stmt = assign});
-                }
+                add_var(def, stmts);
             }
         }
     }
-    // todo: main 函数类型检查
-    auto user_main_fun = env_fun.get_user_fun(".main");
 
+    auto user_main_fun = env_fun.get_user_fun(".main");
+    if (!user_main_fun.parameters.empty() || user_main_fun.ret_type.get_primary() != "i32")
+    {
+        throw syntax_error(module.loc, "function 'main' must be 'fu main() i32 {}'");
+    }
+
+    // 调用 main()
     auto call_main = std::make_shared<syntax_expr>();
     auto call_struct = syntax_fun_call();
     call_struct.fun_name = ".main";
@@ -136,19 +205,13 @@ void syntax_module::global_var_analysis(const node_module &module)
 
     stmts.push_back(syntax_stmt{call_main});
 
-    // return 0
-    auto zero = std::make_shared<syntax_expr>();
+    // return main()
     auto i32 = env_type.get_type("i32");
-    zero->type = i32;
-    zero->val = syntax_literal{.type = i32, .val = (unsigned long long)0};
-    stmts.push_back(syntax_stmt{zero});
-    stmts.push_back(syntax_stmt{syntax_return{zero}});
-
+    stmts.push_back(syntax_stmt{syntax_return{call_main}});
     fun_impl.emplace_back(std::make_pair("main", std::move(stmts)));
     env_fun.add_func(main_fun);
 }
 
-// todo:
 syntax_stmt syntax_module::if_analysis(const node_if_statement &node)
 {
     syntax_if_block block;
@@ -174,11 +237,11 @@ syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
     syntax_while_block block;
     env_var.push();
     block.condition = expr_analysis(node.while_condition, block.condition_stmt);
-    //add while condition to the statement
+    // add while condition to the statement
     auto new_node = node;
     auto condition_stmt = node_statement{.loc = node.loc, .statement = node.while_condition};
     new_node.loop_statement.push_back(condition_stmt);
-    //-------------------------------------
+    // -------------------------------------
     block.body = statement_analysis(new_node.loop_statement);
     env_var.pop();
     return {block};
@@ -196,6 +259,7 @@ void syntax_module::syntax_analysis(const node_module &module)
 
     // 第三步：扫描全局变量的声明，生成全局变量符号和类型定义，此处需要类型推导。生成入口函数 main
     global_var_analysis(module);
+
     // 第四步：进入每个 block，完成语义分析
     // - 变量的分析（参考全局变量部分）
     // - 控制流 if, while 的分析
@@ -205,72 +269,8 @@ void syntax_module::syntax_analysis(const node_module &module)
     }
 }
 
-static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
-{
-    if (dependency_graph.seq_num == 0)
-        return;
+// ==================== TODO 分割线 ===========================
 
-    std::vector<int> in_degree(dependency_graph.seq_num);
-    std::vector<int> visit(dependency_graph.seq_num);
-
-    for (auto it : dependency_graph.adj_list)
-    {
-        for (auto edge : it.second)
-        {
-            in_degree[edge]++;
-        }
-    }
-
-    for (auto i = 0; i < dependency_graph.seq_num; i++)
-    {
-        for (auto j = 0; j < dependency_graph.seq_num; j++)
-        {
-            if (visit[j] == 0 && in_degree[j] == 0)
-            {
-                if (dependency_graph.arr.count(j) != 0)
-                {
-                    try
-                    {
-                        env_type.add_type(dependency_graph.name_table[j], env_type.type_check(dependency_graph.arr[j]));
-                        visit[j] = 1;
-                        for (auto tmp : dependency_graph.adj_list[j])
-                        {
-                            in_degree[tmp]--;
-                        }
-                        break;
-                    }
-                    catch (std::string &e)
-                    {
-                        throw e;
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        env_type.get_type(dependency_graph.name_table[j]);
-                        visit[j] = 1;
-                        for (auto tmp : dependency_graph.adj_list[j])
-                        {
-                            in_degree[tmp]--;
-                        }
-                        break;
-                    }
-                    catch (std::string &e)
-                    {
-                        throw std::string("no such type " + dependency_graph.name_table[i]);
-                    }
-                }
-            }
-            else if (j == dependency_graph.seq_num - 1)
-            {
-                throw std::string("exists loop type define");
-            }
-        }
-    }
-}
-
-// todo: 补全该函数
 std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts)
 {
     try
@@ -530,7 +530,7 @@ void syntax_module::function_analysis(const syntax_fun &node)
     {
         auto exp = std::make_shared<syntax_expr>();
         exp->type = arg.second;
-        exp->val = syntax_var{syntax_var::PARAMETER};
+        exp->val = syntax_var();
         env_var.insert(arg.first, exp);
     }
 
@@ -572,7 +572,7 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
             for (auto &v : def->var_list)
             {
                 auto var = std::make_shared<syntax_expr>();
-                var->val = syntax_var{.alloc_type = syntax_var::STACK};
+                var->val = syntax_var();
                 var->type = t;
 
                 // 声明
