@@ -21,6 +21,7 @@ class codegen_llvm
 {
     const syntax_module &module;
     llvm::LLVMContext context;
+    std::shared_ptr<llvm::Module> llvm_module;
 
     llvm::Type *type_primary(const primary_type &t);
     llvm::Type *type_sum(const sum_type &t);
@@ -30,6 +31,8 @@ class codegen_llvm
     llvm::Value *get_value(const std::shared_ptr<syntax_expr> &expr);
 
     llvm::IRBuilder<> *builder;
+
+    void function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts);
 
 public:
     codegen_llvm(const syntax_module &mod) : module(mod) {}
