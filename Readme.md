@@ -131,7 +131,7 @@
 
 - 外部链接
     链接 C 标准库
-    特殊处理 malloc（想想怎么处理）
+    增加 new 和 delete 关键字，new type 或 new type[u64]，delete var
     printf（就类型判断的时候特判就ok）
 
 - 字符串
