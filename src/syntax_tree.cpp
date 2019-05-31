@@ -31,13 +31,6 @@ void syntax_module::typedef_analysis(const node_module &module)
         }
     }
     fix_lookahead(env_type, dependency_graph);
-
-    if (verbose_flag)
-    {
-        std::cout << "================type_table===============\n";
-        env_type.print_type_table();
-        std::cout << "===================end===================\n\n";
-    }
 }
 
 std::vector<syntax_fun> syntax_module::fundef_analysis(const node_module &module)
@@ -608,7 +601,7 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
         {
             auto e = expr_analysis(*expr, stmts);
             auto p = std::get_if<syntax_var>(&e->val);
-            if(!p)
+            if (!p)
                 stmts.emplace_back(syntax_stmt{e});
         }
         else if (auto ret = std::get_if<node_return_statement>(ps))
