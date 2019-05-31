@@ -1,5 +1,6 @@
 #include "syntax_tree.h"
 
+// todo: 补全该函数
 std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts)
 {
     try
@@ -28,7 +29,7 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
         }
         else if (auto p = std::get_if<node_construct_expr>(&node.expr))
         {
-            return nullptr;
+
         }
         else
             assert(false);
@@ -238,7 +239,54 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     }
     else if (auto p = std::get_if<node_post_dot_expr>(&node.expr))
     {
-        return nullptr;
+        auto syntax_node = expr_analysis(p->obj, stmts);
+        if(auto e = std::get_if<syntax_var>(&syntax_node->val))
+        {
+            if(!syntax_node->type.get_primary().empty())
+            {
+                auto syntax_ret = std::make_shared<syntax_expr>();
+                if(auto product_t = get_if<product_type>(&(syntax_node->type).type))
+                {
+                    bool flag = false;
+                    for(int i = 0; i < product_t->fields.size(); i++)
+                    {
+                        if(product_t->fields[i] == (p->attr).val)
+                        {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    if(flag)
+                    {
+                        syntax_ret->type = *(p->types[i]);
+                        syntax_ret->val = syntax_dot{.field = (p->attr).val, .val = syntax_node}
+                    }
+                    else
+                    {
+
+                    }
+                }
+                else if(auto sum_t = get_if<sum_type>(&(syntax_node->type).type))
+                {
+
+                }
+                else
+                    assert(false);
+            }
+            else
+                throw syntax_error(p->loc, "lvalue is not product type or sum type");
+        }
+        else if(auto e = std::get_if<syntax_dot>(&syntax->val))
+        {
+            if(!syntax_node->type.get_primary().empty())
+            {
+
+            }
+            else
+                throw syntax_error(p->loc, "lvalue is not product type or sum type");
+        }
+        else
+            throw syntax_error(p->loc, "not lvalue");
     }
     else if (auto p = std::get_if<node_post_check_expr>(&node.expr))
     {
@@ -246,7 +294,6 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     }
     else
         assert(false);
-    return nullptr;
 }
 
 std::shared_ptr<syntax_expr> syntax_module::is_left_value(const node_unary_expr &node)

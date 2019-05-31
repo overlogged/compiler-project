@@ -43,10 +43,22 @@ struct syntax_type_convert
     syntax_type target_type;
 };
 
+struct syntax_construct
+{
+    std::vector<std::string> label;
+    std::shared_ptr<syntax_expr> val;
+};
+
+struct syntax_dot
+{
+    std::string field;
+    std::shared_ptr<syntax_expr> val;
+};
+
 struct syntax_expr
 {
     syntax_type type;
-    std::variant<syntax_fun_call, syntax_literal, syntax_var, syntax_type_convert> val;
+    std::variant<syntax_fun_call, syntax_literal, syntax_var, syntax_type_convert, syntax_construct> val;
     void *reserved = nullptr;
 };
 
