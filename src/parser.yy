@@ -51,7 +51,9 @@ while (0)
   KW_ELSE  "else"
   KW_VAR   "var"
   KW_VAL  "val"
-  KW_TYPE "type"
+  KW_TYPE "type"  
+  KW_NEW  "new"
+  KW_DELETE "delete"
   LANGLE  "{"
   RANGLE  "}"
   LSQUARE "["
@@ -62,10 +64,10 @@ while (0)
   COLON   ":"
   COMMA   ","
   DOT     "."
-  REFERRENCE_OP "&"
   UNION_OP      "|"
   EQUAL "="
   QUESTION_MARK "?"
+  POINTER_OP "*"
 ;
 
 %token <std::string> OCT_INT_CONST
@@ -94,7 +96,7 @@ constant: DEC_INT_CONST {
             $$.is_const = true;
             $$.ori = $1;
             $$.type = std::make_shared<node_type>();
-            $$.type->is_ref = false;
+            $$.type->is_pointer = false;
             node_identifier type_name;
             type_name.val = number_type($1, 10, $$.val);
             $$.type->type_val = type_name;
@@ -104,7 +106,7 @@ constant: DEC_INT_CONST {
             $$.is_const = true;
             $$.ori = $1; 
             $$.type = std::make_shared<node_type>();
-            $$.type->is_ref = false;
+            $$.type->is_pointer = false;
             node_identifier type_name;
             type_name.val = bin_type($1);
             $$.type->type_val = type_name;
@@ -115,7 +117,7 @@ constant: DEC_INT_CONST {
             $$.is_const = true;
             $$.ori = $1;
             $$.type = std::make_shared<node_type>();
-            $$.type->is_ref = false;
+            $$.type->is_pointer = false;
             node_identifier type_name;
             auto value = $1.substr(1);
             type_name.val = number_type(value, 8, $$.val);
@@ -126,7 +128,7 @@ constant: DEC_INT_CONST {
             $$.is_const = true;
             $$.ori = $1;
             $$.type = std::make_shared<node_type>();
-            $$.type->is_ref = false;
+            $$.type->is_pointer = false;
             node_identifier type_name;
             auto value = $1.substr(2);
             type_name.val = number_type(value, 16, $$.val);
@@ -137,7 +139,7 @@ constant: DEC_INT_CONST {
             $$.is_const = true;
             $$.ori = $1;
             $$.type = std::make_shared<node_type>();
-            $$.type->is_ref = false;
+            $$.type->is_pointer = false;
             node_identifier type_name;
             type_name.val = float_type($1, 10, $$.val);
             $$.type->type_val = type_name;
@@ -147,7 +149,7 @@ constant: DEC_INT_CONST {
             $$.is_const = true;
             $$.ori = $1;
             $$.type = std::make_shared<node_type>();
-            $$.type->is_ref = false;
+            $$.type->is_pointer = false;
             node_identifier type_name;
             auto value = $1.substr(2);
             type_name.val = float_type(value, 16, $$.val);
@@ -158,7 +160,7 @@ constant: DEC_INT_CONST {
             $$.is_const = true;
             $$.ori = $1; 
             $$.type = std::make_shared<node_type>();
-            $$.type->is_ref = false;
+            $$.type->is_pointer = false;
             node_identifier type_name;
             type_name.val = "char";
             $$.type->type_val = type_name;
@@ -169,7 +171,7 @@ constant: DEC_INT_CONST {
             $$.is_const = true;
             $$.ori = trim($1, '\"');
             $$.type = std::make_shared<node_type>();
-            $$.type->is_ref = false;
+            $$.type->is_pointer = false;
             node_identifier type_name;
             type_name.val = "char&";
             $$.type->type_val = type_name;
@@ -280,7 +282,7 @@ KW_FN identifier fun_param LANGLE statement_list RANGLE
         .params = $3,
         .ret_type = node_type {
             .loc = @$,
-            .is_ref = false,
+            .is_pointer = false,
             .type_val = node_identifier {
                 .loc = @$,
                 .val = "auto"
@@ -360,7 +362,7 @@ unaryExpr:
         $$.ops.push_back($1);
         $$.loc = @$;
     }|
-    REFERRENCE_OP unaryExpr {
+    POINTER_OP unaryExpr {
         $$ = std::move($2);
         $$.ops.push_back("*");
         $$.loc = @$;
@@ -384,7 +386,7 @@ binaryExpr:
         $$.ops.push_back($2);
         $$.loc = @$;
     } |
-    binaryExpr REFERRENCE_OP unaryExpr{
+    binaryExpr POINTER_OP unaryExpr{
         $$ = std::move($1);
         $$.vars.push_back($3);
         $$.ops.push_back("*");
@@ -395,7 +397,7 @@ binaryExpr:
         $$.vars.push_back($3);
         $$.ops.push_back("|");
         $$.loc = @$;
-    } ;
+    };
 %type<node_construct_expr> construct_expr;
 construct_expr:
     LANGLE construct_element RANGLE
@@ -475,7 +477,22 @@ expression:
         data->expr = $1;
         $$ = data;
         $$->loc = @$;
+    }|
+    new_expression{
+        auto data = std::make_shared<node_expression>();
+        data->expr = $1;
+        $$ = data;
+        $$->loc = @$;
     }
+
+%type <node_new_expr> new_expression;
+new_expression:
+    KW_NEW type
+    {
+        $$.new_type = *$2;
+        $$.loc = @$;
+    }
+
 %type <node_expression_list> expression_list;
 expression_list: 
     %empty {
@@ -515,6 +532,18 @@ statement:
     }|
     var_def_statement SEMICOLON{
         $$.statement = $1;
+        $$.loc = @$;
+    }|
+    delete_statement SEMICOLON{
+        $$.statement = $1;
+        $$.loc = @$;
+    }
+
+%type <node_delete_statement> delete_statement;
+delete_statement:
+    KW_DELETE expression
+    {
+        $$.delete_expr = *$2;
         $$.loc = @$;
     }
 %type <node_var_def_statement> var_def_statement;
@@ -701,15 +730,15 @@ type:
     identifier
     {
         auto data = std::make_shared<node_type>();
-        data->is_ref = false;
+        data->is_pointer = false;
         data->type_val = $1;
         $$ = data;
         $$->loc = @$;
     }|
-    identifier REFERRENCE_OP
+    identifier POINTER_OP
     {
         auto data = std::make_shared<node_type>();
-        data->is_ref = true;
+        data->is_pointer = true;
         data->type_val = $1;
         $$ = data;
         $$->loc = @$;
@@ -717,15 +746,15 @@ type:
     sum_type
     {
         auto data = std::make_shared<node_type>();
-        data->is_ref = false;
+        data->is_pointer = false;
         data->type_val = $1;
         $$ = data;
         $$->loc = @$;
     }|
-    sum_type REFERRENCE_OP
+    sum_type POINTER_OP
     {
         auto data = std::make_shared<node_type>();
-        data->is_ref = true;
+        data->is_pointer = true;
         data->type_val = $1;
         $$ = data;
         $$->loc = @$;
@@ -733,15 +762,15 @@ type:
     product_type
     {
         auto data = std::make_shared<node_type>();
-        data->is_ref = false;
+        data->is_pointer = false;
         data->type_val = $1;
         $$ = data;
         $$->loc = @$;
     }|
-    product_type REFERRENCE_OP
+    product_type POINTER_OP
     {
         auto data = std::make_shared<node_type>();
-        data->is_ref = true;
+        data->is_pointer = true;
         data->type_val = $1;
         $$ = data;
         $$->loc = @$;

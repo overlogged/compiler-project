@@ -36,12 +36,12 @@ escape_seq             {simple_escape_seq}|{octal_escape_seq}|{hex_escape_seq}|{
 c_char_seq             ([^'\\\r\n])|{escape_seq}
 char_const             (\'{c_char_seq}\')|("L"\'{c_char_seq}\')|("u"\'{c_char_seq}\')|("U"\'{c_char_seq}\')
 string_const           \"{c_char_seq}+\"
-unary_bin_op           ("+"|"-"|"*")
+unary_bin_op           ("&"|"+"|"-")
 unary_op               ("~"|"!")
-binary_op              ("*"|"/"|"%"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
-assign_op              ("*"|"/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")=
+binary_op              ("/"|"%"|"^"|">>"|"<<"|"||"|"&&"|"~"|"!"|">"|"<"|"<="|">="|"!="|"==")
+assign_op              ("/"|"%"|"&"|"|"|"^"|">>"|"<<"|"||"|"&&"|"+"|"-")=
 equal                  "="
-referrence_op          "&"
+pointer_op             "*"
 union_op               "|"
 question_mark          "?"
 %{
@@ -82,9 +82,11 @@ question_mark          "?"
 "var"           return yy::parser::make_KW_VAR (loc);
 "val"           return yy::parser::make_KW_VAL (loc);
 "type"          return yy::parser::make_KW_TYPE(loc);
+"new"           return yy::parser::make_KW_NEW(loc);
+"delete"        return yy::parser::make_KW_DELETE(loc);
 {equal}         return yy::parser::make_EQUAL (loc);
 {question_mark} return yy::parser::make_QUESTION_MARK (loc);
-{referrence_op} return yy::parser::make_REFERRENCE_OP (loc);
+{pointer_op}    return yy::parser::make_POINTER_OP (loc);
 {union_op}      return yy::parser::make_UNION_OP (loc);
 {id}            return yy::parser::make_IDENTIFIER (yytext, loc);
 {oct_int_const} return yy::parser::make_OCT_INT_CONST(yytext, loc);

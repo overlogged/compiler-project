@@ -209,26 +209,38 @@ inline std::string to_string(const node_product_type &node)
 struct node_type
 {
     yy::location loc;
-    bool is_ref;
+    bool is_pointer;
     std::variant<node_identifier, node_sum_type, node_product_type> type_val;
 };
 inline std::string to_string(const node_type &node)
 {
     std::string lable;
-    if (node.is_ref)
-        lable = "ref_type";
+    if (node.is_pointer)
+        lable = "pointer_type";
     else
         lable = "type";
     return obj_to_string(vec_str{lable}, vec_str{to_string(node.type_val)});
 }
 const node_type node_type_auto = node_type {
     .loc = yy::location(),
-    .is_ref = false,
+    .is_pointer = false,
     .type_val = node_identifier{
         .loc = yy::location(),
         .val = "auto"
     }
 };
+
+//node_new_expr
+struct node_new_expr
+{
+    yy::location loc;
+    node_type new_type;
+};
+inline std::string to_string(const node_new_expr &node)
+{
+    return obj_to_string(vec_str{"new_type"},vec_str{to_string(node.new_type)});
+}
+
 
 // node_statement
 struct node_statement;
@@ -236,7 +248,7 @@ struct node_statement;
 struct node_expression
 {
     yy::location loc;
-    std::variant<node_binary_expr, node_assign_expr, node_construct_expr> expr;
+    std::variant<node_binary_expr, node_assign_expr, node_construct_expr,node_new_expr> expr;
 };
 inline std::string to_string(const node_expression &node)
 {
@@ -314,6 +326,17 @@ inline std::string to_string(const node_var_def_statement &node)
     return obj_to_string(vec_str{"is_immutable", "var_list", "var_type", "initial_exp"}, vec_str{to_string(node.is_immutable), to_string(node.var_list), to_string(node.var_type), to_string(node.initial_exp)});
 }
 
+
+struct node_delete_statement
+{
+    yy::location loc;
+    node_expression delete_expr;
+}; 
+inline std::string to_string(const node_delete_statement& node)
+{
+    return obj_to_string(vec_str{"delete_expr"},vec_str{to_string(node.delete_expr)});
+}
+
 struct node_global_var_def_block
 {
     yy::location loc;
@@ -333,7 +356,8 @@ struct node_statement
         node_while_statement,
         node_for_statement,
         node_expression,
-        node_var_def_statement>
+        node_var_def_statement,
+        node_delete_statement>
         statement;
 };
 inline std::string to_string(const node_statement &node)
