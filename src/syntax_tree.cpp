@@ -195,7 +195,7 @@ std::vector<syntax_fun> syntax_module::fundef_analysis(const node_module &module
 
 void syntax_module::global_var_analysis(const node_module &module)
 {
-    std::vector<syntax_stmt> stmts;
+    std::vector<syntax_stmt> stmts{};
     syntax_fun main_fun;
     main_fun.fun_name = "main";
     main_fun.ret_type = env_type.get_type("i32");
@@ -231,8 +231,8 @@ void syntax_module::global_var_analysis(const node_module &module)
     stmts.push_back(syntax_stmt{syntax_return{call_main}});
 
     fun_name.push_back("main");
-    fun_impl.emplace_back(std::move(stmts));
-    fun_args.push_back({});
+    fun_impl.push_back(std::move(stmts));
+    fun_args.push_back(std::vector<std::shared_ptr<syntax_expr>>());
 
     env_fun.add_func(main_fun);
 }

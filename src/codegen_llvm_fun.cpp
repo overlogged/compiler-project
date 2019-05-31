@@ -158,14 +158,14 @@ void codegen_llvm::block_if(const syntax_if_block &syntax_if)
     builder->CreateBr(block_merge);
 
     // else
-    block_else->insertInto(func);
     builder->SetInsertPoint(block_else);
     block(syntax_if.else_stmt);
     builder->CreateBr(block_merge);
+    block_else->insertInto(func);
 
     // merge
-    block_merge->insertInto(func);
     builder->SetInsertPoint(block_merge);
+    block_merge->insertInto(func);
 }
 
 // 处理 block
@@ -192,7 +192,7 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
         // todo: for, while, new, delete
         else if (auto p_if = std::get_if<std::shared_ptr<syntax_if_block>>(p_stmt))
         {
-            block_if(**p_if);
+            block_if(*p_if->get());
         }
     }
 }
@@ -201,7 +201,7 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
 void codegen_llvm::function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts, const std::vector<std::shared_ptr<syntax_expr>> &args)
 {
     // 定义函数体
-    auto func = llvm_module->getFunction(fun_name);
+    func = llvm_module->getFunction(fun_name);
     auto return_type = func->getReturnType();
 
     // 入口函数
