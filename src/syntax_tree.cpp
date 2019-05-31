@@ -72,7 +72,7 @@ static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
     }
 }
 
-void syntax_module::add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts)
+void syntax_module::add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts, bool is_global)
 {
     auto init_expr = expr_analysis(def.initial_exp, stmts);
     auto rval = std::make_shared<syntax_expr>();
@@ -89,7 +89,7 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
         rval = expr_convert_to(init_expr, t);
         stmts.emplace_back(syntax_stmt{rval});
     }
-    // 分配全局变量
+    // 分配变量
     for (auto &v : def.var_list)
     {
         auto var = std::make_shared<syntax_expr>();
@@ -99,6 +99,7 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
 
         // 声明
         env_var.insert(v.val, var);
+        if(!is_global) stmts.push_back(syntax_stmt{var});
 
         // 初始化
         syntax_assign assign{.lval = var, .rval = rval};
@@ -206,7 +207,7 @@ void syntax_module::global_var_analysis(const node_module &module)
         {
             for (auto &def : p_global_var_def->arr)
             {
-                add_var(def, stmts);
+                add_var(def, stmts, true);
             }
         }
     }

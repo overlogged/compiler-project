@@ -145,7 +145,7 @@ class syntax_module
     syntax_stmt while_analysis(const node_while_statement &node);
     std::vector<syntax_stmt> statement_analysis(std::vector<node_statement> origin_stmts);
 
-    void add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts);
+    void add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts,bool is_global = false);
 
 public:
     type_table env_type;
