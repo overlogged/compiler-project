@@ -18,6 +18,9 @@ bool syntax_type::subtyping(const syntax_type &t) const
     {
         auto t1 = get_primary();
         auto t2 = t.get_primary();
+        // 判断整形
+        static std::map<std::string, int> int_table = {
+            {"i8", 0}, {"u8", 1}, {"i16", 2}, {"u16", 3}, {"i32", 4}, {"u32", 5}, {"i64", 6}, {"u64", 7}};
 
         // 基础类型
         if (!t1.empty() && !t2.empty())
@@ -43,12 +46,13 @@ bool syntax_type::subtyping(const syntax_type &t) const
                 {
                     return true;
                 }
+                if (t2 == "f32" || t2 == "f64")
+                {
+                    auto it = int_table.find(t1);
+                    return it != int_table.end();
+                }
                 return false;
             }
-
-            // 判断整形
-            static std::map<std::string, int> int_table = {
-                {"i8", 0}, {"u8", 1}, {"i16", 2}, {"u16", 3}, {"i32", 4}, {"u32", 5}, {"i64", 6}, {"u64", 7}};
 
             if (int_table[t1] % 2 == int_table[t2] % 2)
             {
