@@ -98,23 +98,6 @@ void syntax_module::global_var_analysis(const node_module &module)
             for (auto &def : p_global_var_def->arr)
             {
                 auto init_expr = expr_analysis(def.initial_exp, stmts);
-                // test remove!!
-                // std::cout << stmts.size() << '\n';
-                // for(auto it : stmts)
-                // {
-                //     auto tmp = std::get_if<std::shared_ptr<syntax_expr>>(&it.stmt);
-                //     if(auto t_1 = std::get_if<syntax_literal>(&tmp->get()->val))
-                //     {
-                //         if(auto t_2 = std::get_if<unsigned long long>(&t_1->val))
-                //         {
-                //             std::cout << *t_2 << '\n';
-                //         }
-                //     }
-                //     else if(auto t_3 = std::get_if<syntax_fun_call>(&tmp->get()->val))
-                //     {
-                //         std::cout << t_3->fun_name << '\n';
-                //     }
-                // }
                 auto rval = std::make_shared<syntax_expr>();
                 syntax_type t = env_type.type_check(def.var_type);
                 if (t.is_auto())
@@ -624,7 +607,9 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
         else if (auto expr = std::get_if<node_expression>(ps))
         {
             auto e = expr_analysis(*expr, stmts);
-            stmts.emplace_back(syntax_stmt{e});
+            auto p = std::get_if<syntax_var>(&e->val);
+            if(!p)
+                stmts.emplace_back(syntax_stmt{e});
         }
         else if (auto ret = std::get_if<node_return_statement>(ps))
         {
