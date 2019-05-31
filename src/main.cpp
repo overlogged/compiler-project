@@ -1,6 +1,7 @@
 #include "driver.h"
 #include "syntax_tree.h"
 #include "codegen.h"
+#include "exception.h"
 #include <iostream>
 #include <fstream>
 
@@ -35,7 +36,15 @@ int main(int argc, char *argv[])
             }
             catch (std::string &s)
             {
-                std::cout << "[error] " << s << std::endl;
+                std::cerr << "internel error: " << s << std::endl;
+            }
+            catch (syntax_error &e)
+            {
+                std::cerr << e;
+            }
+            catch (inner_error &e)
+            {
+                std::cerr << "unhandled inner error: " << e.number << std::endl;
             }
         }
         else

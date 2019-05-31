@@ -1,5 +1,6 @@
 #include "function.h"
 #include "syntax_tree.h"
+#include "exception.h"
 #include <map>
 #include <set>
 
@@ -9,151 +10,152 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
 {
     auto p_ret = make_shared<syntax_expr>();
     p_ret->val = call;
-    std::string t1 = call.parameters[0]->type.get_primary();
-    std::string t2 = call.parameters[1]->type.get_primary();
     // .
-    if(func_name[0] == '.' && func_name[func_name.size()-1] != '?')
+    if (func_name[0] == '.' && func_name[func_name.size() - 1] != '?')
     {
         bool match = false;
-        std::string field_name = func_name.substr(1,func_name.size()-1);
-        if(call.parameters.size() != 1)
-            throw("parameters not match");
+        std::string field_name = func_name.substr(1, func_name.size() - 1);
+        if (call.parameters.size() != 1)
+            throw inner_error(INNER_NO_MATCH_FUN, func_name);
         auto ptr_product_val = call.parameters[0];
         auto ptr_product_type = std::get_if<product_type>(&ptr_product_val->type.type);
-        if(!ptr_product_type)
-            throw("parameters not match");
+        if (!ptr_product_type)
+            throw inner_error(INNER_NO_MATCH_FUN, func_name);
         auto it_fields = ptr_product_type->fields.begin();
         auto it_type = ptr_product_type->types.begin();
-        for(;it_fields!=ptr_product_type->fields.end();it_fields++,it_type++)
+        for (; it_fields != ptr_product_type->fields.end(); it_fields++, it_type++)
         {
-            if(field_name == *it_fields)
-                {
-                    match = true;
-                    p_ret->type = **it_type;
-                    break;
-                }
+            if (field_name == *it_fields)
+            {
+                match = true;
+                p_ret->type = **it_type;
+                break;
+            }
         }
-        if(match)
+        if (match)
             return p_ret;
         else
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN, func_name);
     }
     //.?
-    else if(func_name[0] == '.' && func_name[func_name.size()-1] == '?')
+    else if (func_name[0] == '.' && func_name[func_name.size() - 1] == '?')
     {
         bool match = false;
-        std::string alt_name = func_name.substr(1,func_name.size()-2);
-        if(call.parameters.size() != 1)
-            throw("parameters not match");
+        std::string alt_name = func_name.substr(1, func_name.size() - 2);
+        if (call.parameters.size() != 1)
+            throw inner_error(INNER_NO_MATCH_FUN, func_name);
         auto ptr_sum_val = call.parameters[0];
         auto ptr_sum_type = std::get_if<sum_type>(&ptr_sum_val->type.type);
-        if(!ptr_sum_type)
-            throw("parameters not match");
+        if (!ptr_sum_type)
+            throw inner_error(INNER_NO_MATCH_FUN, func_name);
         auto it_alt = ptr_sum_type->alters.begin();
         auto it_type = ptr_sum_type->types.begin();
-        for(;it_alt!=ptr_sum_type->alters.end();it_alt++,it_type++)
+        for (; it_alt != ptr_sum_type->alters.end(); it_alt++, it_type++)
         {
-            if(alt_name == *it_alt)
-                {
-                    match = true;
-                    p_ret->type = **it_type;
-                    break;
-                }
+            if (alt_name == *it_alt)
+            {
+                match = true;
+                p_ret->type = **it_type;
+                break;
+            }
         }
-        if(match)
+        if (match)
             return p_ret;
         else
-            throw("parameters not match");
+            throw inner_error(INNER_NO_MATCH_FUN, func_name);
     }
     // == !=
-    else if(func_name == "==" || func_name == "!=")
+    else if (func_name == "==" || func_name == "!=")
     {
-        p_ret->type =  syntax_type{.type = primary_type{.name = "bool",.size = 1}};
-        if(call.parameters.size() != 2)
-            throw("parameters not match");
-        if(call.parameters[0]->type.type_equal(call.parameters[1]->type))
+        p_ret->type = syntax_type{.type = primary_type{.name = "bool", .size = 1}};
+        if (call.parameters.size() != 2)
+            throw inner_error(INNER_NO_MATCH_FUN, func_name);
+
+        std::string t1 = call.parameters[0]->type.get_primary();
+        std::string t2 = call.parameters[1]->type.get_primary();
+
+        if (call.parameters[0]->type.type_equal(call.parameters[1]->type))
         {
             return p_ret;
         }
-        else if(t1 != "" && t2 != "")
+        else if (t1 != "" && t2 != "")
         {
-            implicit_conv(call.parameters[0],call.parameters[1]);
+            implicit_conv(call.parameters[0], call.parameters[1]);
         }
-        else 
-            throw("parameters not match");
+        else
+            throw inner_error(INNER_NO_MATCH_FUN, func_name);
     }
-    // inline function
-    try
+    else
     {
-        p_ret->type = infer_type_in_list(func_name, call, inline_fun);
-        return p_ret;
+        // inline function
+        bool find_flag = false;
+        p_ret->type = infer_type_in_list(func_name, call, inline_fun, find_flag);
+        if (find_flag)
+            return p_ret;
+
+        // normal function
+        p_ret->type = infer_type_in_list(func_name, call, normal_fun, find_flag);
+        if (find_flag)
+            return p_ret;
     }
-    catch (std::string exception)
-    {
-        if (exception == "parameters not match")
-            throw(exception);
-    }
-    // normal function
-    p_ret->type = infer_type_in_list(func_name, call, normal_fun);
-    return p_ret;
+    // not found
+    throw inner_error(INNER_NO_MATCH_FUN, func_name);
 }
 
-syntax_type function_table::infer_type_in_list(const std::string &func_name,syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list)
+syntax_type function_table::infer_type_in_list(const std::string &func_name, syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list, bool &find_flag)
 {
     syntax_type ret_type;
+
     auto it = func_list.find(func_name);
-    if (it == func_list.end())
-    {
-        throw string("no such function " + func_name);
-    }
-    auto &fun = it->second;
-    bool match = true;
     bool match_flag = false;
-    for (auto i = 0; i < fun.size(); i++)
+    if (it != func_list.end())
     {
-        if (fun[i].parameters.size() == call.parameters.size())
-        { 
-            for (auto j = 0; j < fun[i].parameters.size(); j++)
+        auto &fun = it->second;
+        bool match = true;
+        for (auto i = 0; i < fun.size(); i++)
+        {
+            if (fun[i].parameters.size() == call.parameters.size())
             {
-                auto t1 = fun[i].parameters[j].second;
-                auto t2 = call.parameters[j]->type;
-                auto t1p = fun[i].parameters[j].second.get_primary();
-                auto t2p = call.parameters[j]->type.get_primary();
-                if (t1p == "" || t2p == "")
+                for (auto j = 0; j < fun[i].parameters.size(); j++)
                 {
-                    if (!t2.subtyping(t1))
+                    auto t1 = fun[i].parameters[j].second;
+                    auto t2 = call.parameters[j]->type;
+                    auto t1p = fun[i].parameters[j].second.get_primary();
+                    auto t2p = call.parameters[j]->type.get_primary();
+                    if (t1p == "" || t2p == "")
+                    {
+                        if (!t2.subtyping(t1))
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+                    else if (t1p != "" && t2p != "")
+                    {
+                        if (t1p != t2p)
+                            implicit_conv(call.parameters[j], fun[i].parameters[j].second);
+                    }
+                    else
                     {
                         match = false;
                         break;
                     }
                 }
-                else if (t1p != "" && t2p != "")
-                {
-                    if(t1p != t2p)
-                        implicit_conv(call.parameters[j],fun[i].parameters[j].second);
-                }
-                else
-                {
-                    match = false;
-                    break;
-                }
+            }
+            if (match)
+            {
+                ret_type = fun[i].ret_type;
+                match_flag = true;
+                break;
+            }
+            else
+            {
+                match = true;
             }
         }
-        if (match)
-        {
-            ret_type = fun[i].ret_type;
-            match_flag =true;
-            break;
-        }
-        else
-        {
-            match = true;
-        }
     }
-    if(match_flag)
-        return ret_type;
-    else
-        throw("parameters not match");
+    find_flag = match_flag;
+    return ret_type;
 }
 
 function_table::function_table()
@@ -170,8 +172,8 @@ function_table::function_table()
         create_bin_op_fun(op[i], "i64", 8, "i64", 8, "i64", 8);
         create_bin_op_fun(op[i], "u64", 8, "u64", 8, "u64", 8);
     }
-    op = {">","<",">=","<="};
-    for(int i =0;i<op.size();i++)
+    op = {">", "<", ">=", "<="};
+    for (int i = 0; i < op.size(); i++)
     {
         create_bin_op_fun(op[i], "bool", 1, "i8", 1, "i8", 1);
         create_bin_op_fun(op[i], "bool", 1, "u8", 1, "u8", 1);
@@ -222,11 +224,11 @@ bool function_table::primary_match(std::string t1, std::string t2)
     return (i1 == i2 || i1 - i2 >= 2) && (((i1 - i2) % 2 == 0) || ((i1 - i2) % 2 == 1 && i2 % 2 == 0));
 }
 
-void function_table::implicit_conv(std::shared_ptr<syntax_expr> param1,std::shared_ptr<syntax_expr> param2)
+void function_table::implicit_conv(std::shared_ptr<syntax_expr> param1, std::shared_ptr<syntax_expr> param2)
 {
     std::string t1 = param1->type.get_primary();
     std::string t2 = param2->type.get_primary();
-    if(primary_match(t1,t2))
+    if (primary_match(t1, t2))
     {
         auto conv = std::make_shared<syntax_expr>();
         conv->val = syntax_type_convert{.source_expr = param2,
@@ -234,7 +236,7 @@ void function_table::implicit_conv(std::shared_ptr<syntax_expr> param1,std::shar
         conv->type = param1->type;
         param2 = conv;
     }
-    else if(primary_match(t2,t1))
+    else if (primary_match(t2, t1))
     {
         auto conv = std::make_shared<syntax_expr>();
         conv->val = syntax_type_convert{.source_expr = param1,
@@ -243,14 +245,14 @@ void function_table::implicit_conv(std::shared_ptr<syntax_expr> param1,std::shar
         param1 = conv;
     }
     else
-        throw("parameters not match");
+        throw inner_error(INNER_NO_MATCH_FUN);
 }
 
-void function_table::implicit_conv(std::shared_ptr<syntax_expr> param,const syntax_type fun_param_type)
+void function_table::implicit_conv(std::shared_ptr<syntax_expr> param, const syntax_type fun_param_type)
 {
     std::string t1 = param->type.get_primary();
     std::string t2 = fun_param_type.get_primary();
-    if(primary_match(t2,t1))
+    if (primary_match(t2, t1))
     {
         auto conv = std::make_shared<syntax_expr>();
         conv->val = syntax_type_convert{.source_expr = param,
@@ -259,5 +261,5 @@ void function_table::implicit_conv(std::shared_ptr<syntax_expr> param,const synt
         param = conv;
     }
     else
-        throw("parameters not match");
+        throw inner_error(INNER_NO_MATCH_FUN);
 }

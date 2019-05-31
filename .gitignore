@@ -11,3 +11,4 @@ src/*.hh
 *.o
 samples/*.json
 .out
+*.ll

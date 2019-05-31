@@ -5,6 +5,7 @@
 #include <variant>
 #include <exception>
 #include "parse_tree.h"
+#include "exception.h"
 #include <iostream>
 
 struct syntax_type;
@@ -21,6 +22,18 @@ struct product_type
     std::vector<std::shared_ptr<syntax_type>> types;
     std::vector<size_t> offsets;
     size_t size;
+
+    int get_index(const std::string &name)
+    {
+        for (auto i = 0; i < fields.size(); i++)
+        {
+            if (fields[i] == name)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
 };
 
 struct sum_type
@@ -144,6 +157,13 @@ struct syntax_type
             return "";
     }
 
+    int get_primary_size() const
+    {
+        if (auto p = std::get_if<primary_type>(&type))
+            return p->size;
+        else
+            return 0;
+    }
     // size_t get_size() const {
     //     if(auto p = std::get_if<primary_type>(&type)) {
     //         return p->size;
@@ -302,7 +322,7 @@ public:
 
     syntax_type get_type(std::string name)
     {
-        static const std::string builtin_types[] = {"u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "char", "unit", "auto","bool"};
+        static const std::string builtin_types[] = {"u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "char", "unit", "auto", "bool"};
         static const size_t builtin_size[] = {1, 1, 2, 2, 4, 4, 8, 8, 1, 1, 0, 1};
         static const size_t builtin_n = sizeof(builtin_size) / sizeof(size_t);
         for (auto i = 0; i < builtin_n; i++)
@@ -345,7 +365,7 @@ public:
                 {
                     dependency_graph->changed = true;
                     dependency_graph->add_node(type_name);
-                    return syntax_type();
+                    throw inner_error(INNER_NOT_INFER_TYPE);
                 }
             }
         }
