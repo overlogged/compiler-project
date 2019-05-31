@@ -80,7 +80,7 @@ Type *codegen_llvm::llvm_type(const syntax_type &s)
         throw std::string("bad type");
     }
 
-    if (s.is_ref)
+    if (s.is_ref())
     {
         ret = PointerType::get(ret, 0);
     }
