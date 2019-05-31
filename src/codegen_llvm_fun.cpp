@@ -204,17 +204,20 @@ void codegen_llvm::function(const std::string &fun_name, const std::vector<synta
     auto func = llvm_module->getFunction(fun_name);
     auto return_type = func->getReturnType();
 
-    // 初始化参数
-    for (auto &arg : func->args())
-    {
-        auto idx = arg.getArgNo();
-        args[idx]->reserved = (Value *)&arg;
-    }
-
+    // 入口函数
     auto block_entry = BasicBlock::Create(context, "entry", func);
     builder->SetInsertPoint(block_entry);
     ret_value = builder->CreateAlloca(return_type, nullptr, "ret_value");
     builder->CreateStore(Constant::getNullValue(return_type), ret_value);
+
+    // 初始化参数
+    for (auto &arg : func->args())
+    {
+        auto idx = arg.getArgNo();
+        auto var = builder->CreateAlloca(arg.getType());
+        args[idx]->reserved = var;
+        builder->CreateStore(&arg, var);
+    }
 
     block_return = BasicBlock::Create(context, "return");
     builder->SetInsertPoint(block_return);
