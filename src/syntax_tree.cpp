@@ -75,6 +75,7 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
         auto var = std::make_shared<syntax_expr>();
         var->val = syntax_var();
         var->type = t;
+        var->is_immutale = def.is_immutable;
 
         // 声明
         env_var.insert(v.val, var);
@@ -193,7 +194,7 @@ void syntax_module::global_var_analysis(const node_module &module)
     auto user_main_fun = env_fun.get_user_fun(".main");
     if (!user_main_fun.parameters.empty() || user_main_fun.ret_type.get_primary() != "i32")
     {
-        throw syntax_error(module.loc, "function 'main' must be 'fu main() i32 {}'");
+        throw syntax_error(module.loc, "function 'main' must be 'fn main() i32 {}'");
     }
 
     // 调用 main()

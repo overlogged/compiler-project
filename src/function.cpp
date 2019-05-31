@@ -10,35 +10,8 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
 {
     auto p_ret = make_shared<syntax_expr>();
     p_ret->val = call;
-    // .
-    if (func_name[0] == '.' && func_name[func_name.size() - 1] != '?')
-    {
-        bool match = false;
-        std::string field_name = func_name.substr(1, func_name.size() - 1);
-        if (call.parameters.size() != 1)
-            throw inner_error(INNER_NO_MATCH_FUN, func_name);
-        auto ptr_product_val = call.parameters[0];
-        auto ptr_product_type = std::get_if<product_type>(&ptr_product_val->type.type);
-        if (!ptr_product_type)
-            throw inner_error(INNER_NO_MATCH_FUN, func_name);
-        auto it_fields = ptr_product_type->fields.begin();
-        auto it_type = ptr_product_type->types.begin();
-        for (; it_fields != ptr_product_type->fields.end(); it_fields++, it_type++)
-        {
-            if (field_name == *it_fields)
-            {
-                match = true;
-                p_ret->type = **it_type;
-                break;
-            }
-        }
-        if (match)
-            return p_ret;
-        else
-            throw inner_error(INNER_NO_MATCH_FUN, func_name);
-    }
     //.?
-    else if (func_name[0] == '.' && func_name[func_name.size() - 1] == '?')
+    if (func_name[0] == '.' && func_name[func_name.size() - 1] == '?')
     {
         bool match = false;
         std::string alt_name = func_name.substr(1, func_name.size() - 2);

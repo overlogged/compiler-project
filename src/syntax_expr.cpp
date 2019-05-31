@@ -12,7 +12,12 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
         else if (auto p = std::get_if<node_assign_expr>(&node.expr))
         {
             auto syntax_node_r = expr_analysis(*(p->rval), stmts);
-            auto syntax_node_l = is_left_value(p->lval);
+            auto syntax_node_l = unary_expr_analysis(p->lval, stmts);
+            if(!is_left_value(*syntax_node_l))
+                throw syntax_error(p->loc, "left oprand of assignment is not lvalue");
+                //is immutable?
+            if(is_lvalue_immutale(*syntax_node_l))
+                throw syntax_error(p->loc, "left oprand of assignment is immutable");
             if (p->op != "=")
             {
                 auto syntax_fun_node = syntax_fun_call{.fun_name = p->op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
@@ -194,11 +199,6 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
         {
             try
             {
-                // 这里不能加
-                // 因为加了就会有一次分配行为
-                // 而分配空间是在 val,var 语句里做的
-                // stmts.push_back(syntax_stmt{.stmt = env_var.find(q->val)});
-                // 这里应该是 load
                 return env_var.find(q->val);
             }
             catch (const std::string &e)
@@ -239,16 +239,19 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     }
     else if (auto p = std::get_if<node_post_dot_expr>(&node.expr))
     {
-        auto syntax_node = expr_analysis(p->obj, stmts);
-        if(auto e = std::get_if<syntax_var>(&syntax_node->val))
+        auto syntax_node = post_expr_analysis(*(p->obj), stmts);
+        auto e = std::get_if<syntax_var>(&syntax_node->val);
+        auto q = std::get_if<syntax_dot>(&syntax_node->val);
+        if(e || q)
         {
             if(!syntax_node->type.get_primary().empty())
             {
                 auto syntax_ret = std::make_shared<syntax_expr>();
-                if(auto product_t = get_if<product_type>(&(syntax_node->type).type))
+                if(auto product_t = std::get_if<product_type>(&(syntax_node->type).type))
                 {
                     bool flag = false;
-                    for(int i = 0; i < product_t->fields.size(); i++)
+                    int i = 0;
+                    for(i = 0; i < product_t->fields.size(); i++)
                     {
                         if(product_t->fields[i] == (p->attr).val)
                         {
@@ -258,29 +261,39 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
                     }
                     if(flag)
                     {
-                        syntax_ret->type = *(p->types[i]);
-                        syntax_ret->val = syntax_dot{.field = (p->attr).val, .val = syntax_node}
+                        syntax_ret->is_immutale = syntax_node->is_immutale;
+                        syntax_ret->type = *(product_t->types[i]);
+                        syntax_ret->val = syntax_dot{.field = (p->attr).val, .val = syntax_node};
+                        return syntax_ret;
                     }
                     else
-                    {
-
-                    }
+                        throw syntax_error(p->loc, "no such attribute");
                 }
-                else if(auto sum_t = get_if<sum_type>(&(syntax_node->type).type))
+                else if(auto sum_t = std::get_if<sum_type>(&(syntax_node->type).type))
                 {
-
+                    auto syntax_ret = std::make_shared<syntax_expr>();
+                    bool flag = false;
+                    int i;
+                    for(i = 0; i < sum_t->alters.size(); i++)
+                    {
+                        if(p->attr.val == sum_t->alters[i])
+                        {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    if(flag)
+                    {
+                        syntax_ret->is_immutale = syntax_node->is_immutale;
+                        syntax_ret->type = *(sum_t->types[i]);
+                        syntax_ret->val = syntax_dot{.field = p->attr.val, .val = syntax_node};
+                        return syntax_ret;
+                    }
+                    else
+                        throw syntax_error(p->loc, "no such attribute");
                 }
                 else
                     assert(false);
-            }
-            else
-                throw syntax_error(p->loc, "lvalue is not product type or sum type");
-        }
-        else if(auto e = std::get_if<syntax_dot>(&syntax->val))
-        {
-            if(!syntax_node->type.get_primary().empty())
-            {
-
             }
             else
                 throw syntax_error(p->loc, "lvalue is not product type or sum type");
@@ -290,27 +303,22 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     }
     else if (auto p = std::get_if<node_post_check_expr>(&node.expr))
     {
-        return nullptr;
+        auto syntax_check_exp = post_expr_analysis(*(p->check_exp), stmts);
+        auto syntax_fun_node = syntax_fun_call{.fun_name = "."+p->check_lable.val+"?", .parameters = {syntax_check_exp}};
+        auto syntax_node = env_fun.infer_type(("."+p->check_lable.val+"?"), syntax_fun_node);
+        stmts.push_back(syntax_stmt{.stmt = syntax_node});
+        return syntax_node;
     }
     else
         assert(false);
 }
 
-std::shared_ptr<syntax_expr> syntax_module::is_left_value(const node_unary_expr &node)
+bool syntax_module::is_left_value(const syntax_expr &node)
 {
-    if (auto p = std::get_if<node_primary_expr>(&node.post_expr->expr))
-    {
-        if (auto q = std::get_if<node_identifier>(&p->val))
-        {
-            return env_var.find(q->val);
-        }
-        else
-        {
-            throw std::string("not lval");
-        }
-    }
+    if(auto p = std::get_if<syntax_dot>(&node.val))
+        return true;
+    else if(auto p = std::get_if<syntax_var>(&node.val))
+        return true;
     else
-    {
-        throw std::string("not lval");
-    }
+        return false;
 }

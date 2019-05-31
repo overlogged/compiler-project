@@ -57,8 +57,9 @@ struct syntax_dot
 
 struct syntax_expr
 {
+    bool is_immutale = false;
     syntax_type type;
-    std::variant<syntax_fun_call, syntax_literal, syntax_var, syntax_type_convert, syntax_construct> val;
+    std::variant<syntax_fun_call, syntax_literal, syntax_var, syntax_type_convert, syntax_construct, syntax_dot> val;
     void *reserved = nullptr;
 };
 
@@ -117,7 +118,12 @@ class syntax_module
     void global_var_analysis(const node_module &module);
     void function_analysis(const syntax_fun &node);
 
-    std::shared_ptr<syntax_expr> is_left_value(const node_unary_expr &node);
+    bool is_left_value(const syntax_expr &node);
+
+    bool is_lvalue_immutale(const syntax_expr &node)
+    {
+        return node.is_immutale;
+    }
 
     syntax_stmt if_analysis(const node_if_statement &node);
     syntax_stmt while_analysis(const node_while_statement &node);
