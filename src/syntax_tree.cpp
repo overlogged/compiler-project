@@ -99,7 +99,8 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
 
         // 声明
         env_var.insert(v.val, var);
-        if(!is_global) stmts.push_back(syntax_stmt{var});
+        if (!is_global)
+            stmts.push_back(syntax_stmt{var});
 
         // 初始化
         syntax_assign assign{.lval = var, .rval = rval};
@@ -298,6 +299,8 @@ void syntax_module::syntax_analysis(const node_module &module)
 
 void syntax_module::function_analysis(const syntax_fun &node)
 {
+    ret_type = node.ret_type;
+
     env_var.push();
     std::vector<std::shared_ptr<syntax_expr>> args;
     std::vector<syntax_stmt> stmts;
@@ -355,7 +358,14 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
         else if (auto ret = std::get_if<node_return_statement>(ps))
         {
             auto ret_e = expr_analysis(ret->expr, stmts);
-            stmts.emplace_back(syntax_stmt{syntax_return{ret_e}});
+            if (ret_e->type.subtyping(ret_type))
+            {
+                stmts.emplace_back(syntax_stmt{expr_convert_to(ret_e, ret_type)});
+            }
+            else
+            {
+                throw syntax_error(node_stmt.loc, "can't return value of this type");
+            }
         }
     }
     return stmts;

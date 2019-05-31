@@ -13,10 +13,10 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
         {
             auto syntax_node_r = expr_analysis(*(p->rval), stmts);
             auto syntax_node_l = unary_expr_analysis(p->lval, stmts);
-            if(!is_left_value(*syntax_node_l))
+            if (!is_left_value(*syntax_node_l))
                 throw syntax_error(p->loc, "left oprand of assignment is not lvalue");
-                //is immutable?
-            if(is_lvalue_immutale(*syntax_node_l))
+            //is immutable?
+            if (is_lvalue_immutale(*syntax_node_l))
                 throw syntax_error(p->loc, "left oprand of assignment is immutable");
             if (p->op != "=")
             {
@@ -34,7 +34,6 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
         }
         else if (auto p = std::get_if<node_construct_expr>(&node.expr))
         {
-
         }
         else
             assert(false);
@@ -46,6 +45,7 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
             throw syntax_error(node.loc, "no such function called '" + e.info + "'");
         }
     }
+    assert(false);
 }
 
 std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_binary_expr &node, std::vector<syntax_stmt> &stmts)
@@ -242,24 +242,24 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
         auto syntax_node = post_expr_analysis(*(p->obj), stmts);
         auto e = std::get_if<syntax_var>(&syntax_node->val);
         auto q = std::get_if<syntax_dot>(&syntax_node->val);
-        if(e || q)
+        if (e || q)
         {
-            if(!syntax_node->type.get_primary().empty())
+            if (!syntax_node->type.get_primary().empty())
             {
                 auto syntax_ret = std::make_shared<syntax_expr>();
-                if(auto product_t = std::get_if<product_type>(&(syntax_node->type).type))
+                if (auto product_t = std::get_if<product_type>(&(syntax_node->type).type))
                 {
                     bool flag = false;
                     int i = 0;
-                    for(i = 0; i < product_t->fields.size(); i++)
+                    for (i = 0; i < product_t->fields.size(); i++)
                     {
-                        if(product_t->fields[i] == (p->attr).val)
+                        if (product_t->fields[i] == (p->attr).val)
                         {
                             flag = true;
                             break;
                         }
                     }
-                    if(flag)
+                    if (flag)
                     {
                         syntax_ret->is_immutale = syntax_node->is_immutale;
                         syntax_ret->type = *(product_t->types[i]);
@@ -269,20 +269,20 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
                     else
                         throw syntax_error(p->loc, "no such attribute");
                 }
-                else if(auto sum_t = std::get_if<sum_type>(&(syntax_node->type).type))
+                else if (auto sum_t = std::get_if<sum_type>(&(syntax_node->type).type))
                 {
                     auto syntax_ret = std::make_shared<syntax_expr>();
                     bool flag = false;
                     int i;
-                    for(i = 0; i < sum_t->alters.size(); i++)
+                    for (i = 0; i < sum_t->alters.size(); i++)
                     {
-                        if(p->attr.val == sum_t->alters[i])
+                        if (p->attr.val == sum_t->alters[i])
                         {
                             flag = true;
                             break;
                         }
                     }
-                    if(flag)
+                    if (flag)
                     {
                         syntax_ret->is_immutale = syntax_node->is_immutale;
                         syntax_ret->type = *(sum_t->types[i]);
@@ -304,8 +304,8 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     else if (auto p = std::get_if<node_post_check_expr>(&node.expr))
     {
         auto syntax_check_exp = post_expr_analysis(*(p->check_exp), stmts);
-        auto syntax_fun_node = syntax_fun_call{.fun_name = "."+p->check_lable.val+"?", .parameters = {syntax_check_exp}};
-        auto syntax_node = env_fun.infer_type(("."+p->check_lable.val+"?"), syntax_fun_node);
+        auto syntax_fun_node = syntax_fun_call{.fun_name = "." + p->check_lable.val + "?", .parameters = {syntax_check_exp}};
+        auto syntax_node = env_fun.infer_type(("." + p->check_lable.val + "?"), syntax_fun_node);
         stmts.push_back(syntax_stmt{.stmt = syntax_node});
         return syntax_node;
     }
@@ -315,9 +315,9 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
 
 bool syntax_module::is_left_value(const syntax_expr &node)
 {
-    if(auto p = std::get_if<syntax_dot>(&node.val))
+    if (auto p = std::get_if<syntax_dot>(&node.val))
         return true;
-    else if(auto p = std::get_if<syntax_var>(&node.val))
+    else if (auto p = std::get_if<syntax_var>(&node.val))
         return true;
     else
         return false;

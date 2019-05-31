@@ -8,7 +8,7 @@ llvm::Value *codegen_llvm::get_value(const std::shared_ptr<syntax_expr> &expr)
 {
     if (auto pvar = std::get_if<syntax_var>(&expr->val))
     {
-        return builder->CreateLoad((Value *)expr->reserved);
+        return builder->CreateLoad((Value *)expr->reserved, "load");
     }
     else
     {

@@ -219,12 +219,15 @@ void codegen_llvm::function(const std::string &fun_name, const std::vector<synta
         builder->CreateStore(&arg, var);
     }
 
+    // 返回值
     block_return = BasicBlock::Create(context, "return");
     builder->SetInsertPoint(block_return);
-    builder->CreateRet(ret_value);
+    auto ret_v = builder->CreateLoad(ret_value, ".retv");
+    builder->CreateRet(ret_v);
 
     builder->SetInsertPoint(block_entry);
     block(stmts);
+    builder->CreateBr(block_return);
 
     block_return->insertInto(func);
 }

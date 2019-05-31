@@ -66,6 +66,9 @@ inline std::shared_ptr<syntax_expr> expr_convert_to(std::shared_ptr<syntax_expr>
     auto to_type = target;
     if (from_type.subtyping(to_type))
     {
+        if (from_type.type_equal(to_type))
+            return expr;
+
         auto ret = std::make_shared<syntax_expr>();
         ret->type = to_type;
         ret->val = syntax_type_convert{.source_expr = expr, .target_type = to_type};
@@ -133,6 +136,7 @@ class syntax_module
     void typedef_analysis(const node_module &module);
     void global_var_analysis(const node_module &module);
     void function_analysis(const syntax_fun &node);
+    syntax_type ret_type;
 
     bool is_left_value(const syntax_expr &node);
 
@@ -145,7 +149,7 @@ class syntax_module
     syntax_stmt while_analysis(const node_while_statement &node);
     std::vector<syntax_stmt> statement_analysis(std::vector<node_statement> origin_stmts);
 
-    void add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts,bool is_global = false);
+    void add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts, bool is_global = false);
 
 public:
     type_table env_type;
