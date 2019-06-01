@@ -143,7 +143,7 @@ void codegen_llvm::block_if(const syntax_if_block &syntax_if)
 {
     // 计算条件
     block(syntax_if.cond_stmt);
-    auto condv = expression(syntax_if.condition);
+    auto condv = get_value(syntax_if.condition);
 
     // 创建分支块
     auto block_then = BasicBlock::Create(context, "then", func);
