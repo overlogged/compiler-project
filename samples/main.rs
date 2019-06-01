@@ -8,5 +8,5 @@ fn fun(x:i8) i8 {
 }
 
 fn main() i32 {
-    return 0;
+    return 3;
 }

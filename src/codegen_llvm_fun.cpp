@@ -66,6 +66,10 @@ Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
     auto t_size = conv.target_type.get_primary_size();
     if (t_size != 0)
     {
+        if (debug_flag)
+        {
+            std::cout << "cast";
+        }
         return builder->CreateCast(Instruction::CastOps::ZExt, get_value(conv.source_expr), llvm_type(conv.target_type), "zext");
     }
     throw std::string("convert failed");
@@ -167,17 +171,17 @@ void codegen_llvm::block_if(const syntax_if_block &syntax_if)
     builder->SetInsertPoint(block_merge);
     block_merge->insertInto(func);
 }
-void codegen_llvm::block_while(const syntax_while_block& syntax_while)
+void codegen_llvm::block_while(const syntax_while_block &syntax_while)
 {
     // branch
-    auto block_begin_test = BasicBlock::Create(context,"begin_test");
-    auto block_loop = BasicBlock::Create(context,"loop");
-    auto block_loop_end = BasicBlock::Create(context,"loop_end");
+    auto block_begin_test = BasicBlock::Create(context, "begin_test");
+    auto block_loop = BasicBlock::Create(context, "loop");
+    auto block_loop_end = BasicBlock::Create(context, "loop_end");
 
     // begin test
     builder->SetInsertPoint(block_begin_test);
     block(syntax_while.condition_stmt);
-    builder->CreateCondBr(get_value(syntax_while.condition),block_loop,block_loop_end);
+    builder->CreateCondBr(get_value(syntax_while.condition), block_loop, block_loop_end);
     block_begin_test->insertInto(func);
     // loop
     builder->SetInsertPoint(block_loop);
@@ -209,7 +213,7 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
             builder->CreateStore(get_value(p_ret->val), ret_value);
             builder->CreateBr(block_return);
         }
-        // todo: for, while, new, delete
+        // todo: new, delete
         else if (auto p_if = std::get_if<std::shared_ptr<syntax_if_block>>(p_stmt))
         {
             block_if(*p_if->get());
@@ -239,6 +243,7 @@ void codegen_llvm::function(const std::string &fun_name, const std::vector<synta
     {
         auto idx = arg.getArgNo();
         auto var = builder->CreateAlloca(arg.getType());
+        var->setName("arg" + std::to_string(idx));
         args[idx]->reserved = var;
         builder->CreateStore(&arg, var);
     }

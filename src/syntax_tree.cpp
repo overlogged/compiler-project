@@ -355,7 +355,9 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
             auto ret_e = expr_analysis(ret->expr, stmts);
             if (ret_e->type.subtyping(ret_type))
             {
-                stmts.emplace_back(syntax_stmt{expr_convert_to(ret_e, ret_type)});
+                auto ret_v = expr_convert_to(ret_e, ret_type);
+                stmts.emplace_back(syntax_stmt{ret_v});
+                stmts.emplace_back(syntax_stmt{syntax_return{ret_v}});
             }
             else
             {

@@ -55,16 +55,16 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
         }
         else if (t1p != "" && t2p != "")
         {
-            if(t1.subtyping(t2))
+            if (t1.subtyping(t2))
             {
-                call.parameters[0] = expr_convert_to(call.parameters[0],t2);
+                call.parameters[0] = expr_convert_to(call.parameters[0], t2);
             }
-            else if(t2.subtyping(t1))
+            else if (t2.subtyping(t1))
             {
-                call.parameters[1] = expr_convert_to(call.parameters[1],t1);
+                call.parameters[1] = expr_convert_to(call.parameters[1], t1);
             }
             else
-                throw inner_error(INNER_NO_MATCH_FUN,func_name);
+                throw inner_error(INNER_NO_MATCH_FUN, func_name);
         }
         else
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
@@ -105,13 +105,13 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, syn
                 {
                     auto t1 = fun[i].parameters[j].second;
                     auto t2 = call.parameters[j]->type;
-                    if(t1.type_equal(t2))
+                    if (t1.type_equal(t2))
                         continue;
-                    else if(t2.subtyping(t1))
+                    else if (t2.subtyping(t1))
                         to_convert_index.push_back(j);
                     else
                     {
-                        match =false;
+                        match = false;
                     }
                 }
             }
@@ -121,10 +121,10 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, syn
             {
                 ret_type = fun[i].ret_type;
                 match_flag = true;
-                for(auto j=0;j<to_convert_index.size(); j++ )
+                for (auto j = 0; j < to_convert_index.size(); j++)
                 {
                     auto index = to_convert_index[j];
-                    call.parameters[index] = expr_convert_to(call.parameters[index],fun[i].parameters[index].second);
+                    call.parameters[index] = expr_convert_to(call.parameters[index], fun[i].parameters[index].second);
                 }
                 break;
             }
@@ -174,12 +174,12 @@ function_table::function_table()
             }
         }
     }
-    create_unary_op_fun("!","bool",1,"bool",1);
+    create_unary_op_fun("!", "bool", 1, "bool", 1);
 
     param_type = {"i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"};
-    for(auto i=0 ;i<param_type.size();i++)
+    for (auto i = 0; i < param_type.size(); i++)
     {
-        create_unary_op_fun("~",param_type[i],(i/2+1)*4,param_type[i],(i/2+1)*4 );
+        create_unary_op_fun("~", param_type[i], (i / 2 + 1) * 4, param_type[i], (i / 2 + 1) * 4);
     }
 }
 
@@ -192,8 +192,7 @@ void function_table::create_bin_op_fun(std::string op, std::string ret_type, siz
                                             std::pair<std::string, syntax_type>("_1", syntax_type{.type = primary_type{.name = param2_type, .size = param2_size}})}});
 }
 
-
-void function_table::create_unary_op_fun(std::string op, std::string ret_type, size_t ret_size, std::string param_type, size_t param_size )
+void function_table::create_unary_op_fun(std::string op, std::string ret_type, size_t ret_size, std::string param_type, size_t param_size)
 {
     inline_fun[op].push_back(syntax_fun{.fun_name = op,
                                         .ret_type = syntax_type{.type = primary_type{.name = ret_type, .size = ret_size}},
