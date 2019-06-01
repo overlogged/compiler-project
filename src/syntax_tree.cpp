@@ -265,12 +265,7 @@ syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
     syntax_while_block block;
     env_var.push();
     block.condition = expr_analysis(node.while_condition, block.condition_stmt);
-    // add while condition to the statement
-    auto new_node = node;
-    auto condition_stmt = node_statement{.loc = node.loc, .statement = node.while_condition};
-    new_node.loop_statement.push_back(condition_stmt);
-    // -------------------------------------
-    block.body = statement_analysis(new_node.loop_statement);
+    block.body = statement_analysis(node.loop_statement);
     env_var.pop();
     return {std::make_shared<syntax_while_block>(block)};
 }

@@ -167,7 +167,27 @@ void codegen_llvm::block_if(const syntax_if_block &syntax_if)
     builder->SetInsertPoint(block_merge);
     block_merge->insertInto(func);
 }
+void codegen_llvm::block_while(const syntax_while_block& syntax_while)
+{
+    // branch
+    auto block_begin_test = BasicBlock::Create(context,"begin_test");
+    auto block_loop = BasicBlock::Create(context,"loop");
+    auto block_loop_end = BasicBlock::Create(context,"loop_end");
 
+    // begin test
+    builder->SetInsertPoint(block_begin_test);
+    block(syntax_while.condition_stmt);
+    builder->CreateCondBr(get_value(syntax_while.condition),block_loop,block_loop_end);
+    block_begin_test->insertInto(func);
+    // loop
+    builder->SetInsertPoint(block_loop);
+    block(syntax_while.body);
+    builder->CreateBr(block_begin_test);
+    block_loop->insertInto(func);
+    // loop end
+    builder->SetInsertPoint(block_loop_end);
+    block_loop_end->insertInto(func);
+}
 // 处理 block
 void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
 {
@@ -193,6 +213,10 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
         else if (auto p_if = std::get_if<std::shared_ptr<syntax_if_block>>(p_stmt))
         {
             block_if(*p_if->get());
+        }
+        else if (auto p_if = std::get_if<std::shared_ptr<syntax_while_block>>(p_stmt))
+        {
+            block_while(*p_if->get());
         }
     }
 }
