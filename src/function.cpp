@@ -6,21 +6,26 @@
 
 using namespace std;
 
-std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_name, syntax_fun_call &call)
+std::shared_ptr<syntax_expr>
+function_table::infer_type(const std::string &func_name, syntax_fun_call &call, std::vector<syntax_stmt> &stmts)
 {
     auto p_ret = make_shared<syntax_expr>();
-    p_ret->val = call;
+
     //.?
     if (func_name[0] == '.' && func_name[func_name.size() - 1] == '?')
     {
         bool match = false;
         std::string alt_name = func_name.substr(1, func_name.size() - 2);
+
         if (call.parameters.size() != 1)
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
+
         auto ptr_sum_val = call.parameters[0];
         auto ptr_sum_type = std::get_if<sum_type>(&ptr_sum_val->type.type);
+
         if (!ptr_sum_type)
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
+
         auto it_alt = ptr_sum_type->alters.begin();
         auto it_type = ptr_sum_type->types.begin();
         for (; it_alt != ptr_sum_type->alters.end(); it_alt++, it_type++)
@@ -33,9 +38,14 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
             }
         }
         if (match)
+        {
+            p_ret->val = call;
             return p_ret;
+        }
         else
+        {
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
+        }
     }
     // == !=
     else if (func_name == "==" || func_name == "!=")
@@ -51,17 +61,19 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
 
         if (call.parameters[0]->type.type_equal(call.parameters[1]->type))
         {
+            p_ret->val = call;
             return p_ret;
         }
         else if (t1p != "" && t2p != "")
         {
+            bool equal = false;
             if (t1.subtyping(t2))
             {
-                call.parameters[0] = expr_convert_to(call.parameters[0], t2);
+                call.parameters[0] = expr_convert_to(call.parameters[0], t2, stmts);
             }
             else if (t2.subtyping(t1))
             {
-                call.parameters[1] = expr_convert_to(call.parameters[1], t1);
+                call.parameters[1] = expr_convert_to(call.parameters[1], t1, stmts);
             }
             else
                 throw inner_error(INNER_NO_MATCH_FUN, func_name);
@@ -73,20 +85,29 @@ std::shared_ptr<syntax_expr> function_table::infer_type(const std::string &func_
     {
         // inline function
         bool find_flag = false;
-        p_ret->type = infer_type_in_list(func_name, call, inline_fun, find_flag);
+        p_ret->type = infer_type_in_list(func_name, call, inline_fun, find_flag, stmts);
         if (find_flag)
+        {
+            p_ret->val = call;
             return p_ret;
+        }
 
         // normal function
-        p_ret->type = infer_type_in_list(func_name, call, normal_fun, find_flag);
+        p_ret->type = infer_type_in_list(func_name, call, normal_fun, find_flag, stmts);
         if (find_flag)
+        {
+            p_ret->val = call;
             return p_ret;
+        }
     }
+
     // not found
     throw inner_error(INNER_NO_MATCH_FUN, func_name);
 }
 
-syntax_type function_table::infer_type_in_list(const std::string &func_name, syntax_fun_call &call, const std::map<std::string, std::vector<syntax_fun>> func_list, bool &find_flag)
+syntax_type function_table::infer_type_in_list(const std::string &func_name, syntax_fun_call &call,
+                                               const std::map<std::string, std::vector<syntax_fun>> func_list,
+                                               bool &find_flag, std::vector<syntax_stmt> &stmts)
 {
     syntax_type ret_type;
 
@@ -117,6 +138,7 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, syn
             }
             else
                 match = false;
+
             if (match)
             {
                 ret_type = fun[i].ret_type;
@@ -124,7 +146,8 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, syn
                 for (auto j = 0; j < to_convert_index.size(); j++)
                 {
                     auto index = to_convert_index[j];
-                    call.parameters[index] = expr_convert_to(call.parameters[index], fun[i].parameters[index].second);
+                    call.parameters[index] = expr_convert_to(call.parameters[index], fun[i].parameters[index].second,
+                                                             stmts);
                 }
                 break;
             }
@@ -170,7 +193,8 @@ function_table::function_table()
         {
             for (int k = 0; k < param_type.size(); k++)
             {
-                create_bin_op_fun(op[i], param_type[j], (j / 2 + 1) * 4, param_type[j], (j / 2 + 1) * 4, param_type[k], (k / 2 + 1) * 4);
+                create_bin_op_fun(op[i], param_type[j], (j / 2 + 1) * 4, param_type[j], (j / 2 + 1) * 4, param_type[k],
+                                  (k / 2 + 1) * 4);
             }
         }
     }
@@ -183,19 +207,24 @@ function_table::function_table()
     }
 }
 
-void function_table::create_bin_op_fun(std::string op, std::string ret_type, size_t ret_size, std::string param1_type, size_t param1_size, std::string param2_type, size_t param2_size)
+void function_table::create_bin_op_fun(std::string op, std::string ret_type, size_t ret_size, std::string param1_type,
+                                       size_t param1_size, std::string param2_type, size_t param2_size)
 {
     inline_fun[op].push_back(syntax_fun{.fun_name = op,
                                         .ret_type = syntax_type{.type = primary_type{.name = ret_type, .size = ret_size}},
                                         .parameters = std::vector<std::pair<std::string, syntax_type>>{
-                                            std::pair<std::string, syntax_type>("_0", syntax_type{.type = primary_type{.name = param1_type, .size = param1_size}}),
-                                            std::pair<std::string, syntax_type>("_1", syntax_type{.type = primary_type{.name = param2_type, .size = param2_size}})}});
+                                            std::pair<std::string, syntax_type>("_0",
+                                                                                syntax_type{.type = primary_type{.name = param1_type, .size = param1_size}}),
+                                            std::pair<std::string, syntax_type>("_1",
+                                                                                syntax_type{.type = primary_type{.name = param2_type, .size = param2_size}})}});
 }
 
-void function_table::create_unary_op_fun(std::string op, std::string ret_type, size_t ret_size, std::string param_type, size_t param_size)
+void function_table::create_unary_op_fun(std::string op, std::string ret_type, size_t ret_size, std::string param_type,
+                                         size_t param_size)
 {
     inline_fun[op].push_back(syntax_fun{.fun_name = op,
                                         .ret_type = syntax_type{.type = primary_type{.name = ret_type, .size = ret_size}},
                                         .parameters = std::vector<std::pair<std::string, syntax_type>>{
-                                            std::pair<std::string, syntax_type>("_0", syntax_type{.type = primary_type{.name = param_type, .size = param_size}})}});
+                                            std::pair<std::string, syntax_type>("_0",
+                                                                                syntax_type{.type = primary_type{.name = param_type, .size = param_size}})}});
 }

@@ -66,10 +66,6 @@ Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
     auto t_size = conv.target_type.get_primary_size();
     if (t_size != 0)
     {
-        if (debug_flag)
-        {
-            std::cout << "cast";
-        }
         return builder->CreateCast(Instruction::CastOps::ZExt, get_value(conv.source_expr), llvm_type(conv.target_type), "zext");
     }
     throw std::string("convert failed");

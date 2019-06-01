@@ -60,23 +60,6 @@ struct syntax_expr
     void *reserved = nullptr;
 };
 
-inline std::shared_ptr<syntax_expr> expr_convert_to(std::shared_ptr<syntax_expr> expr, const syntax_type &target)
-{
-    auto from_type = expr->type;
-    auto to_type = target;
-    if (from_type.subtyping(to_type))
-    {
-        if (from_type.type_equal(to_type))
-            return expr;
-
-        auto ret = std::make_shared<syntax_expr>();
-        ret->type = to_type;
-        ret->val = syntax_type_convert{.source_expr = expr, .target_type = to_type};
-        return ret;
-    }
-    throw inner_error{INNER_CANT_CAST};
-}
-
 struct syntax_assign
 {
     std::shared_ptr<syntax_expr> lval, rval;
@@ -129,13 +112,21 @@ struct syntax_while_block
 class syntax_module
 {
     std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts);
+
     std::shared_ptr<syntax_expr> binary_expr_analysis(const node_binary_expr &node, std::vector<syntax_stmt> &stmts);
+
     std::shared_ptr<syntax_expr> unary_expr_analysis(const node_unary_expr &node, std::vector<syntax_stmt> &stmts);
+
     std::shared_ptr<syntax_expr> post_expr_analysis(const node_post_expr &node, std::vector<syntax_stmt> &stmts);
+
     std::vector<syntax_fun> fundef_analysis(const node_module &module);
+
     void typedef_analysis(const node_module &module);
+
     void global_var_analysis(const node_module &module);
+
     void function_analysis(const syntax_fun &node);
+
     syntax_type ret_type;
 
     bool is_left_value(const syntax_expr &node);
@@ -146,7 +137,9 @@ class syntax_module
     }
 
     syntax_stmt if_analysis(const node_if_statement &node);
+
     syntax_stmt while_analysis(const node_while_statement &node);
+
     std::vector<syntax_stmt> statement_analysis(std::vector<node_statement> origin_stmts);
 
     void add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts, bool is_global = false);
@@ -163,3 +156,24 @@ public:
 
     void syntax_analysis(const node_module &module);
 };
+
+inline std::shared_ptr<syntax_expr>
+expr_convert_to(std::shared_ptr<syntax_expr> expr, const syntax_type &target, std::vector<syntax_stmt> &stmts)
+{
+    auto from_type = expr->type;
+    auto to_type = target;
+    if (from_type.subtyping(to_type))
+    {
+        if (from_type.type_equal(to_type))
+        {
+            return expr;
+        }
+
+        auto ret = std::make_shared<syntax_expr>();
+        ret->type = to_type;
+        ret->val = syntax_type_convert{.source_expr = expr, .target_type = to_type};
+        stmts.push_back(syntax_stmt{ret});
+        return ret;
+    }
+    throw inner_error{INNER_CANT_CAST};
+}

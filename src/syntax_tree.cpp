@@ -86,8 +86,7 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
     else
     {
         // 隐式转换
-        rval = expr_convert_to(init_expr, t);
-        stmts.emplace_back(syntax_stmt{rval});
+        rval = expr_convert_to(init_expr, t, stmts);
     }
     // 分配变量
     for (auto &v : def.var_list)
@@ -345,18 +344,14 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
         }
         else if (auto expr = std::get_if<node_expression>(ps))
         {
-            auto e = expr_analysis(*expr, stmts);
-            auto p = std::get_if<syntax_var>(&e->val);
-            if (!p)
-                stmts.emplace_back(syntax_stmt{e});
+            expr_analysis(*expr, stmts);
         }
         else if (auto ret = std::get_if<node_return_statement>(ps))
         {
             auto ret_e = expr_analysis(ret->expr, stmts);
             if (ret_e->type.subtyping(ret_type))
             {
-                auto ret_v = expr_convert_to(ret_e, ret_type);
-                stmts.emplace_back(syntax_stmt{ret_v});
+                auto ret_v = expr_convert_to(ret_e, ret_type, stmts);
                 stmts.emplace_back(syntax_stmt{syntax_return{ret_v}});
             }
             else

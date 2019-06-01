@@ -21,7 +21,7 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
             if (p->op != "=")
             {
                 auto syntax_fun_node = syntax_fun_call{.fun_name = p->op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
-                auto syntax_node = env_fun.infer_type(p->op.substr(0, 1), syntax_fun_node);
+                auto syntax_node = env_fun.infer_type(p->op.substr(0, 1), syntax_fun_node, stmts);
                 stmts.push_back(syntax_stmt{.stmt = syntax_node});
                 stmts.push_back(syntax_stmt{.stmt = syntax_assign{.lval = syntax_node_l, .rval = syntax_node}});
                 return syntax_node_l;
@@ -77,13 +77,13 @@ std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_bina
                     auto syntax_node_l = unary_expr_analysis(*p, stmts);
                     auto syntax_node_r = unary_expr_analysis(*q, stmts);
                     auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters = {syntax_node_l, syntax_node_r}};
-                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node, stmts);
                 }
                 else if (auto q = std::get_if<std::shared_ptr<syntax_expr>>(&rexp))
                 {
                     auto syntax_node_l = unary_expr_analysis(*p, stmts);
                     auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters = {syntax_node_l, *q}};
-                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node, stmts);
                 }
                 else
                     assert(false);
@@ -93,13 +93,13 @@ std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_bina
                 if (auto q = std::get_if<std::shared_ptr<syntax_expr>>(&rexp))
                 {
                     auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters = {*p, *q}};
-                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node, stmts);
                 }
                 else if (auto q = std::get_if<node_unary_expr>(&rexp))
                 {
                     auto syntax_node_r = unary_expr_analysis(*q, stmts);
                     auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters = {*p, syntax_node_r}};
-                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                    syntax_node = env_fun.infer_type(fun_name, syntax_fun_node, stmts);
                 }
                 else
                     assert(false);
@@ -133,13 +133,13 @@ std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_bina
                 auto syntax_node_l = unary_expr_analysis(*p, stmts);
                 auto syntax_node_r = unary_expr_analysis(*q, stmts);
                 auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters = {syntax_node_l, syntax_node_r}};
-                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node, stmts);
             }
             else if (auto q = std::get_if<std::shared_ptr<syntax_expr>>(&rexp))
             {
                 auto syntax_node_l = unary_expr_analysis(*p, stmts);
                 auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters = {syntax_node_l, *q}};
-                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node, stmts);
             }
             else
                 assert(false);
@@ -149,13 +149,13 @@ std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_bina
             if (auto q = std::get_if<std::shared_ptr<syntax_expr>>(&rexp))
             {
                 auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters = {*p, *q}};
-                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node, stmts);
             }
             else if (auto q = std::get_if<node_unary_expr>(&rexp))
             {
                 auto syntax_node_r = unary_expr_analysis(*q, stmts);
                 auto syntax_fun_node = syntax_fun_call{.fun_name = fun_name, .parameters = {*p, syntax_node_r}};
-                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node);
+                syntax_node = env_fun.infer_type(fun_name, syntax_fun_node, stmts);
             }
             else
                 assert(false);
@@ -185,7 +185,7 @@ std::shared_ptr<syntax_expr> syntax_module::unary_expr_analysis(const node_unary
     {
         auto p = post_expr_analysis(*node.post_expr.get(), stmts);
         auto call = syntax_fun_call{.fun_name = node.ops[0], .parameters = {p}};
-        auto syntax_unary = env_fun.infer_type(node.ops[0], call);
+        auto syntax_unary = env_fun.infer_type(node.ops[0], call, stmts);
         stmts.push_back(syntax_stmt{.stmt = syntax_unary});
         return syntax_unary;
     }
@@ -233,7 +233,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
         {
             syntax_fun_node.parameters.push_back(expr_analysis(*para, stmts));
         }
-        auto syntax_node = env_fun.infer_type(fun_name->val, syntax_fun_node);
+        auto syntax_node = env_fun.infer_type(fun_name->val, syntax_fun_node, stmts);
         stmts.push_back(syntax_stmt{.stmt = syntax_node});
         return syntax_node;
     }
@@ -305,7 +305,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
     {
         auto syntax_check_exp = post_expr_analysis(*(p->check_exp), stmts);
         auto syntax_fun_node = syntax_fun_call{.fun_name = "." + p->check_lable.val + "?", .parameters = {syntax_check_exp}};
-        auto syntax_node = env_fun.infer_type(("." + p->check_lable.val + "?"), syntax_fun_node);
+        auto syntax_node = env_fun.infer_type(("." + p->check_lable.val + "?"), syntax_fun_node, stmts);
         stmts.push_back(syntax_stmt{.stmt = syntax_node});
         return syntax_node;
     }
