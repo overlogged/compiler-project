@@ -1,22 +1,12 @@
-val x:i32 = 0;
-var y = fun(3+3*6);
-
-fn test(x:i8,y:i32) {
+val v0:i8 =1;
+fn test(x:f64,y:i64) {
     
 }
 
 fn fun(x:i8) i8 {
-    if x==0 {
-        return 32;
-    } else if x==1 {
-        return 3;
-    } else {
-        return 5;
-    }
+	test(f32,1);
 }
 
 fn main() i32 {
-    val y:i8 = 1;
-    val z = fun(y);
     return 0;
 }
