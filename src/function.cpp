@@ -115,6 +115,8 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, syn
                     }
                 }
             }
+            else
+                match = false;
             if (match)
             {
                 ret_type = fun[i].ret_type;
