@@ -107,7 +107,7 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, syn
                     auto t2 = call.parameters[j]->type;
                     if(t1.type_equal(t2))
                         continue;
-                    else if(t1.subtyping(t2))
+                    else if(t2.subtyping(t1))
                         to_convert_index.push_back(j);
                     else
                     {
@@ -123,7 +123,8 @@ syntax_type function_table::infer_type_in_list(const std::string &func_name, syn
                 match_flag = true;
                 for(auto j=0;j<to_convert_index.size(); j++ )
                 {
-                    call.parameters[j] = expr_convert_to(call.parameters[j],fun[i].parameters[j].second);
+                    auto index = to_convert_index[j];
+                    call.parameters[index] = expr_convert_to(call.parameters[index],fun[i].parameters[index].second);
                 }
                 break;
             }
