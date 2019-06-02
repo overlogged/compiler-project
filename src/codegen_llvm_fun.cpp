@@ -55,96 +55,97 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_UGT,arg1, arg2, "ne");
+        return builder->CreateICmp(CmpInst::ICMP_UGT, arg1, arg2, "ne");
     }
-    else if(call.fun_name == "&")
+    else if (call.fun_name == "&")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateAnd(arg1, arg2, "andtmp");
     }
-    else if(call.fun_name == "|")
+    else if (call.fun_name == "|")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateOr(arg1, arg2, "ortmp");
     }
-    else if(call.fun_name == "s%")
+    else if (call.fun_name == "s%")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateSRem(arg1, arg2, "modtmp");
     }
-    else if(call.fun_name == "u%")
+    else if (call.fun_name == "u%")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateURem(arg1, arg2, "modtmp");
-    } 
-    else if(call.fun_name == "l>>")
+    }
+    else if (call.fun_name == "l>>")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateLShr(arg1, arg2, "shifttmp");
-    }else if(call.fun_name == "a>>")
+    }
+    else if (call.fun_name == "a>>")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateAShr(arg1, arg2, "shifttmp");
     }
-    else if(call.fun_name == "<<")
+    else if (call.fun_name == "<<")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateShl(arg1, arg2, "shifttmp");
     }
-    else if(call.fun_name =="s>")
+    else if (call.fun_name == "s>")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_SGT,arg1, arg2, "cmptmp");
+        return builder->CreateICmp(CmpInst::ICMP_SGT, arg1, arg2, "cmptmp");
     }
-    else if(call.fun_name =="u>")
+    else if (call.fun_name == "u>")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_UGT,arg1, arg2, "cmptmp");
+        return builder->CreateICmp(CmpInst::ICMP_UGT, arg1, arg2, "cmptmp");
     }
-    else if(call.fun_name =="s<")
+    else if (call.fun_name == "s<")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_SLT,arg1, arg2, "cmptmp");
+        return builder->CreateICmp(CmpInst::ICMP_SLT, arg1, arg2, "cmptmp");
     }
-    else if(call.fun_name =="u<")
+    else if (call.fun_name == "u<")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_ULT,arg1, arg2, "cmptmp");
+        return builder->CreateICmp(CmpInst::ICMP_ULT, arg1, arg2, "cmptmp");
     }
-    else if(call.fun_name =="s>=")
+    else if (call.fun_name == "s>=")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_SGE,arg1, arg2, "cmptmp");
+        return builder->CreateICmp(CmpInst::ICMP_SGE, arg1, arg2, "cmptmp");
     }
-    else if(call.fun_name =="u>=")
+    else if (call.fun_name == "u>=")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_UGE,arg1, arg2, "cmptmp");
+        return builder->CreateICmp(CmpInst::ICMP_UGE, arg1, arg2, "cmptmp");
     }
-    else if(call.fun_name =="s<=")
+    else if (call.fun_name == "s<=")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_SLE,arg1, arg2, "cmptmp");
+        return builder->CreateICmp(CmpInst::ICMP_SLE, arg1, arg2, "cmptmp");
     }
-    else if(call.fun_name =="u<=")
+    else if (call.fun_name == "u<=")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_ULE,arg1, arg2, "cmptmp");
+        return builder->CreateICmp(CmpInst::ICMP_ULE, arg1, arg2, "cmptmp");
     }
     else
     {
@@ -166,7 +167,7 @@ Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
     auto t_size = conv.target_type.get_primary_size();
     if (t_size != 0)
     {
-        if(conv.source_expr->type.get_primary()[0]=='u'||conv.source_expr->type.get_primary()=="bool")
+        if (conv.source_expr->type.get_primary()[0] == 'u' || conv.source_expr->type.get_primary() == "bool")
             return builder->CreateCast(Instruction::CastOps::ZExt, get_value(conv.source_expr), llvm_type(conv.target_type), "zext");
         else
             return builder->CreateCast(Instruction::CastOps::SExt, get_value(conv.source_expr), llvm_type(conv.target_type), "zext");
@@ -179,29 +180,32 @@ Value *codegen_llvm::get_dot(const syntax_dot &dot)
     auto inner_val = dot.val;
     auto inner_type = inner_val->type;
     auto inner_llvm_val = (Value *)inner_val->reserved;
-    uint64_t index = 0;
+    auto llvm_i32 = IntegerType::getInt32PtrTy(context);
+    auto llvm_zero = ConstantInt::get(llvm_i32, 0);
+
     if (inner_type.is_sum())
     {
-        index = 1;
-        auto llvm_i32 = IntegerType::getInt32PtrTy(context);
-        auto llvm_idx = ConstantInt::get(llvm_i32, index);
-        auto gep = builder->CreateGEP(inner_llvm_val, llvm_idx);
+        if (dot.field == ".tag")
+        {
+            return builder->CreateStructGEP(inner_llvm_val, 0, "tag");
+        }
+        else
+        {
+            auto sum = std::get<sum_type>(inner_type.type);
+            auto idx = sum.get_index(dot.field);
+            assert(idx != -1);
+            auto target_type = llvm_type(*sum.types[idx]);
 
-        auto sum = std::get<sum_type>(inner_type.type);
-        auto idx = sum.get_index(dot.field);
-        assert(idx != -1);
-        auto target_type = llvm_type(*sum.types[idx]);
-
-        return builder->CreateCast(Instruction::CastOps::BitCast, gep, target_type, sum.alters[idx]);
+            auto gep = builder->CreateStructGEP(inner_llvm_val, 1);
+            return builder->CreateCast(Instruction::CastOps::BitCast, gep, target_type, sum.alters[idx]);
+        }
     }
     else if (inner_type.is_product())
     {
         auto prod = std::get<product_type>(inner_type.type);
-        index = prod.get_index(dot.field);
-        assert(index != -1);
-        auto llvm_i32 = IntegerType::getInt32PtrTy(context);
+        uint64_t index = prod.get_index(dot.field);
         auto llvm_idx = ConstantInt::get(llvm_i32, index);
-        return builder->CreateGEP(inner_llvm_val, llvm_idx, prod.fields[index]);
+        return builder->CreateStructGEP(inner_llvm_val, index, prod.fields[index]);
     }
     else
     {
@@ -307,7 +311,7 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
         }
         else if (auto p_assign = std::get_if<syntax_assign>(p_stmt))
         {
-            if(auto dot = std::get_if<syntax_dot>(&p_assign->lval->val))
+            if (auto dot = std::get_if<syntax_dot>(&p_assign->lval->val))
             {
                 builder->CreateStore(get_value(p_assign->rval), get_value(p_assign->lval));
             }
@@ -372,16 +376,15 @@ void codegen_llvm::function(const std::string &fun_name, const std::vector<synta
 // 外部函数声明
 void codegen_llvm::ext_function_dec()
 {
-    std::vector<llvm::Type*> printf_arg_types; 
+    std::vector<llvm::Type *> printf_arg_types;
     printf_arg_types.push_back(llvm::Type::getInt8PtrTy(llvm_module->getContext()));
 
-    llvm::FunctionType* printf_type =
+    llvm::FunctionType *printf_type =
         llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(llvm_module->getContext()), printf_arg_types, true); 
+            llvm::Type::getInt32Ty(llvm_module->getContext()), printf_arg_types, true);
     llvm::Function *func = llvm::Function::Create(
-                printf_type, llvm::Function::ExternalLinkage,
-                llvm::Twine("printf"),
-                &*llvm_module
-           );
+        printf_type, llvm::Function::ExternalLinkage,
+        llvm::Twine("printf"),
+        &*llvm_module);
     func->setCallingConv(llvm::CallingConv::C);
 }

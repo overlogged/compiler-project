@@ -126,16 +126,7 @@ std::string number_type(const std::string &s, int base, std::variant<unsigned lo
     }
     else
     {
-        if (value <= 1)
-        {
-            if (suffix == "l" || suffix == "L")
-                return "i32";
-            else if (suffix == "ll" || suffix == "LL")
-                return "i64";
-            else
-                return "bool";
-        }
-        else if (value <= 127)
+        if (value <= 127)
         {
             if (suffix == "l" || suffix == "L")
                 return "i32";
@@ -178,7 +169,7 @@ std::string number_type(const std::string &s, int base, std::variant<unsigned lo
             else
                 return "u31";
         }
-        else if(value <= 4294967295UL)
+        else if (value <= 4294967295UL)
         {
             if (suffix == "ll" || suffix == "LL")
                 return "i64";

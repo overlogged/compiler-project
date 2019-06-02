@@ -13,23 +13,23 @@ Type *codegen_llvm::type_primary(const primary_type &t)
     {
         return Type::getDoubleTy(context);
     }
-    else if(t.name == "u7")
+    else if (t.name == "u7")
     {
         return IntegerType::getInt8Ty(context);
     }
-    else if(t.name == "u15")
+    else if (t.name == "u15")
     {
         return IntegerType::getInt16Ty(context);
     }
-    else if(t.name =="u31")
+    else if (t.name == "u31")
     {
         return IntegerType::getInt32Ty(context);
     }
-    else if(t.name =="u63")
+    else if (t.name == "u63")
     {
         return IntegerType::getInt64Ty(context);
     }
-    else if(t.name == "bool")
+    else if (t.name == "bool")
     {
         return IntegerType::getInt1Ty(context);
     }
@@ -57,7 +57,7 @@ Type *codegen_llvm::type_product(const product_type &t)
         auto tf = llvm_type(*fields);
         members.push_back(tf);
     }
-    return StructType::create(context, members);
+    return StructType::create(context, members, "product_type");
 }
 
 Type *codegen_llvm::type_sum(const sum_type &t)
@@ -76,7 +76,7 @@ Type *codegen_llvm::type_sum(const sum_type &t)
     }
     auto unions = ArrayType::get(IntegerType::getInt8Ty(context), max_size);
     std::vector<Type *> members{IntegerType::getInt32Ty(context), unions};
-    return StructType::create(context, members);
+    return StructType::create(context, members, "sum_type");
 }
 
 Type *codegen_llvm::llvm_type(const syntax_type &s)

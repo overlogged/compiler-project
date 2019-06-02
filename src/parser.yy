@@ -414,36 +414,23 @@ binaryExpr:
 construct_expr:
     LANGLE construct_element RANGLE
     {
-        $$ = $2;
-        $$.loc = @$;
-    }|
-    LANGLE no_lable_construct_element RANGLE
-    {
-        $$ = $2;
+        $$ = std::move($2);
         $$.loc = @$;
     }
-%type<node_construct_expr> no_lable_construct_element;
-no_lable_construct_element:
-    no_lable_construct_element COMMA expression
-    {
-        $1.lable.push_back("_"+std::to_string($1.lable.size()));
-        $1.init_val.push_back($3);
-        $$ =$1;
-        $$.loc = @$;
-    }|
-    expression
-    {
-        $$.lable.push_back("_"+std::to_string($$.lable.size()));
-        $$.init_val.push_back($1);
-        $$.loc = @$;
-    }
-
+    
 %type<node_construct_expr> construct_element;
 construct_element:
-    construct_element COLON identifier EQUAL expression
+    construct_element COMMA identifier EQUAL expression
     {
         $1.lable.push_back($3.val);
         $1.init_val.push_back($5);
+        $$ = $1;
+        $$.loc = @$;
+    }|
+    construct_element COMMA expression
+    {
+        $1.lable.push_back("_" + std::to_string($1.lable.size() + 1));
+        $1.init_val.push_back($3);
         $$ = $1;
         $$.loc = @$;
     }|
@@ -452,7 +439,14 @@ construct_element:
         $$.lable.push_back($1.val);
         $$.init_val.push_back($3);
         $$.loc = @$;
+    }|
+    expression
+    {
+        $$.lable.push_back("_1");
+        $$.init_val.push_back($1);
+        $$.loc = @$;
     }
+
 
 %type <std::shared_ptr<node_expression>> expression;
 expression:
@@ -692,13 +686,13 @@ product_type_tuple:
         $$.loc = @$;
     }|
     product_type_tuple COMMA type{
-        $1.lables.push_back("_"+std::to_string($1.lables.size()));
+        $1.lables.push_back("_"+std::to_string($1.lables.size()+1));
         $1.element.push_back($3);
         $$ = std::move($1);
         $$.loc = @$;
     }|
     type{
-        $$.lables.push_back("_0");
+        $$.lables.push_back("_1");
         $$.element.push_back($1);
         $$.loc = @$;
     };    
@@ -715,7 +709,7 @@ sum_type:
     LPAREN sum_type_tuple UNION_OP type RPAREN
     {
         $$ = std::move($2);
-        $$.lables.push_back("_"+std::to_string($$.lables.size()));
+        $$.lables.push_back("_"+std::to_string($$.lables.size()+1));
         $$.element.push_back($4);
         $$.loc = @$;
     }
@@ -734,13 +728,13 @@ sum_type_tuple:
         $$.loc = @$;
     }|
     sum_type_tuple UNION_OP type{
-        $1.lables.push_back("_"+std::to_string($$.lables.size()));
+        $1.lables.push_back("_"+std::to_string($$.lables.size()+1));
         $1.element.push_back($3);
         $$ = std::move($1);
         $$.loc = @$;
     }|
     type{
-        $$.lables.push_back("_"+std::to_string($$.lables.size()));
+        $$.lables.push_back("_"+std::to_string($$.lables.size()+1));
         $$.element.push_back($1);
         $$.loc = @$;
     };
@@ -783,5 +777,5 @@ type:
 
 void yy::parser::error (const location_type& l, const std::string& m)
 {
-    std::cerr << l << ": " << m << '\n';
+    std::cerr << to_string(l) << " \033[0m" << m << std::endl;
 }

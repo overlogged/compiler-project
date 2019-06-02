@@ -239,7 +239,7 @@ std::string to_string(const std::variant<T1, T2, T3, T4, T5, T6> &node)
 
 //to_string for 7 types variant
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
-std::string to_string(const std::variant<T1, T2, T3, T4, T5, T6,T7> &node)
+std::string to_string(const std::variant<T1, T2, T3, T4, T5, T6, T7> &node)
 {
     auto pval1 = std::get_if<T1>(&node);
     auto pval2 = std::get_if<T2>(&node);

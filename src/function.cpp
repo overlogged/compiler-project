@@ -70,10 +70,14 @@ function_table::infer_type(const std::string &func_name, syntax_fun_call &call, 
             if (t1.subtyping(t2))
             {
                 call.parameters[0] = expr_convert_to(call.parameters[0], t2, stmts);
+                p_ret->val = call;
+                return p_ret;
             }
             else if (t2.subtyping(t1))
             {
                 call.parameters[1] = expr_convert_to(call.parameters[1], t1, stmts);
+                p_ret->val = call;
+                return p_ret;
             }
             else
                 throw inner_error(INNER_NO_MATCH_FUN, func_name);
