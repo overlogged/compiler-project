@@ -81,8 +81,17 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
         env_var.insert(v.val, var);
 
         // 初始化
-        syntax_assign assign{.lval = var, .rval = rval};
-        stmts.push_back(syntax_stmt{.stmt = assign});
+        if(auto construct = std::get_if<syntax_construct>(&rval->val))
+        {
+            // auto node_expr = node_expression{.loc = v.loc, .expr = node_assign_expr{.loc = v.loc, .lval = node_unary_expr{.loc = v.loc}, .op = "="}};
+            // auto p = std::get_if<node_assign_expr>(&node_expr.expr);
+            // p->lval.post_expr = 
+        }
+        else
+        {
+            syntax_assign assign{.lval = var, .rval = rval};
+            stmts.push_back(syntax_stmt{.stmt = assign});
+        }
     }
 }
 

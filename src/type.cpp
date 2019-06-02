@@ -122,7 +122,7 @@ bool syntax_type::type_equal(const syntax_type &t) const
     {
         return false;
     }
-    else if (is_ref() == t.is_ref())
+    else if (is_ref() && t.is_ref())
     {
         return de_ref().type_equal(t.de_ref());
     }

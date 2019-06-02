@@ -11,30 +11,145 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
         }
         else if (auto p = std::get_if<node_assign_expr>(&node.expr))
         {
-            auto syntax_node_r = expr_analysis(*(p->rval), stmts);
             auto syntax_node_l = unary_expr_analysis(p->lval, stmts);
             if(!is_left_value(*syntax_node_l))
                 throw syntax_error(p->loc, "left oprand of assignment is not lvalue");
-                //is immutable?
+            //is immutable?
             if(is_lvalue_immutale(*syntax_node_l))
                 throw syntax_error(p->loc, "left oprand of assignment is immutable");
-            if (p->op != "=")
+            if(auto construct = std::get_if<node_construct_expr>(&p->rval->expr))
             {
-                auto syntax_fun_node = syntax_fun_call{.fun_name = p->op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
-                auto syntax_node = env_fun.infer_type(p->op.substr(0, 1), syntax_fun_node);
-                stmts.push_back(syntax_stmt{.stmt = syntax_node});
-                stmts.push_back(syntax_stmt{.stmt = syntax_assign{.lval = syntax_node_l, .rval = syntax_node}});
+                auto type_node = syntax_node_l->type;
+                if(auto product_t = std::get_if<product_type>(&type_node.type))
+                {
+                    auto i = 0;
+                    auto j = 0;
+                    for(i = 0; i < construct->lable.size(); i++)
+                    {
+                        for(j = 0; j < product_t->fields.size(); j++)
+                        {
+                            if(construct->lable[i] == product_t->fields[j])
+                            {
+                                break;
+                            }
+                        }
+                        if(j >= product_t->fields.size())
+                        {
+                            throw syntax_error(p->loc, "no corresponding attribute in the assignment");
+                        }
+                        else
+                        {
+                            auto node_construct = node_expression{.loc = p->loc, .expr = node_assign_expr{.loc = p->loc, .lval = node_unary_expr{.loc = p->loc}, .op = "=", .rval = construct->init_val[j]}};
+                            auto p = std::get_if<node_assign_expr>(&node_construct.expr);
+                            p->lval.post_expr = std::make_shared<node_post_expr>();
+                            p->lval.post_expr->loc = p->loc;
+                            node_post_dot_expr node_dot;
+                            node_dot.loc = p->loc;
+                            node_dot.obj = p->lval.post_expr;
+                            node_dot.attr.loc = p->loc;
+                            node_dot.attr.val = construct->lable[j];
+                            p->lval.post_expr->expr = node_dot;
+                            expr_analysis(node_construct, stmts);
+                        }
+                    }
+                }
+                else if(auto sum_t = std::get_if<sum_type>(&type_node.type))
+                {
+                    auto i = 0;
+                    if(construct->lable.size() != 1)
+                        throw syntax_error(p->loc, "sum type assignment error, not match");
+                    for(i = 0; i < sum_t->alters.size(); i++)
+                    {
+                        if(sum_t->alters[i] == construct->lable[0])
+                        {
+                            break;
+                        }
+                    }
+                    if(i >= sum_t->alters.size())
+                    {
+                        throw syntax_error(p->loc, "sum type assignment error, not match any");
+                    }
+                    else
+                    {
+                        auto node_construct = node_expression{.loc = p->loc, .expr = node_assign_expr{.loc = p->loc, .lval = node_unary_expr{.loc = p->loc}, .op = "=", .rval = construct->init_val[i]}};
+                        auto p = std::get_if<node_assign_expr>(&node_construct.expr);
+                        p->lval.post_expr = std::make_shared<node_post_expr>();
+                        p->lval.post_expr->loc = p->loc;
+                        node_post_dot_expr node_dot;
+                        node_dot.loc = p->loc;
+                        node_dot.obj = p->lval.post_expr;
+                        node_dot.attr.loc = p->loc;
+                        node_dot.attr.val = construct->lable[i];
+                        p->lval.post_expr->expr = node_dot;
+                        expr_analysis(node_construct, stmts);
+                    }
+                }
+                else
+                {
+                    throw syntax_error(p->loc, "lval is not sum type or product type");
+                }
                 return syntax_node_l;
             }
-            else
+            else 
             {
-                stmts.push_back(syntax_stmt{.stmt = syntax_assign{.lval = syntax_node_l, .rval = syntax_node_r}});
-                return syntax_node_l;
+                auto syntax_node_r = expr_analysis(*(p->rval), stmts);
+                if (p->op != "=")
+                {
+                    auto syntax_fun_node = syntax_fun_call{.fun_name = p->op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
+                    auto syntax_node = env_fun.infer_type(p->op.substr(0, 1), syntax_fun_node);
+                    if(!syntax_node->type.subtyping(syntax_node_l->type))
+                    {
+                        throw syntax_error(p->loc, "assignment oprands not match");
+                    }
+                    syntax_node = expr_convert_to(syntax_node, syntax_node_l->type);
+                    stmts.push_back(syntax_stmt{.stmt = syntax_node});
+                    stmts.push_back(syntax_stmt{.stmt = syntax_assign{.lval = syntax_node_l, .rval = syntax_node}});
+                    return syntax_node_l;
+                    }
+                else
+                {
+                    if(!syntax_node_r->type.subtyping(syntax_node_l->type))
+                    {
+                        throw syntax_error(p->loc, "assignment oprands not match");
+                    }
+                    //
+                    syntax_node_r = expr_convert_to(syntax_node_r, syntax_node_l->type);
+                    stmts.push_back(syntax_stmt{.stmt = syntax_assign{.lval = syntax_node_l, .rval = syntax_node_r}});
+                    return syntax_node_l;
+                }
             }
         }
         else if (auto p = std::get_if<node_construct_expr>(&node.expr))
         {
-
+            auto syntax_node = std::make_shared<syntax_expr>();
+            syntax_construct syntax_construct_node;
+            syntax_type type_node;
+            product_type product_node;
+            if(p->lable.size() != 1)
+            {
+                for(auto i = 0; i < p->lable.size(); i++)
+                {
+                    auto syntax_ret = expr_analysis(*(p->init_val[i]), stmts);
+                    product_node.fields.push_back(p->lable[i]);
+                    product_node.types.push_back(std::make_shared<syntax_type>(&syntax_ret->type));
+                    syntax_construct_node.label.push_back(p->lable[i]);
+                    syntax_construct_node.val.push_back(syntax_ret);
+                }
+                syntax_type type_node;
+                type_node.type = product_node;
+            }
+            else
+            {
+                sum_type sum_node;
+                auto syntax_ret = expr_analysis(*(p->init_val[0]), stmts);
+                sum_node.alters.push_back(p->lable[0]);
+                sum_node.types.push_back(std::make_shared<syntax_type>(&syntax_ret->type));
+                syntax_type type_node;
+                type_node.type = product_node;
+            }
+            syntax_node->type = type_node;
+            syntax_node->val = syntax_construct_node;
+            return syntax_node;
         }
         else
             assert(false);
@@ -238,13 +353,13 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
         return syntax_node;
     }
     else if (auto p = std::get_if<node_post_dot_expr>(&node.expr))
-    {
+    { 
         auto syntax_node = post_expr_analysis(*(p->obj), stmts);
         auto e = std::get_if<syntax_var>(&syntax_node->val);
         auto q = std::get_if<syntax_dot>(&syntax_node->val);
         if(e || q)
         {
-            if(!syntax_node->type.get_primary().empty())
+            if(syntax_node->type.get_primary().empty())
             {
                 auto syntax_ret = std::make_shared<syntax_expr>();
                 if(auto product_t = std::get_if<product_type>(&(syntax_node->type).type))

@@ -43,23 +43,23 @@ struct syntax_type_convert
     syntax_type target_type;
 };
 
-struct syntax_construct
-{
-    std::vector<std::string> label;
-    std::shared_ptr<syntax_expr> val;
-};
-
 struct syntax_dot
 {
     std::string field;
     std::shared_ptr<syntax_expr> val;
 };
 
+struct syntax_construct
+{
+    std::vector<std::string> label;
+    std::vector<std::shared_ptr<syntax_expr>> val;
+};
+
 struct syntax_expr
 {
     bool is_immutale = false;
     syntax_type type;
-    std::variant<syntax_fun_call, syntax_literal, syntax_var, syntax_type_convert, syntax_construct, syntax_dot> val;
+    std::variant<syntax_fun_call, syntax_literal, syntax_var, syntax_type_convert, syntax_dot, syntax_construct> val;
     void *reserved = nullptr;
 };
 
