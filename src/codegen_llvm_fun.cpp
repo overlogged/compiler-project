@@ -33,11 +33,17 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateMul(arg1, arg2, "multmp");
     }
-    else if (call.fun_name == "/")
+    else if (call.fun_name == "s/")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateSDiv(arg1, arg2, "divtmp");
+    }
+    else if (call.fun_name == "u/")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateUDiv(arg1, arg2, "divtmp");
     }
     else if (call.fun_name == "==")
     {
@@ -45,11 +51,17 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateICmpEQ(arg1, arg2, "eq");
     }
+    else if (call.fun_name == "!=")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmp(CmpInst::ICMP_UGT,arg1, arg2, "ne");
+    }
     else if(call.fun_name == "&")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmpEQ(arg1, arg2, "andtmp");
+        return builder->CreateAnd(arg1, arg2, "andtmp");
     }
     else if(call.fun_name == "|")
     {
