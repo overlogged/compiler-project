@@ -86,7 +86,14 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
     else
     {
         // 隐式转换
-        rval = expr_convert_to(init_expr, t, stmts);
+        try
+        {
+            rval = expr_convert_to(init_expr, t, stmts);
+        }
+        catch (inner_error &e)
+        {
+            throw syntax_error(def.loc, "can't do such type convertion");
+        }
     }
     // 分配变量
     for (auto &v : def.var_list)
