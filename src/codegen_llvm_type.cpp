@@ -13,7 +13,14 @@ Type *codegen_llvm::type_primary(const primary_type &t)
     {
         return Type::getDoubleTy(context);
     }
-
+    else if(t.name == "u7")
+    {
+        return IntegerType::getInt8Ty(context);
+    }
+    else if(t.name == "bool")
+    {
+        return IntegerType::getInt1Ty(context);
+    }
     auto tt = Type::getInt128Ty(context);
     switch (t.size)
     {
