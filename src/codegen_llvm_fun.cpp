@@ -160,8 +160,6 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
     }
 }
 
-// todo: 完成对类型转换的处理
-// sum type, product type 等等
 Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
 {
     auto t_size = conv.target_type.get_primary_size();
