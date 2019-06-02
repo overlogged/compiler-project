@@ -17,6 +17,18 @@ Type *codegen_llvm::type_primary(const primary_type &t)
     {
         return IntegerType::getInt8Ty(context);
     }
+    else if(t.name == "u15")
+    {
+        return IntegerType::getInt16Ty(context);
+    }
+    else if(t.name =="u31")
+    {
+        return IntegerType::getInt32Ty(context);
+    }
+    else if(t.name =="u63")
+    {
+        return IntegerType::getInt64Ty(context);
+    }
     else if(t.name == "bool")
     {
         return IntegerType::getInt1Ty(context);
