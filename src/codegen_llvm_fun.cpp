@@ -358,3 +358,20 @@ void codegen_llvm::function(const std::string &fun_name, const std::vector<synta
 
     block_return->insertInto(func);
 }
+
+// 外部函数声明
+void codegen_llvm::ext_function_dec()
+{
+    std::vector<llvm::Type*> printf_arg_types; 
+    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(llvm_module->getContext()));
+
+    llvm::FunctionType* printf_type =
+        llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(llvm_module->getContext()), printf_arg_types, true); 
+    llvm::Function *func = llvm::Function::Create(
+                printf_type, llvm::Function::ExternalLinkage,
+                llvm::Twine("printf"),
+                &*llvm_module
+           );
+    func->setCallingConv(llvm::CallingConv::C);
+}

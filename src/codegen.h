@@ -41,6 +41,7 @@ class codegen_llvm
     llvm::Value *get_convert(const syntax_type_convert &conv);
     llvm::Value *get_dot(const syntax_dot &dot);
 
+    void ext_function_dec();
     void function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts, const std::vector<std::shared_ptr<syntax_expr>> &args);
     void block(const std::vector<syntax_stmt> &stmts);
     void block_if(const syntax_if_block &syntax_if);

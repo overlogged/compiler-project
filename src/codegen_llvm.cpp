@@ -59,7 +59,8 @@ void codegen_llvm::codegen()
         auto fun_type = FunctionType::get(llvm_type(fun_decl.ret_type), type_args, false);
         Function::Create(fun_type, GlobalValue::ExternalLinkage, fun_name, llvm_module.get());
     }
-
+    // 第二部分，生成外部函数声明
+        ext_function_dec();
     // 第三部分，生成函数的内部
     for (auto i = 0; i < module.fun_name.size(); i++)
     {
