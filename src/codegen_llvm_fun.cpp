@@ -1,7 +1,6 @@
 #include "codegen.h"
 
 using namespace llvm;
-
 // todo: 完成字面量的处理
 // 包括整数，浮点，字符，字符串
 Value *codegen_llvm::get_lit(const syntax_literal &lit)
@@ -45,6 +44,95 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateICmpEQ(arg1, arg2, "eq");
+    }
+    else if(call.fun_name == "&")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmpEQ(arg1, arg2, "andtmp");
+    }
+    else if(call.fun_name == "|")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateOr(arg1, arg2, "ortmp");
+    }
+    else if(call.fun_name == "s%")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateSRem(arg1, arg2, "modtmp");
+    }
+    else if(call.fun_name == "u%")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateURem(arg1, arg2, "modtmp");
+    } 
+    else if(call.fun_name == "l>>")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateLShr(arg1, arg2, "shifttmp");
+    }else if(call.fun_name == "a>>")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateAShr(arg1, arg2, "shifttmp");
+    }
+    else if(call.fun_name == "<<")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateShl(arg1, arg2, "shifttmp");
+    }
+    else if(call.fun_name =="s>")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmp(CmpInst::ICMP_SGT,arg1, arg2, "cmptmp");
+    }
+    else if(call.fun_name =="u>")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmp(CmpInst::ICMP_UGT,arg1, arg2, "cmptmp");
+    }
+    else if(call.fun_name =="s<")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmp(CmpInst::ICMP_SLT,arg1, arg2, "cmptmp");
+    }
+    else if(call.fun_name =="u<")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmp(CmpInst::ICMP_ULT,arg1, arg2, "cmptmp");
+    }
+    else if(call.fun_name =="s>=")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmp(CmpInst::ICMP_SGE,arg1, arg2, "cmptmp");
+    }
+    else if(call.fun_name =="u>=")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmp(CmpInst::ICMP_UGE,arg1, arg2, "cmptmp");
+    }
+    else if(call.fun_name =="s<=")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmp(CmpInst::ICMP_SLE,arg1, arg2, "cmptmp");
+    }
+    else if(call.fun_name =="u<=")
+    {
+        auto arg1 = get_value(call.parameters[0]);
+        auto arg2 = get_value(call.parameters[1]);
+        return builder->CreateICmp(CmpInst::ICMP_ULE,arg1, arg2, "cmptmp");
     }
     else
     {
@@ -174,11 +262,13 @@ void codegen_llvm::block_while(const syntax_while_block &syntax_while)
     auto block_loop = BasicBlock::Create(context, "loop");
     auto block_loop_end = BasicBlock::Create(context, "loop_end");
 
+    builder->CreateBr(block_begin_test);
     // begin test
     builder->SetInsertPoint(block_begin_test);
     block(syntax_while.condition_stmt);
     builder->CreateCondBr(get_value(syntax_while.condition), block_loop, block_loop_end);
     block_begin_test->insertInto(func);
+
     // loop
     builder->SetInsertPoint(block_loop);
     block(syntax_while.body);

@@ -173,7 +173,7 @@ function_table::function_table()
         create_bin_op_fun(op[i], "i64", 8, "i64", 8, "i64", 8);
         create_bin_op_fun(op[i], "u64", 8, "u64", 8, "u64", 8);
     }
-    op = {">", "<", ">=", "<="};
+    op = {">", "<", ">=", "<=","==","!="};
     for (int i = 0; i < op.size(); i++)
     {
         create_bin_op_fun(op[i], "bool", 1, "i8", 1, "i8", 1);
@@ -185,7 +185,7 @@ function_table::function_table()
         create_bin_op_fun(op[i], "bool", 1, "i64", 8, "i64", 8);
         create_bin_op_fun(op[i], "bool", 1, "u64", 8, "u64", 8);
     }
-    op = {"<<", ">>", ">>=", "<<="};
+    op = {"<<", ">>"};
     vec_str param_type = {"i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64"};
     for (int i = 0; i < op.size(); i++)
     {
