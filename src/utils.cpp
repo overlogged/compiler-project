@@ -126,14 +126,32 @@ std::string number_type(const std::string &s, int base, std::variant<unsigned lo
     }
     else
     {
-        if (value <= 127)
+        if (value <= 1)
         {
             if (suffix == "l" || suffix == "L")
                 return "i32";
             else if (suffix == "ll" || suffix == "LL")
                 return "i64";
             else
-                return "i8";
+                return "bool";
+        }
+        else if (value <= 127)
+        {
+            if (suffix == "l" || suffix == "L")
+                return "i32";
+            else if (suffix == "ll" || suffix == "LL")
+                return "i64";
+            else
+                return "u7";
+        }
+        else if (value <= 255)
+        {
+            if (suffix == "l" || suffix == "L")
+                return "i32";
+            else if (suffix == "ll" || suffix == "LL")
+                return "i64";
+            else
+                return "u8";
         }
         else if (value <= 32767)
         {
@@ -142,17 +160,33 @@ std::string number_type(const std::string &s, int base, std::variant<unsigned lo
             else if (suffix == "ll" || suffix == "LL")
                 return "i64";
             else
-                return "i16";
+                return "u15";
+        }
+        else if (value <= 65535)
+        {
+            if (suffix == "l" || suffix == "L")
+                return "i32";
+            else if (suffix == "ll" || suffix == "LL")
+                return "i64";
+            else
+                return "u16";
         }
         else if (value <= 2147483647UL)
         {
             if (suffix == "ll" || suffix == "LL")
                 return "i64";
             else
-                return "i32";
+                return "u31";
+        }
+        else if(value <= 4294967295UL)
+        {
+            if (suffix == "ll" || suffix == "LL")
+                return "i64";
+            else
+                return "u32";
         }
         else if (value <= 9223372036854775807ULL)
-            return "i64";
+            return "u63";
         else if (value <= 18446744073709551615ULL)
             return "u64";
         else

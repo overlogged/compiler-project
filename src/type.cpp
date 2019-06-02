@@ -20,7 +20,7 @@ bool syntax_type::subtyping(const syntax_type &t) const
         auto t2 = t.get_primary();
         // 判断整形
         static std::map<std::string, int> int_table = {
-            {"i8", 0}, {"u8", 1}, {"i16", 2}, {"u16", 3}, {"i32", 4}, {"u32", 5}, {"i64", 6}, {"u64", 7}};
+            {"bool",1},{"u7",3},{"i8", 4}, {"u8", 5},{"u15",7} ,{"i16", 8}, {"u16", 9},{"u31",11}, {"i32", 12}, {"u32", 13},{"u63",15},{"i64", 16}, {"u64", 17}};
 
         // 基础类型
         if (!t1.empty() && !t2.empty())
@@ -29,11 +29,10 @@ bool syntax_type::subtyping(const syntax_type &t) const
             {
                 return true;
             }
-
-            if (t1 == "bool" || t2 == "bool")
+            /*if (t1 == "bool" || t2 == "bool")
             {
                 return false;
-            }
+            }*/
 
             if (t1 == "char" || t2 == "char")
             {
@@ -171,8 +170,8 @@ syntax_type type_table::get_type(std::string name)
 {
     // 13 种基础类型
     static const std::string builtin_types[] =
-        {"u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "char", "unit", "bool", "f32", "f64", "auto"};
-    static const size_t builtin_size[] = {1, 1, 2, 2, 4, 4, 8, 8, 1, 1, 1, 4, 8, 0};
+        {"u7","u15","u31","u63","u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "char", "unit", "bool", "f32", "f64", "auto"};
+    static const size_t builtin_size[] = {1,2,4,8,1, 1, 2, 2, 4, 4, 8, 8, 1, 1, 1, 4, 8, 0};
 
     static const size_t builtin_n = sizeof(builtin_size) / sizeof(size_t);
     for (auto i = 0; i < builtin_n; i++)
