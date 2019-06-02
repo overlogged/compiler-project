@@ -119,16 +119,16 @@ struct node_post_arr_expr
     std::shared_ptr<node_post_expr> arr;
     std::shared_ptr<node_expression> arr_index;
 };
-inline std::string to_string(const node_post_arr_expr& node)
+inline std::string to_string(const node_post_arr_expr &node)
 {
-    return obj_to_string(vec_str{"arr","arr_index"},vec_str{to_string(node.arr),to_string(node.arr_index)});
+    return obj_to_string(vec_str{"arr", "arr_index"}, vec_str{to_string(node.arr), to_string(node.arr_index)});
 }
 
 // node_post_expr
 struct node_post_expr
 {
     yy::location loc;
-    std::variant<node_primary_expr, node_post_call_expr, node_post_dot_expr, node_post_check_expr,node_post_arr_expr> expr;
+    std::variant<node_primary_expr, node_post_call_expr, node_post_dot_expr, node_post_check_expr, node_post_arr_expr> expr;
 };
 
 inline std::string to_string(const node_post_expr &node)
@@ -233,14 +233,12 @@ inline std::string to_string(const node_type &node)
         lable = "type";
     return obj_to_string(vec_str{lable}, vec_str{to_string(node.type_val)});
 }
-const node_type node_type_auto = node_type {
+const node_type node_type_auto = node_type{
     .loc = yy::location(),
     .is_pointer = false,
     .type_val = node_identifier{
         .loc = yy::location(),
-        .val = "auto"
-    }
-};
+        .val = "auto"}};
 
 //node_new_expr
 struct node_new_expr
@@ -252,12 +250,11 @@ struct node_new_expr
 };
 inline std::string to_string(const node_new_expr &node)
 {
-    if(node.single_flag)
-        return obj_to_string(vec_str{"new_type"},vec_str{to_string(node.new_type)});
+    if (node.single_flag)
+        return obj_to_string(vec_str{"new_type"}, vec_str{to_string(node.new_type)});
     else
-        return obj_to_string(vec_str{"new_type","size"},vec_str{to_string(node.new_type),to_string(node.size)});
+        return obj_to_string(vec_str{"new_type", "size"}, vec_str{to_string(node.new_type), to_string(node.size)});
 }
-
 
 // node_statement
 struct node_statement;
@@ -265,7 +262,7 @@ struct node_statement;
 struct node_expression
 {
     yy::location loc;
-    std::variant<node_binary_expr, node_assign_expr, node_construct_expr,node_new_expr> expr;
+    std::variant<node_binary_expr, node_assign_expr, node_construct_expr, node_new_expr> expr;
 };
 inline std::string to_string(const node_expression &node)
 {
@@ -343,15 +340,14 @@ inline std::string to_string(const node_var_def_statement &node)
     return obj_to_string(vec_str{"is_immutable", "var_list", "var_type", "initial_exp"}, vec_str{to_string(node.is_immutable), to_string(node.var_list), to_string(node.var_type), to_string(node.initial_exp)});
 }
 
-
 struct node_delete_statement
 {
     yy::location loc;
     node_expression delete_expr;
-}; 
-inline std::string to_string(const node_delete_statement& node)
+};
+inline std::string to_string(const node_delete_statement &node)
 {
-    return obj_to_string(vec_str{"delete_expr"},vec_str{to_string(node.delete_expr)});
+    return obj_to_string(vec_str{"delete_expr"}, vec_str{to_string(node.delete_expr)});
 }
 
 struct node_global_var_def_block

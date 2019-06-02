@@ -8,7 +8,11 @@ llvm::Value *codegen_llvm::get_value(const std::shared_ptr<syntax_expr> &expr)
 {
     if (auto pvar = std::get_if<syntax_var>(&expr->val))
     {
-        return builder->CreateLoad((Value *)expr->reserved);
+        return builder->CreateLoad((Value *)expr->reserved, "load");
+    }
+    else if(auto pdot = std::get_if<syntax_dot>(&expr->val))
+    {
+        return get_dot(*pdot);
     }
     else
     {
@@ -44,9 +48,10 @@ void codegen_llvm::codegen()
     }
 
     // 第二部分，生成函数的声明
-    for (auto &fun : module.fun_impl)
+    for (auto i = 0; i < module.fun_name.size(); i++)
     {
-        auto fun_name = fun.first;
+        auto fun_name = module.fun_name[i];
+
         auto fun_decl = module.env_fun.get_user_fun(fun_name);
 
         // 声明
@@ -58,11 +63,12 @@ void codegen_llvm::codegen()
         auto fun_type = FunctionType::get(llvm_type(fun_decl.ret_type), type_args, false);
         Function::Create(fun_type, GlobalValue::ExternalLinkage, fun_name, llvm_module.get());
     }
-
+    // 第二部分，生成外部函数声明
+        ext_function_dec();
     // 第三部分，生成函数的内部
-    for (auto &fun : module.fun_impl)
+    for (auto i = 0; i < module.fun_name.size(); i++)
     {
-        function(fun.first, fun.second);
+        function(module.fun_name[i], module.fun_impl[i], module.fun_args[i]);
     }
 
     // 输出

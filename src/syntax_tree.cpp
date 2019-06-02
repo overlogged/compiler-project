@@ -1,6 +1,26 @@
 #include "syntax_tree.h"
 #include "exception.h"
 
+std::shared_ptr<syntax_if_block> syntax_merged_if_block::reduce(int index)
+{
+    syntax_if_block ret;
+    ret.condition = condition[index];
+    ret.cond_stmt = std::move(condition_stmt[index]);
+    ret.then_stmt = std::move(branch[index]);
+
+    // 最后一个 if
+    if (index == condition.size() - 1)
+    {
+        ret.else_stmt = std::move(default_branch);
+    }
+    else
+    {
+        ret.else_stmt.push_back(syntax_stmt{reduce(index + 1)});
+    }
+
+    return std::make_shared<syntax_if_block>(ret);
+}
+
 static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
 {
     if (dependency_graph.seq_num == 0)
@@ -52,7 +72,7 @@ static void fix_lookahead(type_table &env_type, top_graph &dependency_graph)
     }
 }
 
-void syntax_module::add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts)
+void syntax_module::add_var(const node_var_def_statement &def, std::vector<syntax_stmt> &stmts, bool is_global)
 {
     auto init_expr = expr_analysis(def.initial_exp, stmts);
     auto rval = std::make_shared<syntax_expr>();
@@ -61,15 +81,14 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
     {
         // 类型推导
         t = init_expr->type;
-        rval = init_expr;
     }
-    else
-    {
-        // 隐式转换
-        rval = expr_convert_to(init_expr, t);
-        stmts.emplace_back(syntax_stmt{rval});
-    }
-    // 分配全局变量
+    rval = init_expr;
+    // else
+    // {
+    //     // 隐式转换
+    //     rval = expr_convert_to(init_expr, t, stmts);
+    // }
+    // 分配变量
     for (auto &v : def.var_list)
     {
         auto var = std::make_shared<syntax_expr>();
@@ -79,19 +98,20 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
 
         // 声明
         env_var.insert(v.val, var);
+        if (!is_global)
+            stmts.push_back(syntax_stmt{var});
 
         // 初始化
-        if(auto construct = std::get_if<syntax_construct>(&rval->val))
-        {
-            // auto node_expr = node_expression{.loc = v.loc, .expr = node_assign_expr{.loc = v.loc, .lval = node_unary_expr{.loc = v.loc}, .op = "="}};
-            // auto p = std::get_if<node_assign_expr>(&node_expr.expr);
-            // p->lval.post_expr = 
-        }
-        else
-        {
-            syntax_assign assign{.lval = var, .rval = rval};
-            stmts.push_back(syntax_stmt{.stmt = assign});
-        }
+        // if(auto construct = std::get_if<syntax_construct>(&rval->val))
+        // {
+
+        // }
+        // else
+        // {
+        construct_assign(var, rval, stmts);
+            // syntax_assign assign{.lval = var, .rval = rval};
+            // stmts.push_back(syntax_stmt{.stmt = assign});
+        // }
     }
 }
 
@@ -184,7 +204,7 @@ std::vector<syntax_fun> syntax_module::fundef_analysis(const node_module &module
 
 void syntax_module::global_var_analysis(const node_module &module)
 {
-    std::vector<syntax_stmt> stmts;
+    std::vector<syntax_stmt> stmts{};
     syntax_fun main_fun;
     main_fun.fun_name = "main";
     main_fun.ret_type = env_type.get_type("i32");
@@ -195,7 +215,7 @@ void syntax_module::global_var_analysis(const node_module &module)
         {
             for (auto &def : p_global_var_def->arr)
             {
-                add_var(def, stmts);
+                add_var(def, stmts, true);
             }
         }
     }
@@ -218,18 +238,22 @@ void syntax_module::global_var_analysis(const node_module &module)
     // return main()
     auto i32 = env_type.get_type("i32");
     stmts.push_back(syntax_stmt{syntax_return{call_main}});
-    fun_impl.emplace_back(std::make_pair("main", std::move(stmts)));
+
+    fun_name.push_back("main");
+    fun_impl.push_back(std::move(stmts));
+    fun_args.push_back(std::vector<std::shared_ptr<syntax_expr>>());
+
     env_fun.add_func(main_fun);
 }
 
 syntax_stmt syntax_module::if_analysis(const node_if_statement &node)
 {
-    syntax_if_block block;
+    syntax_merged_if_block block;
     env_var.push();
     block.condition_stmt.push_back(std::vector<syntax_stmt>());
     block.condition.push_back(expr_analysis(node.if_condition, block.condition_stmt[0]));
     block.branch.push_back(statement_analysis(node.if_statement));
-    block.defaul_branch = statement_analysis(node.else_statement);
+    block.default_branch = statement_analysis(node.else_statement);
     auto it_condition = node.else_if_statement.else_if_condition.begin();
     auto it_statement = node.else_if_statement.else_if_statement.begin();
     for (int i = 1; it_condition != node.else_if_statement.else_if_condition.end(); it_condition++, it_statement++, i++)
@@ -239,7 +263,8 @@ syntax_stmt syntax_module::if_analysis(const node_if_statement &node)
         block.branch.push_back(statement_analysis(*it_statement));
     }
     env_var.pop();
-    return {block};
+
+    return {block.reduce(0)};
 }
 
 syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
@@ -247,14 +272,9 @@ syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
     syntax_while_block block;
     env_var.push();
     block.condition = expr_analysis(node.while_condition, block.condition_stmt);
-    // add while condition to the statement
-    auto new_node = node;
-    auto condition_stmt = node_statement{.loc = node.loc, .statement = node.while_condition};
-    new_node.loop_statement.push_back(condition_stmt);
-    // -------------------------------------
-    block.body = statement_analysis(new_node.loop_statement);
+    block.body = statement_analysis(node.loop_statement);
     env_var.pop();
-    return {block};
+    return {std::make_shared<syntax_while_block>(block)};
 }
 
 void syntax_module::syntax_analysis(const node_module &module)
@@ -281,7 +301,10 @@ void syntax_module::syntax_analysis(const node_module &module)
 
 void syntax_module::function_analysis(const syntax_fun &node)
 {
+    ret_type = node.ret_type;
+
     env_var.push();
+    std::vector<std::shared_ptr<syntax_expr>> args;
     std::vector<syntax_stmt> stmts;
 
     // 参数加入局部变量
@@ -290,13 +313,17 @@ void syntax_module::function_analysis(const syntax_fun &node)
         auto exp = std::make_shared<syntax_expr>();
         exp->type = arg.second;
         exp->val = syntax_var();
+        args.push_back(exp);
         env_var.insert(arg.first, exp);
     }
 
     stmts = statement_analysis(node.origin_stmts);
 
     // 分析结束，保存函数实现
-    fun_impl.emplace_back(std::make_pair(node.fun_name, std::move(stmts)));
+    fun_name.push_back(node.fun_name);
+    fun_impl.emplace_back(std::move(stmts));
+    fun_args.push_back(std::move(args));
+
     env_var.pop();
 }
 
@@ -325,17 +352,21 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
         }
         else if (auto expr = std::get_if<node_expression>(ps))
         {
-            auto e = expr_analysis(*expr, stmts);
-            auto p = std::get_if<syntax_var>(&e->val);
-            if (!p)
-                stmts.emplace_back(syntax_stmt{e});
+            expr_analysis(*expr, stmts);
         }
         else if (auto ret = std::get_if<node_return_statement>(ps))
         {
             auto ret_e = expr_analysis(ret->expr, stmts);
-            stmts.emplace_back(syntax_stmt{syntax_return{ret_e}});
+            if (ret_e->type.subtyping(ret_type))
+            {
+                auto ret_v = expr_convert_to(ret_e, ret_type, stmts);
+                stmts.emplace_back(syntax_stmt{syntax_return{ret_v}});
+            }
+            else
+            {
+                throw syntax_error(node_stmt.loc, "can't return value of this type");
+            }
         }
     }
     return stmts;
 }
-

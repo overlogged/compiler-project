@@ -1,10 +1,14 @@
-var x:i8 = 44;
+var x:(i8, i8) = {8, 8};
 var y:i32 = fun(4+3*fun(3));
 
 fn fun(x:i8) i8 {
-    return 5;
+    if x == 0 {
+        return 4;
+    } else {
+        return 5;
+    }
 }
 
 fn main() i32 {
-    x = {1, 2, 3};
+    x._0 = 1;
 }
