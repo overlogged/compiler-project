@@ -13,3 +13,4 @@ samples/*.json
 .out
 *.ll
 *.s
+*.out

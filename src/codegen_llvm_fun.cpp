@@ -198,7 +198,7 @@ Value *codegen_llvm::get_dot(const syntax_dot &dot)
             auto sum = std::get<sum_type>(inner_type.type);
             auto idx = sum.get_index(dot.field);
             assert(idx != -1);
-            auto target_type = llvm_type(*sum.types[idx]);
+            auto target_type = PointerType::get(llvm_type(*sum.types[idx]), 0);
 
             auto gep = builder->CreateStructGEP(inner_llvm_val, 1);
             return builder->CreateCast(Instruction::CastOps::BitCast, gep, target_type, sum.alters[idx]);

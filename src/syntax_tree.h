@@ -118,7 +118,7 @@ struct syntax_expr
 
             if (auto psum = std::get_if<sum_type>(&inner->type.type))
             {
-                return psum->get_index(choose);
+                return psum->get_index(choose) + 1;
             }
         }
         return 0;

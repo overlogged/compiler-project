@@ -10,47 +10,50 @@ std::shared_ptr<syntax_expr> function_table::infer_type(syntax_fun_call &call, s
 {
     auto func_name = call.fun_name;
     auto p_ret = make_shared<syntax_expr>();
+    auto type_i32 = syntax_type{primary_type{.name = "i32", .size = 4}};
+    auto type_bool = syntax_type{.type = primary_type{.name = "bool", .size = 1}};
 
-    //.?
+    // .?
     if (func_name[0] == '.' && func_name[func_name.size() - 1] == '?')
     {
-        bool match = false;
-        std::string alt_name = func_name.substr(1, func_name.size() - 2);
-
         if (call.parameters.size() != 1)
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
 
-        auto ptr_sum_val = call.parameters[0];
-        auto ptr_sum_type = std::get_if<sum_type>(&ptr_sum_val->type.type);
+        std::string alt_name = func_name.substr(1, func_name.size() - 2);
+        auto sum_val = call.parameters[0];
+        auto ptr_sum_type = std::get_if<sum_type>(&sum_val->type.type);
 
         if (!ptr_sum_type)
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
 
-        auto it_alt = ptr_sum_type->alters.begin();
-        auto it_type = ptr_sum_type->types.begin();
-        for (; it_alt != ptr_sum_type->alters.end(); it_alt++, it_type++)
-        {
-            if (alt_name == *it_alt)
-            {
-                match = true;
-                p_ret->type = syntax_type{.type = primary_type{.name = "bool", .size = 1}};
-                break;
-            }
-        }
-        if (match)
-        {
-            p_ret->val = call;
-            return p_ret;
-        }
-        else
+        auto idx = ptr_sum_type->get_index(alt_name);
+        if (idx == -1)
         {
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
         }
+
+        auto tag_lval = std::make_shared<syntax_expr>(syntax_dot{.field = ".tag", .val = sum_val}, type_i32);
+        stmts.push_back(syntax_stmt{tag_lval});
+
+        auto idx_rval = std::make_shared<syntax_expr>(
+            syntax_literal{
+                .type = type_i32,
+                .val = (unsigned long long)idx + 1},
+            type_i32);
+
+        stmts.push_back(syntax_stmt{idx_rval});
+
+        call.fun_name = "==";
+        call.parameters = std::vector<std::shared_ptr<syntax_expr>>{tag_lval, idx_rval};
+        p_ret->val = call;
+        p_ret->type = type_bool;
+
+        return p_ret;
     }
     // == !=
     else if (func_name == "==" || func_name == "!=")
     {
-        p_ret->type = syntax_type{.type = primary_type{.name = "bool", .size = 1}};
+        p_ret->type = type_bool;
         if (call.parameters.size() != 2)
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
 

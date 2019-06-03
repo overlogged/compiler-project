@@ -28,6 +28,7 @@ struct product_type
 
     std::string to_string() const;
 
+    // 不是就返回 -1
     int get_index(const std::string &name) const
     {
         for (auto i = 0; i < fields.size(); i++)
@@ -48,17 +49,17 @@ struct sum_type
 
     std::string to_string() const;
 
-    // 不是则返回 0
+    // 不是则返回 -1
     int get_index(const std::string &name)
     {
         for (auto i = 0; i < alters.size(); i++)
         {
             if (alters[i] == name)
             {
-                return i + 1;
+                return i;
             }
         }
-        return 0;
+        return -1;
     }
 };
 

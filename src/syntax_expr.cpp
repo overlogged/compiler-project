@@ -436,10 +436,10 @@ std::shared_ptr<syntax_expr> expr_convert_to(std::shared_ptr<syntax_expr> expr, 
 
             auto field = source.fields[0];
             auto sum_idx = sum.get_index(field);
-            assert(sum_idx != 0);
+            assert(sum_idx != -1);
 
             auto source_field_type = *source.types[0];
-            auto target_field_type = *sum.types[sum_idx - 1];
+            auto target_field_type = *sum.types[sum_idx];
 
             // 右值
             auto rval = std::make_shared<syntax_expr>(syntax_dot{.field = field, .val = expr}, source_field_type);
