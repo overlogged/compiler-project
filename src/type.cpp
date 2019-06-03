@@ -78,7 +78,7 @@ bool syntax_type::subtyping(const syntax_type &t) const
                     if (p->fields[i] != q->fields[i])
                         return false;
                     auto type_sub = p->types[i];
-                    if (!type_sub->type_equal(*(q->types[i])))
+                    if (!type_sub->subtyping(*(q->types[i])))
                         return false;
                 }
                 return true;
@@ -91,7 +91,7 @@ bool syntax_type::subtyping(const syntax_type &t) const
                     auto p_type = p->types[0];
                     for (auto i = 0; i < q->alters.size(); i++)
                     {
-                        if (p_type->type_equal(*(q->types[i])) && p->fields[0] == q->alters[i])
+                        if (p_type->subtyping(*(q->types[i])) && p->fields[0] == q->alters[i])
                         {
                             return true;
                         }

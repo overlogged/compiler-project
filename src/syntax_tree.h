@@ -72,7 +72,7 @@ struct syntax_expr
 
     syntax_expr(const std::variant<syntax_fun_call, syntax_literal, syntax_var,
                                    syntax_type_convert, syntax_dot, syntax_arr_member> &
-                    v) : val(v)
+                    v,syntax_type t) : type(t), val(v)
     {
         immutable = true;
         reserved = nullptr;
