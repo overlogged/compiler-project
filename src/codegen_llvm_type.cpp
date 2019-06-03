@@ -100,14 +100,13 @@ Type *codegen_llvm::llvm_type(const syntax_type &s)
     {
         ret = type_product(*p);
     }
+    else if (auto p = std::get_if<pointer_type>(&s.type))
+    {
+        ret = PointerType::get(llvm_type(*p->type), 0);
+    }
     else
     {
         throw std::string("bad type");
-    }
-
-    if (s.is_ref())
-    {
-        ret = PointerType::get(ret, 0);
     }
     type_map[s.to_string()] = ret;
     return ret;
