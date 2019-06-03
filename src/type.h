@@ -28,7 +28,7 @@ struct product_type
 
     std::string to_string() const;
 
-    int get_index(const std::string &name)
+    int get_index(const std::string &name) const
     {
         for (auto i = 0; i < fields.size(); i++)
         {

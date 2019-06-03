@@ -1,5 +1,6 @@
 var x:(x:i8, i8) = {x=8, 8};
 var y:i32 = fun(4+3*fun(3));
+val z = {a=3,3,x=4,y=5};
 
 fn fun(x:i8) i8 {
     if x == 5 {
@@ -17,4 +18,5 @@ fn main() i32 {
     x.x = 1;
     x = {x=3,5};
     fun2({x=3,5,6});
+    x = z;
 }

@@ -73,13 +73,20 @@ bool syntax_type::subtyping(const syntax_type &t) const
             {
                 if (q->types.size() > p->types.size())
                     return false;
+
                 for (auto i = 0; i < q->types.size(); i++)
                 {
-                    if (p->fields[i] != q->fields[i])
+                    auto idx = p->get_index(q->fields[i]);
+                    if (idx != -1)
+                    {
+                        auto type_sub = p->types[idx];
+                        if (!type_sub->subtyping(*(q->types[i])))
+                            return false;
+                    }
+                    else
+                    {
                         return false;
-                    auto type_sub = p->types[i];
-                    if (!type_sub->subtyping(*(q->types[i])))
-                        return false;
+                    }
                 }
                 return true;
             }
