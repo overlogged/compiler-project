@@ -80,21 +80,22 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
     if (t.is_auto())
     {
         // 类型推导
-        t = init_expr->type;
+        t = init_expr->type; // todo: t 应该被修正，u15 -> i16 这种
+        rval = init_expr;
     }
-    rval = init_expr;
-    // else
-    // {
-    //     // 隐式转换
-    //     rval = expr_convert_to(init_expr, t, stmts);
-    // }
+    else
+    {
+        // 隐式转换
+        rval = expr_convert_to(init_expr, t, stmts);
+    }
+
     // 分配变量
     for (auto &v : def.var_list)
     {
         auto var = std::make_shared<syntax_expr>();
         var->val = syntax_var();
         var->type = t;
-        var->is_immutale = def.is_immutable;
+        var->immutable = def.is_immutable;
 
         // 声明
         env_var.insert(v.val, var);
@@ -102,16 +103,8 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
             stmts.push_back(syntax_stmt{var});
 
         // 初始化
-        // if(auto construct = std::get_if<syntax_construct>(&rval->val))
-        // {
-
-        // }
-        // else
-        // {
-        construct_assign(var, rval, stmts);
-            // syntax_assign assign{.lval = var, .rval = rval};
-            // stmts.push_back(syntax_stmt{.stmt = assign});
-        // }
+        syntax_assign assign{.lval = var, .rval = rval};
+        stmts.push_back(syntax_stmt{.stmt = assign});
     }
 }
 
@@ -220,8 +213,16 @@ void syntax_module::global_var_analysis(const node_module &module)
         }
     }
 
-    auto user_main_fun = env_fun.get_user_fun(".main");
-    if (!user_main_fun.parameters.empty() || user_main_fun.ret_type.get_primary() != "i32")
+    syntax_fun user_main_fun;
+    try
+    {
+        user_main_fun = env_fun.get_user_fun(".main");
+        if (!user_main_fun.parameters.empty() || user_main_fun.ret_type.get_primary() != "i32")
+        {
+            throw syntax_error(module.loc, "function 'main' must be 'fn main() i32 {}'");
+        }
+    }
+    catch (std::exception &)
     {
         throw syntax_error(module.loc, "function 'main' must be 'fn main() i32 {}'");
     }
@@ -365,6 +366,23 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
             else
             {
                 throw syntax_error(node_stmt.loc, "can't return value of this type");
+            }
+        }
+        else if (auto d = std::get_if<node_delete_statement>(ps))
+        {
+            auto delete_e = expr_analysis(d->delete_expr, stmts);
+            if (delete_e->type.is_ref())
+            {
+                auto expr = std::make_shared<syntax_expr>();
+                expr->val = syntax_fun_call{
+                    .fun_name = "delete",
+                    .parameters = std::vector<std::shared_ptr<syntax_expr>>{expr}};
+                expr->type = env_type.get_type("unit");
+                stmts.emplace_back(syntax_stmt{expr});
+            }
+            else
+            {
+                throw syntax_error(node_stmt.loc, "can't delete this expression");
             }
         }
     }

@@ -40,16 +40,17 @@ struct sum_type
     std::vector<std::string> alters;
     std::vector<std::shared_ptr<syntax_type>> types;
 
+    // 不是则返回 0
     int get_index(const std::string &name)
     {
         for (auto i = 0; i < alters.size(); i++)
         {
             if (alters[i] == name)
             {
-                return i;
+                return i + 1;
             }
         }
-        return -1;
+        return 0;
     }
 };
 

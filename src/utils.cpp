@@ -70,7 +70,7 @@ unsigned long long bin_to_value(const std::string &s)
     return tmp;
 }
 
-std::string number_type(const std::string &s, int base, std::variant<unsigned long long, double, float, long double, char, std::string> &val)
+std::string number_type(const std::string &s, int base, std::variant<unsigned long long, double, float, std::string> &val)
 {
     auto pos = s.find_last_not_of("uUlL");
     auto suffix = s.substr(pos + 1);
@@ -196,13 +196,13 @@ unsigned long long number_to_value(const std::string &s, int base)
         pre = tmp;
         tmp *= base;
         tmp += char_to_integer(s[i]);
-        //overflow sholud generate error
+        // overflow sholud generate error
         assert(tmp >= pre);
     }
     return tmp;
 }
 
-std::string float_type(const std::string &s, int base, std::variant<unsigned long long, double, float, long double, char, std::string> &val)
+std::string float_type(const std::string &s, int base, std::variant<unsigned long long, double, float, std::string> &val)
 {
     auto pos = s.find_last_of("fFlL");
     if (pos != std::string::npos)
@@ -217,10 +217,10 @@ std::string float_type(const std::string &s, int base, std::variant<unsigned lon
         }
         else if (s[pos] == 'l' || s[pos] == 'L')
         {
-            long double tmp = 0.0l;
+            double tmp = 0.0l;
             cal_float(data, base, tmp);
             val = tmp;
-            return "f128";
+            return "f64";
         }
         else
             assert(false);

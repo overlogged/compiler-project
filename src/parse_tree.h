@@ -47,7 +47,7 @@ struct node_constant
     bool is_const;
     std::shared_ptr<node_type> type;
     std::string ori;
-    std::variant<unsigned long long, double, float, long double, char, std::string> val;
+    std::variant<unsigned long long, double, float, std::string> val;
 };
 
 inline std::string to_string(const node_constant &node)

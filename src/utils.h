@@ -19,8 +19,8 @@ std::string myprintf(const char *format, ...);
 std::string obj_to_string(vec_str keys, vec_str values);
 
 std::string bin_type(const std::string &s);
-std::string number_type(const std::string &s, int base, std::variant<unsigned long long, double, float, long double, char, std::string> &val);
-std::string float_type(const std::string &s, int base, std::variant<unsigned long long, double, float, long double, char, std::string> &val);
+std::string number_type(const std::string &s, int base, std::variant<unsigned long long, double, float, std::string> &val);
+std::string float_type(const std::string &s, int base, std::variant<unsigned long long, double, float, std::string> &val);
 float cal_float(const std::string &s, int base);
 double cal_double(const std::string &s, int base);
 long double cal_ldouble(const std::string &s, int base);
@@ -99,6 +99,7 @@ inline std::string trim(const std::string &s, char c)
         return std::string("");
 }
 
+// todo: 转义
 inline char to_char(const std::string &s)
 {
     assert(s.size() <= 3);

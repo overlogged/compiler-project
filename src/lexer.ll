@@ -84,6 +84,8 @@ question_mark          "?"
 "type"          return yy::parser::make_KW_TYPE(loc);
 "new"           return yy::parser::make_KW_NEW(loc);
 "delete"        return yy::parser::make_KW_DELETE(loc);
+"true"          return yy::parser::make_BOOL_CONST(1, loc);
+"false"          return yy::parser::make_BOOL_CONST(0, loc);
 {equal}         return yy::parser::make_EQUAL (loc);
 {question_mark} return yy::parser::make_QUESTION_MARK (loc);
 {pointer_op}    return yy::parser::make_POINTER_OP (loc);

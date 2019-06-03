@@ -29,10 +29,6 @@ bool syntax_type::subtyping(const syntax_type &t) const
             {
                 return true;
             }
-            /*if (t1 == "bool" || t2 == "bool")
-            {
-                return false;
-            }*/
 
             if (t1 == "char" || t2 == "char")
             {
@@ -87,29 +83,48 @@ bool syntax_type::subtyping(const syntax_type &t) const
                 }
                 return true;
             }
-            else
-                return false;
-        }
-        // 和类型
-        else if (auto p = std::get_if<sum_type>(&type))
-        {
-            if (auto q = std::get_if<sum_type>(&t.type))
+            // 1 元素积类型 <= 和类型
+            else if (auto q = std::get_if<sum_type>(&t.type))
             {
-                if (p->types.size() > q->types.size())
-                    return false;
-                for (auto i = 0; i < p->types.size(); i++)
+                if (p->types.size() == 1)
                 {
-                    if (p->alters[i] != q->alters[i])
-                        return false;
-                    auto type_sub = q->types[i];
-                    if (!type_sub->type_equal(*(p->types[i])))
-                        return false;
+                    auto p_type = p->types[0];
+                    for (auto i = 0; i < q->alters.size(); i++)
+                    {
+                        if (p_type->type_equal(*(q->types[i])) && p->fields[0] == q->alters[i])
+                        {
+                            return true;
+                        }
+                    }
                 }
-                return true;
+                return false;
             }
             else
+            {
                 return false;
+            }
         }
+        // 和类型
+        // 暂时不允许和类型到其他类型的 subtyping
+        // else if (auto p = std::get_if<sum_type>(&type))
+        // {
+        //     if (auto q = std::get_if<sum_type>(&t.type))
+        //     {
+        //         if (p->types.size() > q->types.size())
+        //             return false;
+        //         for (auto i = 0; i < p->types.size(); i++)
+        //         {
+        //             if (p->alters[i] != q->alters[i])
+        //                 return false;
+        //             auto type_sub = q->types[i];
+        //             if (!type_sub->type_equal(*(p->types[i])))
+        //                 return false;
+        //         }
+        //         return true;
+        //     }
+        //     else
+        //         return false;
+        // }
     }
 
     throw std::string("subtyping error");

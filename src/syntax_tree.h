@@ -27,7 +27,7 @@ struct syntax_type_def
 struct syntax_literal
 {
     syntax_type type;
-    std::variant<unsigned long long, double, float, long double, char, std::string> val;
+    std::variant<unsigned long long, double, float, std::string> val;
 };
 
 struct syntax_var
@@ -38,6 +38,12 @@ struct syntax_type_convert
 {
     std::shared_ptr<syntax_expr> source_expr;
     syntax_type target_type;
+};
+
+struct syntax_arr_member
+{
+    std::shared_ptr<syntax_expr> base;
+    std::shared_ptr<syntax_expr> idx;
 };
 
 struct syntax_dot
@@ -54,10 +60,79 @@ struct syntax_construct
 
 struct syntax_expr
 {
-    bool is_immutale = false;
+    bool immutable = true;
     syntax_type type;
-    std::variant<syntax_fun_call, syntax_literal, syntax_var, syntax_type_convert, syntax_dot, syntax_construct> val;
+    std::variant<syntax_fun_call, syntax_literal, syntax_var,
+                 syntax_type_convert, syntax_dot, syntax_arr_member>
+        val;
+
     void *reserved = nullptr;
+
+    syntax_expr() = default;
+
+    syntax_expr(const std::variant<syntax_fun_call, syntax_literal, syntax_var,
+                                   syntax_type_convert, syntax_dot, syntax_arr_member> &
+                    v) : val(v)
+    {
+        immutable = true;
+        reserved = nullptr;
+    }
+
+    // 不是则返回 0
+    int is_sum_dot() const
+    {
+        if (auto pdot = std::get_if<syntax_dot>(&val))
+        {
+            auto inner = pdot->val;
+            auto choose = pdot->field;
+
+            if (auto psum = std::get_if<sum_type>(&inner->type.type))
+            {
+                return psum->get_index(choose);
+            }
+        }
+        return 0;
+    }
+
+    bool is_left_value() const
+    {
+        if (auto p = std::get_if<syntax_dot>(&val))
+        {
+            return p->val->is_left_value();
+        }
+        else if (auto p = std::get_if<syntax_arr_member>(&val))
+        {
+            return true;
+        }
+        else if (auto p = std::get_if<syntax_var>(&val))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool is_immutable() const
+    {
+        if (auto p = std::get_if<syntax_var>(&val))
+        {
+            return immutable;
+        }
+        else if (auto p = std::get_if<syntax_dot>(&val))
+        {
+            return p->val->is_immutable();
+        }
+        else if (auto p = std::get_if<syntax_arr_member>(&val))
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 };
 
 struct syntax_assign
@@ -113,6 +188,8 @@ class syntax_module
 {
     std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts);
 
+    std::shared_ptr<syntax_expr> assign_analysis(const node_assign_expr &node, std::vector<syntax_stmt> &stmts);
+
     std::shared_ptr<syntax_expr> binary_expr_analysis(const node_binary_expr &node, std::vector<syntax_stmt> &stmts);
 
     std::shared_ptr<syntax_expr> unary_expr_analysis(const node_unary_expr &node, std::vector<syntax_stmt> &stmts);
@@ -130,15 +207,6 @@ class syntax_module
     syntax_type ret_type;
 
     void primary_assign(std::shared_ptr<syntax_expr> &lval, std::shared_ptr<syntax_expr> &rval, std::vector<syntax_stmt> &stmts);
-
-    void construct_assign(std::shared_ptr<syntax_expr> &lval, std::shared_ptr<syntax_expr> &rval, std::vector<syntax_stmt> &stmts);
-
-    bool is_left_value(const syntax_expr &node);
-
-    bool is_lvalue_immutale(const syntax_expr &node)
-    {
-        return node.is_immutale;
-    }
 
     syntax_stmt if_analysis(const node_if_statement &node);
 
@@ -161,23 +229,6 @@ public:
     void syntax_analysis(const node_module &module);
 };
 
-inline std::shared_ptr<syntax_expr>
-expr_convert_to(std::shared_ptr<syntax_expr> expr, const syntax_type &target, std::vector<syntax_stmt> &stmts)
-{
-    auto from_type = expr->type;
-    auto to_type = target;
-    if (from_type.subtyping(to_type))
-    {
-        if (from_type.type_equal(to_type))
-        {
-            return expr;
-        }
+std::shared_ptr<syntax_expr> expr_convert_to(std::shared_ptr<syntax_expr> expr, const syntax_type &target, std::vector<syntax_stmt> &stmts);
 
-        auto ret = std::make_shared<syntax_expr>();
-        ret->type = to_type;
-        ret->val = syntax_type_convert{.source_expr = expr, .target_type = to_type};
-        stmts.push_back(syntax_stmt{ret});
-        return ret;
-    }
-    throw inner_error{INNER_CANT_CAST};
-}
+void try_sum_tag_assign(const std::shared_ptr<syntax_expr> expr, std::vector<syntax_stmt> &stmts);

@@ -6,9 +6,9 @@
 
 using namespace std;
 
-std::shared_ptr<syntax_expr>
-function_table::infer_type(const std::string &func_name, syntax_fun_call &call, std::vector<syntax_stmt> &stmts)
+std::shared_ptr<syntax_expr> function_table::infer_type(syntax_fun_call &call, std::vector<syntax_stmt> &stmts)
 {
+    auto func_name = call.fun_name;
     auto p_ret = make_shared<syntax_expr>();
 
     //.?
@@ -84,6 +84,39 @@ function_table::infer_type(const std::string &func_name, syntax_fun_call &call, 
         }
         else
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
+    }
+    // *, []
+    else if (func_name == "*" || func_name == "[]")
+    {
+        auto type_u64 = syntax_type{.type = primary_type{.name = "u64", .size = 8}};
+        syntax_literal lit{.type = type_u64, .val = (unsigned long long)0};
+
+        if (func_name == "*")
+        {
+            auto expr_idx = std::make_shared<syntax_expr>();
+            expr_idx->type = lit.type;
+            expr_idx->val = lit;
+            call.fun_name = "[]";
+            call.parameters = std::vector<std::shared_ptr<syntax_expr>>{expr_idx};
+            p_ret->val = call;
+            return p_ret;
+        }
+        else
+        {
+            if (call.parameters.size() == 1)
+            {
+                auto exp = call.parameters[0];
+                if (call.parameters.size() != 1)
+                    throw inner_error(INNER_NO_MATCH_FUN, func_name);
+
+                if (exp->type.subtyping(type_u64))
+                {
+                    call.parameters[0] = expr_convert_to(exp, type_u64, stmts);
+                }
+                p_ret->val = call;
+                return p_ret;
+            }
+        }
     }
     else
     {
@@ -177,7 +210,7 @@ function_table::function_table()
         create_bin_op_fun(op[i], "i64", 8, "i64", 8, "i64", 8);
         create_bin_op_fun(op[i], "u64", 8, "u64", 8, "u64", 8);
     }
-    op = {">", "<", ">=", "<=","==","!="};
+    op = {">", "<", ">=", "<=", "==", "!="};
     for (int i = 0; i < op.size(); i++)
     {
         create_bin_op_fun(op[i], "bool", 1, "i8", 1, "i8", 1);

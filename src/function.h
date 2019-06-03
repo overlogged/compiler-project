@@ -41,7 +41,7 @@ public:
     }
 
     // 进行类型推导，并分析是否进行隐式类型转换
-    std::shared_ptr<syntax_expr> infer_type(const std::string &func_name, syntax_fun_call &call, std::vector<syntax_stmt> &stmts);
+    std::shared_ptr<syntax_expr> infer_type(syntax_fun_call &call, std::vector<syntax_stmt> &stmts);
 
     syntax_fun get_user_fun(const std::string &name) const
     {

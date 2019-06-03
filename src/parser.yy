@@ -70,6 +70,7 @@ while (0)
   POINTER_OP "*"
 ;
 
+%token <int> BOOL_CONST
 %token <std::string> OCT_INT_CONST
 %token <std::string> BIN_INT_CONST
 %token <std::string> HEX_INT_CONST
@@ -164,18 +165,27 @@ constant: DEC_INT_CONST {
             node_identifier type_name;
             type_name.val = "char";
             $$.type->type_val = type_name;
-            $$.val = to_char($1);
+            $$.val = (unsigned long long)to_char($1);
             $$.loc = @$;
         }
         | STRING_CONST { 
             $$.is_const = true;
             $$.ori = trim($1, '\"');
             $$.type = std::make_shared<node_type>();
-            $$.type->is_pointer = false;
+            $$.type->is_pointer = true;
             node_identifier type_name;
-            type_name.val = "char&";
+            type_name.val = "char";
             $$.type->type_val = type_name;
             $$.val = trim($1, '\"');
+            $$.loc = @$;
+        } | BOOL_CONST {
+            $$.is_const = true;
+            $$.type = std::make_shared<node_type>();
+            $$.type->is_pointer = false;
+            node_identifier type_name;
+            type_name.val = "bool";
+            $$.type->type_val = type_name;
+            $$.val = (unsigned long long)$1;
             $$.loc = @$;
         };
 
