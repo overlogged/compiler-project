@@ -14,13 +14,19 @@ struct primary_type
 {
     std::string name;
     size_t size;
+
+    std::string to_string() const
+    {
+        return name;
+    }
 };
 
 struct product_type
 {
     std::vector<std::string> fields;
     std::vector<std::shared_ptr<syntax_type>> types;
-    std::vector<size_t> offsets;
+
+    std::string to_string() const;
 
     int get_index(const std::string &name)
     {
@@ -40,6 +46,8 @@ struct sum_type
     std::vector<std::string> alters;
     std::vector<std::shared_ptr<syntax_type>> types;
 
+    std::string to_string() const;
+
     // 不是则返回 0
     int get_index(const std::string &name)
     {
@@ -57,6 +65,8 @@ struct sum_type
 struct pointer_type
 {
     std::shared_ptr<syntax_type> type;
+
+    std::string to_string() const;
 };
 
 struct top_graph
@@ -169,6 +179,27 @@ struct syntax_type
 
     bool subtyping(const syntax_type &t) const;
     bool type_equal(const syntax_type &t) const;
+
+    std::string to_string() const
+    {
+        if (auto p = std::get_if<primary_type>(&type))
+        {
+            return p->to_string();
+        }
+        else if (auto p = std::get_if<pointer_type>(&type))
+        {
+            return p->to_string();
+        }
+        else if (auto p = std::get_if<sum_type>(&type))
+        {
+            return p->to_string();
+        }
+        else if (auto p = std::get_if<product_type>(&type))
+        {
+            return p->to_string();
+        }
+        return "";
+    }
 };
 
 class type_table

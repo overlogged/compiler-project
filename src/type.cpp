@@ -306,3 +306,30 @@ syntax_type type_table::type_check(const node_type &node, top_graph *dependency_
     }
     assert(false);
 }
+
+std::string product_type::to_string() const
+{
+    std::string s = "(";
+    for (auto i = 0; i < fields.size(); i++)
+    {
+        s += fields[i] + ":" + types[i]->to_string() + ",";
+    }
+    s += ")";
+    return s;
+}
+
+std::string sum_type::to_string() const
+{
+    std::string s = "(";
+    for (auto i = 0; i < alters.size(); i++)
+    {
+        s += alters[i] + ":" + types[i]->to_string() + "|";
+    }
+    s += ")";
+    return s;
+}
+
+std::string pointer_type::to_string() const
+{
+    return type->to_string() + "*";
+}

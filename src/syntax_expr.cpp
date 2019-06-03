@@ -14,15 +14,15 @@ std::shared_ptr<syntax_expr> syntax_module::assign_analysis(const node_assign_ex
 
     // 准备右值
     auto syntax_node_r = expr_analysis(*(node.rval), stmts);
-    if (node.op != "=")
-    {
-        auto syntax_fun_node = syntax_fun_call{.fun_name = node.op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
-        syntax_node_r = env_fun.infer_type(syntax_fun_node, stmts);
-    }
 
     // 类型转换
     try
     {
+        if (node.op != "=")
+        {
+            auto syntax_fun_node = syntax_fun_call{.fun_name = node.op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
+            syntax_node_r = env_fun.infer_type(syntax_fun_node, stmts);
+        }
         syntax_node_r = expr_convert_to(syntax_node_r, syntax_node_l->type, stmts);
     }
     catch (inner_error &e)
@@ -85,11 +85,14 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
             // 利用 syntax_construct_node 赋值构造一个临时的 product_type
             for (auto i = 0; i < p->lable.size(); i++)
             {
-                auto lval = syntax_dot{
+                auto lval_dot = syntax_dot{
                     .field = syntax_construct_node.label[i],
                     .val = syntax_node};
 
-                syntax_assign assign{.lval = std::make_shared<syntax_expr>(lval, syntax_construct_node.val[i]->type), .rval = syntax_construct_node.val[i]};
+                auto lval = std::make_shared<syntax_expr>(lval_dot, syntax_construct_node.val[i]->type);
+                stmts.push_back(syntax_stmt{.stmt = lval});
+
+                syntax_assign assign{.lval = lval, .rval = syntax_construct_node.val[i]};
                 stmts.push_back(syntax_stmt{.stmt = assign});
             }
             return syntax_node;
@@ -102,6 +105,10 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
         if (e.number == INNER_NO_MATCH_FUN)
         {
             throw syntax_error(node.loc, "no such function called '" + e.info + "'");
+        }
+        else if (e.number == INNER_CANT_CAST)
+        {
+            throw syntax_error(node.loc, "can't do such type conversion");
         }
         else
         {
@@ -341,6 +348,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
                         syntax_ret->immutable = syntax_node->immutable;
                         syntax_ret->type = *(product_t->types[i]);
                         syntax_ret->val = syntax_dot{.field = (p->attr).val, .val = syntax_node};
+                        stmts.push_back(syntax_stmt{.stmt = syntax_ret});
                         return syntax_ret;
                     }
                     else
@@ -364,6 +372,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
                         syntax_ret->immutable = syntax_node->immutable;
                         syntax_ret->type = *(sum_t->types[i]);
                         syntax_ret->val = syntax_dot{.field = p->attr.val, .val = syntax_node};
+                        stmts.push_back(syntax_stmt{.stmt = syntax_ret});
                         return syntax_ret;
                     }
                     else
@@ -423,17 +432,22 @@ std::shared_ptr<syntax_expr> expr_convert_to(std::shared_ptr<syntax_expr> expr, 
             stmts.push_back(syntax_stmt{.stmt = ret});
 
             auto source = std::get<product_type>(expr->type.type);
-            auto field = source.fields[0];
             auto sum = std::get<sum_type>(target.type);
+
+            auto field = source.fields[0];
             auto sum_idx = sum.get_index(field);
             assert(sum_idx != 0);
-            auto inner_target = *(sum.types[sum_idx - 1]);
 
-            auto rval = std::make_shared<syntax_expr>(syntax_dot{.field = field, .val = expr}, *source.types[0]);
+            auto source_field_type = *source.types[0];
+            auto target_field_type = *sum.types[sum_idx - 1];
+
+            // 右值
+            auto rval = std::make_shared<syntax_expr>(syntax_dot{.field = field, .val = expr}, source_field_type);
             stmts.push_back(syntax_stmt{.stmt = rval});
-            rval = expr_convert_to(rval, inner_target, stmts);
+            rval = expr_convert_to(rval, target_field_type, stmts);
 
-            auto lval = std::make_shared<syntax_expr>(syntax_dot{.field = field, .val = ret}, inner_target);
+            // 左值
+            auto lval = std::make_shared<syntax_expr>(syntax_dot{.field = field, .val = ret}, target_field_type);
             stmts.push_back(syntax_stmt{.stmt = lval});
 
             auto assign = syntax_assign{.lval = lval, .rval = rval};
@@ -450,36 +464,30 @@ std::shared_ptr<syntax_expr> expr_convert_to(std::shared_ptr<syntax_expr> expr, 
 
             auto target_type = std::get<product_type>(target.type);
             auto source_type = std::get<product_type>(expr->type.type);
-            for (auto i = 0; i < source_type.fields.size(); i++)
+            for (auto i = 0; i < target_type.fields.size(); i++)
             {
-                auto field = source_type.fields[i];
-                auto type = source_type.types[i];
+                auto field = target_type.fields[i];
+                auto target_field_type = *target_type.types[i];
 
-                bool match = false;
-
-                for (auto j = 0; j < target_type.fields.size(); j++)
-                {
-                    // 匹配成功
-                    // 赋值
-                    if (field == target_type.fields[j] && type->subtyping(*target_type.types[j]))
-                    {
-                        auto rval = std::make_shared<syntax_expr>(syntax_dot{.field = field, .val = expr}, *type);
-                        stmts.push_back(syntax_stmt{.stmt = rval});
-                        rval = expr_convert_to(rval, *target_type.types[j], stmts);
-
-                        auto lval = std::make_shared<syntax_expr>(syntax_dot{.field = field, .val = ret}, *target_type.types[j]);
-                        stmts.push_back(syntax_stmt{.stmt = lval});
-
-                        auto assign = syntax_assign{.lval = lval, .rval = rval};
-                        stmts.push_back(syntax_stmt{.stmt = assign});
-                        match = true;
-                        break;
-                    }
-                }
-                if (!match)
+                auto idx = source_type.get_index(field);
+                if (idx == -1)
                 {
                     throw inner_error{INNER_CANT_CAST};
                 }
+
+                auto source_field_type = *source_type.types[idx];
+
+                // 右值
+                auto rval = std::make_shared<syntax_expr>(syntax_dot{.field = field, .val = expr}, source_field_type);
+                stmts.push_back(syntax_stmt{.stmt = rval});
+                rval = expr_convert_to(rval, target_field_type, stmts);
+
+                // 左值
+                auto lval = std::make_shared<syntax_expr>(syntax_dot{.field = field, .val = ret}, target_field_type);
+                stmts.push_back(syntax_stmt{.stmt = lval});
+
+                auto assign = syntax_assign{.lval = lval, .rval = rval};
+                stmts.push_back(syntax_stmt{.stmt = assign});
             }
         }
         else
@@ -502,6 +510,8 @@ void try_sum_tag_assign(const std::shared_ptr<syntax_expr> expr, std::vector<syn
         auto lval_father = std::get<syntax_dot>(expr->val).val;
         auto lval = std::make_shared<syntax_expr>(syntax_dot{.field = ".tag", .val = lval_father}, type_i32);
         auto rval = std::make_shared<syntax_expr>(syntax_literal{.type = type_i32, .val = (unsigned long long)idx}, type_i32);
+        stmts.push_back(syntax_stmt{.stmt = lval});
+        stmts.push_back(syntax_stmt{.stmt = rval});
         stmts.push_back(syntax_stmt{.stmt = syntax_assign{
                                         .lval = lval,
                                         .rval = rval}});

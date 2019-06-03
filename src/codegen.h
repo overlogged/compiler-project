@@ -22,6 +22,7 @@ class codegen_llvm
     const syntax_module &module;
     llvm::LLVMContext context;
     std::shared_ptr<llvm::Module> llvm_module;
+    std::map<std::string,llvm::Type*> type_map;
 
     // 与当前状态相关
     llvm::Function *func;

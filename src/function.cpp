@@ -85,8 +85,8 @@ std::shared_ptr<syntax_expr> function_table::infer_type(syntax_fun_call &call, s
         else
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
     }
-    // *, []
-    else if (func_name == "*" || func_name == "[]")
+    // []
+    else if (func_name == "[]")
     {
         auto type_u64 = syntax_type{.type = primary_type{.name = "u64", .size = 8}};
         syntax_literal lit{.type = type_u64, .val = (unsigned long long)0};

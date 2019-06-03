@@ -168,7 +168,7 @@ Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
     {
         if (t_size == conv.source_expr->type.get_primary_size())
         {
-            return (Value *)conv.source_expr->reserved;
+            return get_value(conv.source_expr);
         }
 
         if (conv.source_expr->type.get_primary()[0] == 'u' || conv.source_expr->type.get_primary() == "bool")
@@ -310,7 +310,7 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
 
         if (debug_flag)
         {
-            std::cout << s.to_string() << std::endl;
+            // std::cout << s.to_string() << std::endl;
         }
 
         // 处理各种 statement
@@ -320,7 +320,11 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
         }
         else if (auto p_assign = std::get_if<syntax_assign>(p_stmt))
         {
-            builder->CreateStore(get_value(p_assign->rval), (Value *)p_assign->lval->reserved);
+            auto rval = get_value(p_assign->rval);
+            // auto rval_type = rval->getType();
+            auto lval = (Value *)p_assign->lval->reserved;
+            // auto lval_cast = builder->CreateBitCast(lval, rval_type, "assign_cast");
+            builder->CreateStore(rval, lval);
         }
         else if (auto p_ret = std::get_if<syntax_return>(p_stmt))
         {

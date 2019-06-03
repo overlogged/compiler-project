@@ -81,6 +81,12 @@ Type *codegen_llvm::type_sum(const sum_type &t)
 
 Type *codegen_llvm::llvm_type(const syntax_type &s)
 {
+    auto it = type_map.find(s.to_string());
+    if (it != type_map.end())
+    {
+        return it->second;
+    }
+
     Type *ret;
     if (auto p = std::get_if<primary_type>(&s.type))
     {
@@ -103,5 +109,6 @@ Type *codegen_llvm::llvm_type(const syntax_type &s)
     {
         ret = PointerType::get(ret, 0);
     }
+    type_map[s.to_string()] = ret;
     return ret;
 }
