@@ -139,3 +139,11 @@
     当作 char 数组处理
 
 - for 循环，暂时只做 for i in range() ，
+
+
+## 最终 TODO
+
+- for 循环
+- new 和 delete
+- printf 和 scanf
+- * 和 & 运算符
