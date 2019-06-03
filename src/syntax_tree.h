@@ -72,10 +72,40 @@ struct syntax_expr
 
     syntax_expr(const std::variant<syntax_fun_call, syntax_literal, syntax_var,
                                    syntax_type_convert, syntax_dot, syntax_arr_member> &
-                    v,syntax_type t) : type(t), val(v)
+                    v,
+                syntax_type t) : type(t), val(v)
     {
         immutable = true;
         reserved = nullptr;
+    }
+
+    std::string to_string() const
+    {
+        if (std::get_if<syntax_fun_call>(&val))
+        {
+            return "call";
+        }
+        else if (std::get_if<syntax_literal>(&val))
+        {
+            return "lit";
+        }
+        else if (std::get_if<syntax_var>(&val))
+        {
+            return "var";
+        }
+        else if (std::get_if<syntax_type_convert>(&val))
+        {
+            return "convert";
+        }
+        else if (std::get_if<syntax_dot>(&val))
+        {
+            return "dot";
+        }
+        else if (std::get_if<syntax_arr_member>(&val))
+        {
+            return "arr";
+        }
+        return "expr";
     }
 
     // 不是则返回 0
@@ -157,6 +187,31 @@ struct syntax_stmt
         syntax_assign,
         syntax_return>
         stmt;
+
+    std::string to_string() const
+    {
+        if (auto e = std::get_if<std::shared_ptr<syntax_expr>>(&stmt))
+        {
+            return e->get()->to_string();
+        }
+        else if (std::get_if<std::shared_ptr<syntax_if_block>>(&stmt))
+        {
+            return "if";
+        }
+        else if (std::get_if<std::shared_ptr<syntax_while_block>>(&stmt))
+        {
+            return "while";
+        }
+        else if (std::get_if<syntax_assign>(&stmt))
+        {
+            return "assign";
+        }
+        else if (std::get_if<syntax_return>(&stmt))
+        {
+            return "return";
+        }
+        return "nothing";
+    }
 };
 
 struct syntax_if_block

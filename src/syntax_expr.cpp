@@ -80,6 +80,7 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
 
             // 为临时的 product type 值分配空间
             auto syntax_node = std::make_shared<syntax_expr>(syntax_var(), type_node);
+            stmts.push_back(syntax_stmt{.stmt = syntax_node});
 
             // 利用 syntax_construct_node 赋值构造一个临时的 product_type
             for (auto i = 0; i < p->lable.size(); i++)

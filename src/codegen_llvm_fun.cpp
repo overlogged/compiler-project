@@ -163,12 +163,18 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
 Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
 {
     auto t_size = conv.target_type.get_primary_size();
+
     if (t_size != 0)
     {
+        if (t_size == conv.source_expr->type.get_primary_size())
+        {
+            return (Value *)conv.source_expr->reserved;
+        }
+
         if (conv.source_expr->type.get_primary()[0] == 'u' || conv.source_expr->type.get_primary() == "bool")
             return builder->CreateCast(Instruction::CastOps::ZExt, get_value(conv.source_expr), llvm_type(conv.target_type), "zext");
         else
-            return builder->CreateCast(Instruction::CastOps::SExt, get_value(conv.source_expr), llvm_type(conv.target_type), "zext");
+            return builder->CreateCast(Instruction::CastOps::SExt, get_value(conv.source_expr), llvm_type(conv.target_type), "sext");
     }
     throw std::string("convert failed");
 }
@@ -302,6 +308,11 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
     {
         auto p_stmt = &s.stmt;
 
+        if (debug_flag)
+        {
+            std::cout << s.to_string() << std::endl;
+        }
+
         // 处理各种 statement
         if (auto p_expr = std::get_if<std::shared_ptr<syntax_expr>>(p_stmt))
         {
@@ -309,14 +320,7 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
         }
         else if (auto p_assign = std::get_if<syntax_assign>(p_stmt))
         {
-            if (auto dot = std::get_if<syntax_dot>(&p_assign->lval->val))
-            {
-                builder->CreateStore(get_value(p_assign->rval), get_value(p_assign->lval));
-            }
-            else
-            {
-                builder->CreateStore(get_value(p_assign->rval), (Value *)p_assign->lval->reserved);
-            }
+            builder->CreateStore(get_value(p_assign->rval), (Value *)p_assign->lval->reserved);
         }
         else if (auto p_ret = std::get_if<syntax_return>(p_stmt))
         {

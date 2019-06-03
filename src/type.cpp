@@ -127,7 +127,7 @@ bool syntax_type::subtyping(const syntax_type &t) const
         // }
     }
 
-    throw std::string("subtyping error");
+    return false;
 }
 
 bool syntax_type::type_equal(const syntax_type &t) const
