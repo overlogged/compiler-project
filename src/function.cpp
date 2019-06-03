@@ -88,39 +88,6 @@ std::shared_ptr<syntax_expr> function_table::infer_type(syntax_fun_call &call, s
         else
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
     }
-    // []
-    else if (func_name == "[]")
-    {
-        auto type_u64 = syntax_type{.type = primary_type{.name = "u64", .size = 8}};
-        syntax_literal lit{.type = type_u64, .val = (unsigned long long)0};
-
-        if (func_name == "*")
-        {
-            auto expr_idx = std::make_shared<syntax_expr>();
-            expr_idx->type = lit.type;
-            expr_idx->val = lit;
-            call.fun_name = "[]";
-            call.parameters = std::vector<std::shared_ptr<syntax_expr>>{expr_idx};
-            p_ret->val = call;
-            return p_ret;
-        }
-        else
-        {
-            if (call.parameters.size() == 1)
-            {
-                auto exp = call.parameters[0];
-                if (call.parameters.size() != 1)
-                    throw inner_error(INNER_NO_MATCH_FUN, func_name);
-
-                if (exp->type.subtyping(type_u64))
-                {
-                    call.parameters[0] = expr_convert_to(exp, type_u64, stmts);
-                }
-                p_ret->val = call;
-                return p_ret;
-            }
-        }
-    }
     else
     {
         // inline function

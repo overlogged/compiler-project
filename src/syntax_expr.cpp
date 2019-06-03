@@ -304,7 +304,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
             assert(false);
     }
 
-    // 函数表达式, todo: 区分
+    // 函数表达式
     else if (auto p = std::get_if<node_post_call_expr>(&node.expr))
     {
         auto fun_name_ptr = std::get_if<node_primary_expr>(&p->callable->expr);
@@ -404,6 +404,25 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
         else
         {
             throw syntax_error(p->loc, "? must be used with sum_type");
+        }
+    }
+    else if (auto p = std::get_if<node_post_arr_expr>(&node.expr))
+    {
+        try
+        {
+            auto arr = post_expr_analysis(*p->arr, stmts);
+            auto idx = expr_analysis(*p->arr_index, stmts);
+            auto member = std::make_shared<syntax_expr>();
+            member->type = arr->type.de_ref();
+            member->val = syntax_arr_member{
+                .base = arr,
+                .idx = idx};
+            stmts.push_back(syntax_stmt{member});
+            return member;
+        }
+        catch (inner_error &)
+        {
+            throw syntax_error(p->loc, "[] operator misused");
         }
     }
     else

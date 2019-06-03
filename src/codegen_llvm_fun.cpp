@@ -246,6 +246,13 @@ Value *codegen_llvm::get_dot(const syntax_dot &dot)
     }
 }
 
+Value *codegen_llvm::get_member(const syntax_arr_member &member)
+{
+    auto base = get_value(member.base);
+    auto idx = get_value(member.idx);
+    return builder->CreateGEP(base, idx, "member");
+}
+
 // 处理 expression
 Value *codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
 {
@@ -270,6 +277,10 @@ Value *codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
     else if (auto p_dot = std::get_if<syntax_dot>(p_val))
     {
         expr->reserved = get_dot(*p_dot);
+    }
+    else if (auto p_member = std::get_if<syntax_arr_member>(p_val))
+    {
+        expr->reserved = get_member(*p_member);
     }
     else
     {

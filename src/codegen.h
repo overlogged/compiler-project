@@ -22,7 +22,7 @@ class codegen_llvm
     const syntax_module &module;
     llvm::LLVMContext context;
     std::shared_ptr<llvm::Module> llvm_module;
-    std::map<std::string,llvm::Type*> type_map;
+    std::map<std::string, llvm::Type *> type_map;
 
     // 与当前状态相关
     llvm::Function *func;
@@ -41,6 +41,7 @@ class codegen_llvm
     llvm::Value *get_call(const syntax_fun_call &call);
     llvm::Value *get_convert(const syntax_type_convert &conv);
     llvm::Value *get_dot(const syntax_dot &dot);
+    llvm::Value *get_member(const syntax_arr_member &member);
 
     void ext_function_dec();
     void function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts, const std::vector<std::shared_ptr<syntax_expr>> &args);
