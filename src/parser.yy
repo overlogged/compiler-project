@@ -625,11 +625,13 @@ return_statement:
     };
 %type <node_for_statement> for_statement;
 for_statement:
-    KW_FOR identifier KW_IN expression LANGLE statement_list RANGLE
+    KW_FOR LPAREN expression SEMICOLON expression SEMICOLON expression RPAREN 
+    LANGLE statement_list RANGLE
     {
-        $$.id = $2;
-        $$.for_range = *$4;
-        $$.for_statement = std::move($6);
+        $$.init_expr = *$3;
+        $$.begin_test = *$5;
+        $$.end_process = *$7;
+        $$.for_statement = std::move($10);
         $$.loc = @$;
     };
 %type <node_while_statement> while_statement;
@@ -652,6 +654,13 @@ if_statement:
         $$.if_condition = *$2;
         $$.if_statement = std::move($4);
         $$.else_statement = std::move($9);
+        $$.else_if_statement = $6;
+        $$.loc = @$;
+    }|
+    KW_IF expression LANGLE statement_list RANGLE else_if_statement
+    {
+        $$.if_condition = *$2;
+        $$.if_statement = std::move($4);
         $$.else_if_statement = $6;
         $$.loc = @$;
     };

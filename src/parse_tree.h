@@ -318,13 +318,15 @@ inline std::string to_string(const node_while_statement &node)
 struct node_for_statement
 {
     yy::location loc;
-    node_identifier id;
-    node_expression for_range;
+    node_expression init_expr;
+    node_expression begin_test;
+    node_expression end_process;
     std::vector<node_statement> for_statement;
 };
 inline std::string to_string(const node_for_statement &node)
 {
-    return obj_to_string(vec_str{"for_id", "for_range", "loop_stmt_list"}, vec_str{to_string(node.id), to_string(node.for_range), to_string(node.for_statement)});
+    return obj_to_string(vec_str{"init_expr", "begin_test", "end_process","for_statement"}, 
+        vec_str{to_string(node.init_expr), to_string(node.begin_test),to_string(node.end_process) ,to_string(node.for_statement)});
 }
 
 struct node_var_def_statement

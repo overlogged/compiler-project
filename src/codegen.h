@@ -47,6 +47,7 @@ class codegen_llvm
     void block(const std::vector<syntax_stmt> &stmts);
     void block_if(const syntax_if_block &syntax_if);
     void block_while(const syntax_while_block &syntax_while);
+    void block_for(const syntax_for_block &syntax_for);
 
     llvm::Value *expression(std::shared_ptr<syntax_expr> expr);
 

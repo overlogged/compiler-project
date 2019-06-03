@@ -249,7 +249,37 @@ Value *codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
 
     return (Value *)expr->reserved;
 }
+void codegen_llvm::block_for(const syntax_for_block &syntax_for)
+{
+    auto block_begin_test = BasicBlock::Create(context, "begin_test");
+    auto block_init = BasicBlock::Create(context, "init");
+    //auto block_end_process = BasicBlock::Create(context, "end_process");
+    auto block_loop = BasicBlock::Create(context, "loop");
+    auto block_loop_end = BasicBlock::Create(context, "loop_end");
+    builder->CreateBr(block_init);
 
+    //init
+    builder->SetInsertPoint(block_init);
+    block(syntax_for.init_stmt);
+    builder->CreateBr(block_begin_test);
+    block_init->insertInto(func);
+
+    //test
+    builder->SetInsertPoint(block_begin_test);
+    block(syntax_for.begin_test_stmt);
+    builder->CreateCondBr(get_value(syntax_for.begin_test),block_loop,block_loop_end);
+    block_begin_test->insertInto(func);
+
+    //loop 
+    builder->SetInsertPoint(block_loop);
+    block(syntax_for.body);
+    block(syntax_for.end_process_stmt);
+    builder->CreateBr(block_begin_test);
+    block_loop->insertInto(func);
+    //loop end
+    builder->SetInsertPoint(block_loop_end);
+    block_loop_end->insertInto(func);
+}
 void codegen_llvm::block_if(const syntax_if_block &syntax_if)
 {
     // 计算条件
@@ -339,6 +369,10 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
         else if (auto p_if = std::get_if<std::shared_ptr<syntax_while_block>>(p_stmt))
         {
             block_while(*p_if->get());
+        }
+        else if (auto p_if = std::get_if<std::shared_ptr<syntax_for_block>>(p_stmt))
+        {
+            block_for(*p_if->get());
         }
     }
 }

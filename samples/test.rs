@@ -1,12 +1,8 @@
-var x:(x:i8|y:i8) = {x=8};
-
+var x:i8 = 1;
+var i:i8 = 1;
 fn main() i32 {
-    val z = x.x;
-    return z;
-    if x.y? {
-        return 2;
-    } else {
-        return 1;
-    }
-    x.y = 3;
+   for(i=0;i=2;i=1)
+   {
+		x=1;
+   }
 }

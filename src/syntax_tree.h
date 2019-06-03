@@ -177,6 +177,7 @@ struct syntax_return
 
 struct syntax_if_block;
 struct syntax_while_block;
+struct syntax_for_block;
 
 struct syntax_stmt
 {
@@ -184,6 +185,7 @@ struct syntax_stmt
         std::shared_ptr<syntax_expr>,
         std::shared_ptr<syntax_if_block>,
         std::shared_ptr<syntax_while_block>,
+        std::shared_ptr<syntax_for_block>,
         syntax_assign,
         syntax_return>
         stmt;
@@ -239,6 +241,15 @@ struct syntax_while_block
     std::vector<syntax_stmt> body;
 };
 
+struct syntax_for_block
+{
+    std::shared_ptr<syntax_expr> begin_test;
+    std::vector<syntax_stmt> begin_test_stmt;
+    std::vector<syntax_stmt> init_stmt;
+    std::vector<syntax_stmt> end_process_stmt;
+    std::vector<syntax_stmt> body;
+};
+
 class syntax_module
 {
     std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts);
@@ -266,6 +277,8 @@ class syntax_module
     syntax_stmt if_analysis(const node_if_statement &node);
 
     syntax_stmt while_analysis(const node_while_statement &node);
+    
+    syntax_stmt for_analysis(const node_for_statement &node);
 
     std::vector<syntax_stmt> statement_analysis(std::vector<node_statement> origin_stmts);
 

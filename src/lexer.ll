@@ -44,6 +44,8 @@ equal                  "="
 pointer_op             "*"
 union_op               "|"
 question_mark          "?"
+block_comment          "/*"([^"*"]|("*")*[^"*"/])*("*")*"*/"
+line_comment           (("//")([^\r\n])*)
 %{
   // Code run each time a pattern is matched.
   # define YY_USER_ACTION  loc.columns (yyleng);
@@ -58,6 +60,8 @@ question_mark          "?"
 %}
 
 
+{line_comment} loc.step ();
+{block_comment} loc.step ();
 {blank}+    loc.step ();
 \n+         loc.lines (yyleng); loc.step ();
 

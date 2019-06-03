@@ -285,6 +285,18 @@ syntax_stmt syntax_module::while_analysis(const node_while_statement &node)
     return {std::make_shared<syntax_while_block>(block)};
 }
 
+syntax_stmt syntax_module::for_analysis(const node_for_statement &node)
+{
+    syntax_for_block block;
+    env_var.push();
+    block.begin_test = expr_analysis(node.begin_test,block.begin_test_stmt);
+    expr_analysis(node.init_expr,block.init_stmt);
+    expr_analysis(node.end_process,block.end_process_stmt);
+    block.body = statement_analysis(node.for_statement);
+    env_var.pop();
+    return {std::make_shared<syntax_for_block>(block)};
+}
+
 void syntax_module::syntax_analysis(const node_module &module)
 {
     // 对于每一个可以定义函数的“环境”
@@ -355,8 +367,7 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
         }
         else if (auto forb = std::get_if<node_for_statement>(ps))
         {
-            // todo:
-            throw std::string("unsupported for statement");
+            stmts.emplace_back(for_analysis(*forb));
         }
         else if (auto expr = std::get_if<node_expression>(ps))
         {
