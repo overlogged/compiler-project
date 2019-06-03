@@ -1,13 +1,42 @@
 #include "codegen.h"
 
 using namespace llvm;
-// todo: 完成字面量的处理
+
 // 包括整数，浮点，字符，字符串
 Value *codegen_llvm::get_lit(const syntax_literal &lit)
 {
     auto type = llvm_type(lit.type);
-    auto value = std::get<unsigned long long>(lit.val);
-    return ConstantInt::get(type, value);
+    if (auto i = std::get_if<unsigned long long>(&lit.val))
+    {
+        return ConstantInt::get(type, *i);
+    }
+    else if (auto f = std::get_if<float>(&lit.val))
+    {
+        return ConstantFP::get(Type::getFloatTy(context), APFloat(*f));
+    }
+    else if (auto d = std::get_if<double>(&lit.val))
+    {
+        return ConstantFP::get(Type::getDoubleTy(context), APFloat(*d));
+    }
+    else if (auto s = std::get_if<std::string>(&lit.val))
+    {
+        auto arr_type = ArrayType::get(IntegerType::getInt8Ty(context), s->size() + 1);
+        auto str = new GlobalVariable(*llvm_module,
+                                      arr_type,
+                                      false,
+                                      GlobalValue::PrivateLinkage,
+                                      0,
+                                      ".str");
+        str->setAlignment(1);
+
+        Constant *const_array_4 = ConstantDataArray::getString(context, *s, true);
+        str->setInitializer(const_array_4);
+
+        auto idx = ConstantInt::get(IntegerType::getInt32Ty(context), 0);
+        auto pointer = builder->CreateGEP(str, idx, "str");
+        return builder->CreateBitCast(pointer, IntegerType::getInt8PtrTy(context));
+    }
+    throw std::string("lit");
 }
 
 // todo: 完成对函数调用的处理
@@ -217,6 +246,13 @@ Value *codegen_llvm::get_dot(const syntax_dot &dot)
     }
 }
 
+Value *codegen_llvm::get_member(const syntax_arr_member &member)
+{
+    auto base = get_value(member.base);
+    auto idx = get_value(member.idx);
+    return builder->CreateGEP(base, idx, "member");
+}
+
 // 处理 expression
 Value *codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
 {
@@ -241,6 +277,10 @@ Value *codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
     else if (auto p_dot = std::get_if<syntax_dot>(p_val))
     {
         expr->reserved = get_dot(*p_dot);
+    }
+    else if (auto p_member = std::get_if<syntax_arr_member>(p_val))
+    {
+        expr->reserved = get_member(*p_member);
     }
     else
     {
@@ -308,6 +348,7 @@ void codegen_llvm::block_if(const syntax_if_block &syntax_if)
     builder->SetInsertPoint(block_merge);
     block_merge->insertInto(func);
 }
+
 void codegen_llvm::block_while(const syntax_while_block &syntax_while)
 {
     // branch
@@ -331,6 +372,7 @@ void codegen_llvm::block_while(const syntax_while_block &syntax_while)
     builder->SetInsertPoint(block_loop_end);
     block_loop_end->insertInto(func);
 }
+
 // 处理 block
 void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
 {

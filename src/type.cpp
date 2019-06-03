@@ -7,7 +7,10 @@ bool syntax_type::subtyping(const syntax_type &t) const
     {
         if (t.is_ref())
         {
-            return de_ref().get_primary() == "unit";
+            auto a_de = de_ref();
+            auto b_de= t.de_ref();
+
+            return a_de.get_primary() == "unit" || a_de.type_equal(b_de);
         }
         else
         {
@@ -190,6 +193,15 @@ bool syntax_type::type_equal(const syntax_type &t) const
 
 syntax_type type_table::get_type(std::string name)
 {
+    if (name == ".string")
+    {
+        auto t = std::make_shared<syntax_type>();
+        t->type = primary_type{
+            .name = "char",
+            .size = 1};
+        return syntax_type{pointer_type{t}};
+    }
+
     // 13 种基础类型
     static const std::string builtin_types[] =
         {"u7", "u15", "u31", "u63", "u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "char", "unit", "bool", "f32", "f64", "auto"};

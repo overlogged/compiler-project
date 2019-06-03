@@ -174,7 +174,7 @@ constant: DEC_INT_CONST {
             $$.type = std::make_shared<node_type>();
             $$.type->is_pointer = true;
             node_identifier type_name;
-            type_name.val = "char";
+            type_name.val = ".string";
             $$.type->type_val = type_name;
             $$.val = trim($1, '\"');
             $$.loc = @$;
