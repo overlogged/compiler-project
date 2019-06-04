@@ -1,5 +1,4 @@
 #include "syntax_tree.h"
-#include "exception.h"
 
 std::shared_ptr<syntax_if_block> syntax_merged_if_block::reduce(int index)
 {

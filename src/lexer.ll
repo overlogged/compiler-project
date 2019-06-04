@@ -31,8 +31,7 @@ hex_float_const        ({hex_prefix}(({hex_digit_seq}?\.{hex_digit_seq})|({hex_d
 simple_escape_seq      [\\]['"abfnrtv\\]
 octal_escape_seq       [\\]{oct_digit}|[\\]{oct_digit}{2}|[\\]{oct_digit}{3}
 hex_escape_seq         [\\]"x"{hex_digit}{2}
-universal_char         [\\]"u"{hex_quad}|[\\]"U"{hex_quad}{2}
-escape_seq             {simple_escape_seq}|{octal_escape_seq}|{hex_escape_seq}|{universal_char}
+escape_seq             {simple_escape_seq}|{octal_escape_seq}|{hex_escape_seq}
 c_char_seq             ([^'\\\r\n])|{escape_seq}
 char_const             (\'{c_char_seq}\')|("L"\'{c_char_seq}\')|("u"\'{c_char_seq}\')|("U"\'{c_char_seq}\')
 string_const           \"{c_char_seq}+\"

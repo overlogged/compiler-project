@@ -26,6 +26,7 @@ const int INNER_NO_MATCH_FUN = 2;
 const int INNER_NO_SUCH_TYPE = 3;
 const int INNER_CANT_CAST = 4;
 const int INNER_LOOP = 5;
+const int INNER_STRING = 6;
 struct inner_error
 {
     int number;

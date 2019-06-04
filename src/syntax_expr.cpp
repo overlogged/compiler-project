@@ -333,7 +333,32 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
         {
             auto type_name = std::get_if<node_identifier>(&(q->type->type_val));
             auto type = env_type.get_type(type_name->val);
-            auto literal = syntax_literal{.type = type, .val = q->val};
+            std::variant<unsigned long long, double, float, std::string> val = q->val;
+            if (type_name->val == "char")
+            {
+                char ch;
+                if (trans_char(std::get<std::string>(q->val), ch))
+                {
+                    val = (unsigned long long)ch;
+                }
+                else
+                {
+                    throw syntax_error{p->loc, "invalid char"};
+                }
+            }
+            else if (type_name->val == ".string")
+            {
+                std::string str;
+                if (trans_string(std::get<std::string>(q->val), str))
+                {
+                    val = str;
+                }
+                else
+                {
+                    throw syntax_error{p->loc, "invalid string"};
+                }
+            }
+            auto literal = syntax_literal{.type = type, .val = val};
             auto syntax_node = std::make_shared<syntax_expr>();
             syntax_node->type = type;
             syntax_node->val = literal;

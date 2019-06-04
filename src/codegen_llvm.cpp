@@ -69,6 +69,6 @@ void codegen_llvm::codegen()
 
     // 输出
     std::error_code c;
-    raw_fd_ostream fout(StringRef("out.ll"), c, sys::fs::F_Text);
+    raw_fd_ostream fout(StringRef("a.ll"), c, sys::fs::F_Text);
     fout << *llvm_module;
 }

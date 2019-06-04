@@ -89,21 +89,102 @@ inline bool is_unsigned(const std::string &s)
     return false;
 }
 
-inline std::string trim(const std::string &s, char c)
+inline int hex_to_int(char ch)
 {
-    auto pos_front = s.find_first_not_of(c, 0);
-    auto pos_end = s.find_last_not_of(c);
-    if (pos_front != std::string::npos && pos_end != std::string::npos)
-        return s.substr(pos_front, pos_end - pos_front + 1);
-    else
-        return std::string("");
+    if (ch >= '0' && ch <= '9')
+        return ch - '0';
+    else if (ch >= 'a' && ch <= 'f')
+        return ch - 'a' + 10;
+    else if (ch >= 'A' && ch <= 'F')
+        return ch - 'A' + 10;
+    return -1;
 }
 
-// todo: 转义
-inline char to_char(const std::string &s)
+inline char trans_code(const std::string &s, int &n)
 {
-    assert(s.size() <= 3);
-    return s[1];
+    // '"abfnrtv
+
+    std::string simple_trans_left = "'\"abfnrtv";
+    std::string simple_trans_right = "'\"\a\b\f\n\r\t\v";
+
+    if (s[n] == '\\')
+    {
+        n++;
+        for (auto i = 0; i < simple_trans_left.size(); i++)
+        {
+            auto l = simple_trans_left[i];
+            auto r = simple_trans_right[i];
+            if (s[n] == l)
+            {
+                n++;
+                return r;
+            }
+        }
+        if (s[n] == 'x')
+        {
+            n++;
+            auto h1 = hex_to_int(s[n]);
+            auto h2 = hex_to_int(s[n + 1]);
+            if (h1 == -1 || h2 == -1)
+            {
+                n = -1;
+                return 0;
+            }
+            auto v = h1 * 16 + h2;
+            n += 2;
+            return (char)v;
+        }
+        else if (s[n] >= '0' && s[n] <= '7')
+        {
+            int v = s[n] - '0';
+            n++;
+            if (s[n] >= '0' && s[n] <= '7')
+            {
+                v = v * 8 + s[n] - '0';
+                n++;
+            }
+            if (s[n] >= '0' && s[n] <= '7')
+            {
+                v = v * 8 + s[n] - '0';
+                n++;
+            }
+            return (char)v;
+        }
+        else
+        {
+            n = -1;
+            return 0;
+        }
+    }
+    else
+    {
+        return s[n++];
+    }
+}
+
+inline bool trans_string(const std::string &s, std::string &out)
+{
+    auto str = s.substr(1, s.size() - 2);
+    auto ret = str;
+    int n = 0;
+    int ret_p = 0;
+    while (n < str.size())
+    {
+        ret[ret_p++] = trans_code(str, n);
+        if (n == -1)
+        {
+            return false;
+        }
+    }
+    out = ret.substr(0, ret_p);
+    return true;
+}
+
+inline bool trans_char(const std::string &s, char &ch)
+{
+    int n = 1;
+    ch = trans_code(s, n);
+    return n != -1;
 }
 
 // to_string for vector

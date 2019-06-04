@@ -26,6 +26,6 @@ fn main() i32 {
     val h = -*s;
     scanf("%d",&y);
     s[0] = 1;
-    var ss = "hello world %d y:%d h:%d";
+    var ss = "hello world %d y:%d h:%d \n";
     printf(ss,s[0],y,h);
 }

@@ -165,18 +165,18 @@ constant: DEC_INT_CONST {
             node_identifier type_name;
             type_name.val = "char";
             $$.type->type_val = type_name;
-            $$.val = (unsigned long long)to_char($1);
+            $$.val = $1;
             $$.loc = @$;
         }
         | STRING_CONST { 
             $$.is_const = true;
-            $$.ori = trim($1, '\"');
+            $$.ori = $1;
             $$.type = std::make_shared<node_type>();
             $$.type->is_pointer = true;
             node_identifier type_name;
             type_name.val = ".string";
             $$.type->type_val = type_name;
-            $$.val = trim($1, '\"');
+            $$.val = $1;
             $$.loc = @$;
         } | BOOL_CONST {
             $$.is_const = true;

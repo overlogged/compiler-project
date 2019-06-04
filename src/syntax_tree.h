@@ -11,6 +11,7 @@
 #include "type.h"
 #include "function.h"
 #include "stack_map.h"
+#include "exception.h"
 
 struct syntax_var_def
 {
@@ -259,6 +260,10 @@ struct syntax_for_block
     std::vector<syntax_stmt> body;
 };
 
+std::shared_ptr<syntax_expr> expr_convert_to(std::shared_ptr<syntax_expr> expr, const syntax_type &target, std::vector<syntax_stmt> &stmts);
+
+void try_sum_tag_assign(const std::shared_ptr<syntax_expr> expr, std::vector<syntax_stmt> &stmts);
+
 class syntax_module
 {
     std::shared_ptr<syntax_expr> expr_analysis(const node_expression &node, std::vector<syntax_stmt> &stmts);
@@ -305,7 +310,3 @@ public:
 
     void syntax_analysis(const node_module &module);
 };
-
-std::shared_ptr<syntax_expr> expr_convert_to(std::shared_ptr<syntax_expr> expr, const syntax_type &target, std::vector<syntax_stmt> &stmts);
-
-void try_sum_tag_assign(const std::shared_ptr<syntax_expr> expr, std::vector<syntax_stmt> &stmts);
