@@ -252,6 +252,8 @@ function_table::function_table()
     for (auto i = 0; i < param_type.size(); i++)
     {
         create_unary_op_fun("~", param_type[i], (i / 2 + 1) * 4, param_type[i], (i / 2 + 1) * 4);
+        create_unary_op_fun("-", param_type[i], (i / 2 + 1) * 4, param_type[i], (i / 2 + 1) * 4);
+        create_unary_op_fun("+", param_type[i], (i / 2 + 1) * 4, param_type[i], (i / 2 + 1) * 4);
     }
 }
 

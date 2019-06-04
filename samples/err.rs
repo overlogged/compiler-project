@@ -22,8 +22,10 @@ fn main() i32 {
     x = {x=3,5};
     fun2({x=3,5,6});
     x = z;
+    s[0] = 42;
+    val h = -*s;
     scanf("%d",&y);
     s[0] = 1;
-    var ss = "hello world %d y:%d";
-    printf(ss,s[0],y);
+    var ss = "hello world %d y:%d h:%d";
+    printf(ss,s[0],y,h);
 }

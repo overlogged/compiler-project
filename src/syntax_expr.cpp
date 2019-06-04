@@ -274,20 +274,42 @@ std::shared_ptr<syntax_expr> syntax_module::binary_expr_analysis(const node_bina
 
 std::shared_ptr<syntax_expr> syntax_module::unary_expr_analysis(const node_unary_expr &node, std::vector<syntax_stmt> &stmts)
 {
-    if (node.ops.empty())
+    // 单目运算符
+    std::shared_ptr<syntax_expr> expr = post_expr_analysis(*node.post_expr.get(), stmts);
+    for (auto op : node.ops)
     {
-        return post_expr_analysis(*node.post_expr.get(), stmts);
+        if (op == "*")
+        {
+            try
+            {
+                auto arr = expr;
+                auto idx = std::make_shared<syntax_expr>();
+                idx->type = syntax_type{primary_type{.name = "u64", .size = 8}};
+                idx->val = syntax_literal{.type = idx->type, .val = (unsigned long long)0};
+                stmts.push_back(syntax_stmt{idx});
+
+                auto member = std::make_shared<syntax_expr>();
+                member->type = arr->type.de_ref();
+                member->val = syntax_arr_member{
+                    .base = arr,
+                    .idx = idx};
+                stmts.push_back(syntax_stmt{member});
+                expr = member;
+            }
+            catch (inner_error &)
+            {
+                throw syntax_error(node.loc, "* operator misused");
+            }
+        }
+        else
+        {
+            auto call = syntax_fun_call{.fun_name = op, .parameters = {expr}};
+            auto syntax_unary = env_fun.infer_type(call, stmts);
+            stmts.push_back(syntax_stmt{.stmt = syntax_unary});
+            expr = syntax_unary;
+        }
     }
-    else
-    {
-        // 单目运算符
-        // todo: 区分 * 和其他
-        auto p = post_expr_analysis(*node.post_expr.get(), stmts);
-        auto call = syntax_fun_call{.fun_name = node.ops[0], .parameters = {p}};
-        auto syntax_unary = env_fun.infer_type(call, stmts);
-        stmts.push_back(syntax_stmt{.stmt = syntax_unary});
-        return syntax_unary;
-    }
+    return expr;
 }
 
 std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_expr &node, std::vector<syntax_stmt> &stmts)

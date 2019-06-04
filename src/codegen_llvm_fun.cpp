@@ -46,15 +46,31 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
 {
     if (call.fun_name == "+")
     {
-        auto arg1 = get_value(call.parameters[0]);
-        auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateAdd(arg1, arg2, "addtmp");
+        if (call.parameters.size() == 1)
+        {
+            auto arg1 = get_value(call.parameters[0]);
+            return arg1;
+        }
+        else
+        {
+            auto arg1 = get_value(call.parameters[0]);
+            auto arg2 = get_value(call.parameters[1]);
+            return builder->CreateAdd(arg1, arg2, "addtmp");
+        }
     }
     else if (call.fun_name == "-")
     {
-        auto arg1 = get_value(call.parameters[0]);
-        auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateSub(arg1, arg2, "subtmp");
+        if (call.parameters.size() == 1)
+        {
+            auto arg1 = get_value(call.parameters[0]);
+            return builder->CreateNeg(arg1, "neg");
+        }
+        else
+        {
+            auto arg1 = get_value(call.parameters[0]);
+            auto arg2 = get_value(call.parameters[1]);
+            return builder->CreateSub(arg1, arg2, "subtmp");
+        }
     }
     else if (call.fun_name == "*")
     {
