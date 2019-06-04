@@ -175,6 +175,11 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
             return builder->CreateICmp(CmpInst::ICMP_ULE, arg1, arg2, "cmptmp");
         }
     }
+    else if (call.fun_name == ".&")
+    {
+        auto arg1 = (Value *)call.parameters[0]->reserved;
+        return arg1;
+    }
     else
     {
         // 普通函数
@@ -184,6 +189,10 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
             fun_name = "free";
         }
         auto fun_decl = llvm_module->getFunction(fun_name);
+        if (fun_decl == nullptr)
+        {
+            throw std::string("llvm no such function");
+        }
         std::vector<Value *> args;
         for (auto &p : call.parameters)
         {
@@ -273,7 +282,9 @@ Value *codegen_llvm::get_new(const syntax_new_expr &node)
     auto member_size_lit = ConstantInt::get(IntegerType::getInt64Ty(context), member_size);
     auto total = builder->CreateMul(member_size_lit, count, "total_size");
     auto malloc_fun = llvm_module->getFunction("malloc");
-    return builder->CreateCall(malloc_fun, std::vector<Value *>{total}, "malloc_ret");
+    auto malloc_ret = builder->CreateCall(malloc_fun, std::vector<Value *>{total}, "malloc_ret");
+    auto member_ptr = PointerType::get(member_type, 0);
+    return builder->CreateBitCast(malloc_ret, member_ptr);
 }
 
 // 处理 expression
@@ -413,7 +424,7 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
 
         if (debug_flag)
         {
-             std::cout << s.to_string() << std::endl;
+            // to_string() << std::endl;
         }
 
         // 处理各种 statement

@@ -12,6 +12,9 @@ std::shared_ptr<syntax_expr> function_table::infer_type(syntax_fun_call &call, s
     auto p_ret = make_shared<syntax_expr>();
     auto type_i32 = syntax_type{primary_type{.name = "i32", .size = 4}};
     auto type_bool = syntax_type{.type = primary_type{.name = "bool", .size = 1}};
+    auto type_string = syntax_type{pointer_type{
+        std::make_shared<syntax_type>(syntax_type{
+            primary_type{.name = "char", .size = 1}})}};
 
     // .?
     if (func_name[0] == '.' && func_name[func_name.size() - 1] == '?')
@@ -87,6 +90,44 @@ std::shared_ptr<syntax_expr> function_table::infer_type(syntax_fun_call &call, s
         }
         else
             throw inner_error(INNER_NO_MATCH_FUN, func_name);
+    }
+    else if (func_name == "&")
+    {
+        if (call.parameters.size() == 1)
+        {
+            auto para = call.parameters[0];
+            call.fun_name = ".&";
+            if (para->is_immutable())
+            {
+                throw inner_error(INNER_NO_MATCH_FUN, func_name);
+            }
+            auto init_type = para->type;
+            auto ptr_type = syntax_type{pointer_type{std::make_shared<syntax_type>(init_type)}};
+            p_ret->type = ptr_type;
+            p_ret->val = call;
+            return p_ret;
+        }
+        else if (call.parameters.size() == 2)
+        {
+            bool find_flag = false;
+            p_ret->type = infer_type_in_list(func_name, call, inline_fun, find_flag, stmts);
+            if (find_flag)
+            {
+                p_ret->val = call;
+                return p_ret;
+            }
+        }
+    }
+    else if (func_name == "scanf" || func_name == "printf")
+    {
+        auto fmt = call.parameters[0];
+        if (fmt->type.subtyping(type_string))
+        {
+            call.parameters[0] = expr_convert_to(call.parameters[0], type_string, stmts);
+        }
+        p_ret->type = type_i32;
+        p_ret->val = call;
+        return p_ret;
     }
     else
     {

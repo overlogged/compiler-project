@@ -18,8 +18,12 @@ fn main() i32 {
     val count:u32 = 16;
     val s = new i32[count];
     x.x = 1;
+    val hh = 3;
     x = {x=3,5};
     fun2({x=3,5,6});
     x = z;
-    delete s;
+    scanf("%d",&y);
+    s[0] = 1;
+    var ss = "hello world %d y:%d";
+    printf(ss,s[0],y);
 }

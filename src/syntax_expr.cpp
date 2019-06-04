@@ -110,9 +110,7 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
                 auto member_type = env_type.type_check(p->new_type);
                 auto ptr = syntax_type{
                     .type = pointer_type{
-                        std::make_shared<syntax_type>(
-                            syntax_type{
-                                primary_type{.name = "unit", .size = 1}})}};
+                        std::make_shared<syntax_type>(member_type)}};
                 auto expr = std::make_shared<syntax_expr>(syntax_new_expr{.type = member_type, .count = count_expr}, ptr);
                 stmts.push_back(syntax_stmt{expr});
                 return expr;
