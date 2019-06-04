@@ -42,6 +42,7 @@ class codegen_llvm
     llvm::Value *get_convert(const syntax_type_convert &conv);
     llvm::Value *get_dot(const syntax_dot &dot);
     llvm::Value *get_member(const syntax_arr_member &member);
+    llvm::Value *get_new(const syntax_new_expr &node);
 
     void ext_function_dec();
     void function(const std::string &fun_name, const std::vector<syntax_stmt> &stmts, const std::vector<std::shared_ptr<syntax_expr>> &args);

@@ -240,7 +240,7 @@ const node_type node_type_auto = node_type{
         .loc = yy::location(),
         .val = "auto"}};
 
-//node_new_expr
+// node_new_expr
 struct node_new_expr
 {
     yy::location loc;
@@ -325,8 +325,8 @@ struct node_for_statement
 };
 inline std::string to_string(const node_for_statement &node)
 {
-    return obj_to_string(vec_str{"init_expr", "begin_test", "end_process","for_statement"}, 
-        vec_str{to_string(node.init_expr), to_string(node.begin_test),to_string(node.end_process) ,to_string(node.for_statement)});
+    return obj_to_string(vec_str{"init_expr", "begin_test", "end_process", "for_statement"},
+                         vec_str{to_string(node.init_expr), to_string(node.begin_test), to_string(node.end_process), to_string(node.for_statement)});
 }
 
 struct node_var_def_statement

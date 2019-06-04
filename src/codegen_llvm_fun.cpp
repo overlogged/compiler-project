@@ -178,13 +178,26 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
     else
     {
         // 普通函数
-        auto fun_decl = llvm_module->getFunction(call.fun_name);
+        std::string fun_name = call.fun_name;
+        if (fun_name == "delete")
+        {
+            fun_name = "free";
+        }
+        auto fun_decl = llvm_module->getFunction(fun_name);
         std::vector<Value *> args;
         for (auto &p : call.parameters)
         {
             args.push_back(get_value(p));
         }
-        return builder->CreateCall(fun_decl, args, call.fun_name + "_result");
+        if (fun_name == "free")
+        {
+            args[0] = builder->CreateBitCast(args[0], Type::getInt8PtrTy(context));
+            return builder->CreateCall(fun_decl, args);
+        }
+        else
+        {
+            return builder->CreateCall(fun_decl, args, call.fun_name + "_result");
+        }
     }
 }
 
@@ -252,6 +265,17 @@ Value *codegen_llvm::get_member(const syntax_arr_member &member)
     return builder->CreateGEP(base, idx, "member");
 }
 
+Value *codegen_llvm::get_new(const syntax_new_expr &node)
+{
+    auto count = get_value(node.count);
+    auto member_type = llvm_type(node.type);
+    auto member_size = member_type->getPrimitiveSizeInBits() / 8;
+    auto member_size_lit = ConstantInt::get(IntegerType::getInt64Ty(context), member_size);
+    auto total = builder->CreateMul(member_size_lit, count, "total_size");
+    auto malloc_fun = llvm_module->getFunction("malloc");
+    return builder->CreateCall(malloc_fun, std::vector<Value *>{total}, "malloc_ret");
+}
+
 // 处理 expression
 Value *codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
 {
@@ -280,6 +304,10 @@ Value *codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
     else if (auto p_member = std::get_if<syntax_arr_member>(p_val))
     {
         expr->reserved = get_member(*p_member);
+    }
+    else if (auto p_new = std::get_if<syntax_new_expr>(p_val))
+    {
+        expr->reserved = get_new(*p_new);
     }
     else
     {
@@ -385,7 +413,7 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
 
         if (debug_flag)
         {
-            // std::cout << s.to_string() << std::endl;
+             std::cout << s.to_string() << std::endl;
         }
 
         // 处理各种 statement
@@ -396,9 +424,7 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
         else if (auto p_assign = std::get_if<syntax_assign>(p_stmt))
         {
             auto rval = get_value(p_assign->rval);
-            // auto rval_type = rval->getType();
             auto lval = (Value *)p_assign->lval->reserved;
-            // auto lval_cast = builder->CreateBitCast(lval, rval_type, "assign_cast");
             builder->CreateStore(rval, lval);
         }
         else if (auto p_ret = std::get_if<syntax_return>(p_stmt))
@@ -406,7 +432,6 @@ void codegen_llvm::block(const std::vector<syntax_stmt> &stmts)
             builder->CreateStore(get_value(p_ret->val), ret_value);
             builder->CreateBr(block_return);
         }
-        // todo: new, delete
         else if (auto p_if = std::get_if<std::shared_ptr<syntax_if_block>>(p_stmt))
         {
             block_if(*p_if->get());
@@ -461,15 +486,58 @@ void codegen_llvm::function(const std::string &fun_name, const std::vector<synta
 // 外部函数声明
 void codegen_llvm::ext_function_dec()
 {
-    std::vector<llvm::Type *> printf_arg_types;
-    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(llvm_module->getContext()));
+    {
+        std::vector<llvm::Type *> arg_types;
+        arg_types.push_back(llvm::Type::getInt8PtrTy(context));
 
-    llvm::FunctionType *printf_type =
-        llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(llvm_module->getContext()), printf_arg_types, true);
-    llvm::Function *func = llvm::Function::Create(
-        printf_type, llvm::Function::ExternalLinkage,
-        llvm::Twine("printf"),
-        &*llvm_module);
-    func->setCallingConv(llvm::CallingConv::C);
+        llvm::FunctionType *fun_type =
+            llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(context), arg_types, true);
+        llvm::Function *func = llvm::Function::Create(
+            fun_type, llvm::Function::ExternalLinkage,
+            "printf",
+            &*llvm_module);
+        func->setCallingConv(llvm::CallingConv::C);
+    }
+    {
+        std::vector<llvm::Type *> arg_types;
+        arg_types.push_back(llvm::Type::getInt8PtrTy(context));
+
+        llvm::FunctionType *fun_type =
+            llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(context), arg_types, true);
+        llvm::Function *func = llvm::Function::Create(
+            fun_type, llvm::Function::ExternalLinkage,
+            "scanf",
+            &*llvm_module);
+        func->setCallingConv(llvm::CallingConv::C);
+    }
+    {
+        std::vector<llvm::Type *> arg_types;
+        arg_types.push_back(llvm::Type::getInt64Ty(context));
+
+        llvm::FunctionType *fun_type =
+            llvm::FunctionType::get(
+                llvm::Type::getInt8PtrTy(context), arg_types, false);
+
+        llvm::Function *func = llvm::Function::Create(
+            fun_type, llvm::Function::ExternalLinkage,
+            "malloc",
+            &*llvm_module);
+        func->setCallingConv(llvm::CallingConv::C);
+    }
+    {
+        std::vector<llvm::Type *> arg_types;
+        arg_types.push_back(llvm::Type::getInt8PtrTy(context));
+
+        llvm::FunctionType *fun_type =
+            llvm::FunctionType::get(
+                llvm::Type::getVoidTy(context), arg_types, false);
+
+        llvm::Function *func = llvm::Function::Create(
+            fun_type, llvm::Function::ExternalLinkage,
+            "free",
+            &*llvm_module);
+        func->setCallingConv(llvm::CallingConv::C);
+    }
 }

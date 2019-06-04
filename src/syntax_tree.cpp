@@ -289,9 +289,9 @@ syntax_stmt syntax_module::for_analysis(const node_for_statement &node)
 {
     syntax_for_block block;
     env_var.push();
-    block.begin_test = expr_analysis(node.begin_test,block.begin_test_stmt);
-    expr_analysis(node.init_expr,block.init_stmt);
-    expr_analysis(node.end_process,block.end_process_stmt);
+    block.begin_test = expr_analysis(node.begin_test, block.begin_test_stmt);
+    expr_analysis(node.init_expr, block.init_stmt);
+    expr_analysis(node.end_process, block.end_process_stmt);
     block.body = statement_analysis(node.for_statement);
     env_var.pop();
     return {std::make_shared<syntax_for_block>(block)};
@@ -394,7 +394,7 @@ std::vector<syntax_stmt> syntax_module::statement_analysis(std::vector<node_stat
                 auto expr = std::make_shared<syntax_expr>();
                 expr->val = syntax_fun_call{
                     .fun_name = "delete",
-                    .parameters = std::vector<std::shared_ptr<syntax_expr>>{expr}};
+                    .parameters = std::vector<std::shared_ptr<syntax_expr>>{delete_e}};
                 expr->type = env_type.get_type("unit");
                 stmts.emplace_back(syntax_stmt{expr});
             }

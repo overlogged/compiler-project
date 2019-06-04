@@ -98,6 +98,30 @@ std::shared_ptr<syntax_expr> syntax_module::expr_analysis(const node_expression 
             }
             return syntax_node;
         }
+
+        // new
+        else if (auto p = std::get_if<node_new_expr>(&node.expr))
+        {
+            auto count = expr_analysis(*p->size, stmts);
+            auto type_u64 = syntax_type{primary_type{.name = "u64", .size = 8}};
+            if (count->type.subtyping(type_u64))
+            {
+                auto count_expr = expr_convert_to(count, type_u64, stmts);
+                auto member_type = env_type.type_check(p->new_type);
+                auto ptr = syntax_type{
+                    .type = pointer_type{
+                        std::make_shared<syntax_type>(
+                            syntax_type{
+                                primary_type{.name = "unit", .size = 1}})}};
+                auto expr = std::make_shared<syntax_expr>(syntax_new_expr{.type = member_type, .count = count_expr}, ptr);
+                stmts.push_back(syntax_stmt{expr});
+                return expr;
+            }
+            else
+            {
+                throw syntax_error(p->loc, "index must be integers");
+            }
+        }
         else
             assert(false);
     }

@@ -30,6 +30,12 @@ struct syntax_literal
     std::variant<unsigned long long, double, float, std::string> val;
 };
 
+struct syntax_new_expr
+{
+    syntax_type type;
+    std::shared_ptr<syntax_expr> count;
+};
+
 struct syntax_var
 {
 };
@@ -60,20 +66,19 @@ struct syntax_construct
 
 struct syntax_expr
 {
+    using val_t = std::variant<syntax_fun_call, syntax_literal, syntax_var,
+                               syntax_type_convert, syntax_dot, syntax_arr_member, syntax_new_expr>;
+
     bool immutable = true;
     syntax_type type;
-    std::variant<syntax_fun_call, syntax_literal, syntax_var,
-                 syntax_type_convert, syntax_dot, syntax_arr_member>
-        val;
+
+    val_t val;
 
     void *reserved = nullptr;
 
     syntax_expr() = default;
 
-    syntax_expr(const std::variant<syntax_fun_call, syntax_literal, syntax_var,
-                                   syntax_type_convert, syntax_dot, syntax_arr_member> &
-                    v,
-                syntax_type t) : type(t), val(v)
+    syntax_expr(const val_t &v, syntax_type t) : type(t), val(v)
     {
         immutable = true;
         reserved = nullptr;
@@ -104,6 +109,10 @@ struct syntax_expr
         else if (std::get_if<syntax_arr_member>(&val))
         {
             return "arr";
+        }
+        else if (std::get_if<syntax_new_expr>(&val))
+        {
+            return "new";
         }
         return "expr";
     }
@@ -277,7 +286,7 @@ class syntax_module
     syntax_stmt if_analysis(const node_if_statement &node);
 
     syntax_stmt while_analysis(const node_while_statement &node);
-    
+
     syntax_stmt for_analysis(const node_for_statement &node);
 
     std::vector<syntax_stmt> statement_analysis(std::vector<node_statement> origin_stmts);

@@ -15,8 +15,11 @@ fn fun2(x:(x:i8,i8)) i8 {
 }
 
 fn main() i32 {
+    val count:u32 = 16;
+    val s = new i32[count];
     x.x = 1;
     x = {x=3,5};
     fun2({x=3,5,6});
     x = z;
+    delete s;
 }
