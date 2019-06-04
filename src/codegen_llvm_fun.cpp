@@ -39,7 +39,6 @@ Value *codegen_llvm::get_lit(const syntax_literal &lit)
     throw std::string("lit");
 }
 
-// todo: 完成对函数调用的处理
 // 各种 builtin 函数
 // 注意判断有无符号
 Value *codegen_llvm::get_call(const syntax_fun_call &call)
@@ -55,7 +54,14 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
         {
             auto arg1 = get_value(call.parameters[0]);
             auto arg2 = get_value(call.parameters[1]);
-            return builder->CreateAdd(arg1, arg2, "addtmp");
+            if (call.parameters[0]->type.get_primary() == "f32" || call.parameters[0]->type.get_primary() == "f64")
+            {
+                return builder->CreateFAdd(arg1, arg2, "faddtmp");
+            }
+            else
+            {
+                return builder->CreateAdd(arg1, arg2, "addtmp");
+            }
         }
     }
     else if (call.fun_name == "-")
@@ -69,26 +75,45 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
         {
             auto arg1 = get_value(call.parameters[0]);
             auto arg2 = get_value(call.parameters[1]);
-            return builder->CreateSub(arg1, arg2, "subtmp");
+            if (call.parameters[0]->type.get_primary() == "f32" || call.parameters[0]->type.get_primary() == "f64")
+            {
+                return builder->CreateFSub(arg1, arg2, "fsubtmp");
+            }
+            else
+            {
+                return builder->CreateSub(arg1, arg2, "subtmp");
+            }
         }
     }
     else if (call.fun_name == "*")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateMul(arg1, arg2, "multmp");
+        if (call.parameters[0]->type.get_primary() == "f32" || call.parameters[0]->type.get_primary() == "f64")
+        {
+            return builder->CreateFMul(arg1, arg2, "fmultmp");
+        }
+        else
+        {
+            return builder->CreateMul(arg1, arg2, "multmp");
+        }
     }
     else if (call.fun_name == "/")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateSDiv(arg1, arg2, "divtmp");
-    }
-    else if (call.fun_name == "u/")
-    {
-        auto arg1 = get_value(call.parameters[0]);
-        auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateUDiv(arg1, arg2, "divtmp");
+        if (call.parameters[0]->type.get_primary() == "f32" || call.parameters[0]->type.get_primary() == "f64")
+        {
+            return builder->CreateFDiv(arg1, arg2, "fdivtmp");
+        }
+        else if (call.parameters[0]->type.get_primary()[0] == 'u')
+        {
+            return builder->CreateUDiv(arg1, arg2, "divtmp");
+        }
+        else
+        {
+            return builder->CreateSDiv(arg1, arg2, "divtmp");
+        }
     }
     else if (call.fun_name == "==")
     {
@@ -237,10 +262,43 @@ Value *codegen_llvm::get_convert(const syntax_type_convert &conv)
             return get_value(conv.source_expr);
         }
 
-        if (conv.source_expr->type.get_primary()[0] == 'u' || conv.source_expr->type.get_primary() == "bool")
+        auto source_type = conv.source_expr->type.get_primary();
+        auto target_type = conv.target_type.get_primary();
+        bool source_unsigned = source_type[0] == 'u' || source_type == "bool";
+
+        if (source_type == "f32" && target_type == "f64")
+        {
+            return builder->CreateFPCast(get_value(conv.source_expr), Type::getDoubleTy(context));
+        }
+        else if (target_type == "f32" || target_type == "f64")
+        {
+            Type *t;
+            if (target_type == "f32")
+            {
+                t = Type::getFloatTy(context);
+            }
+            else
+            {
+                t = Type::getDoubleTy(context);
+            }
+            if (source_unsigned)
+            {
+                return builder->CreateUIToFP(get_value(conv.source_expr), t);
+            }
+            else
+            {
+                return builder->CreateSIToFP(get_value(conv.source_expr), t);
+            }
+        }
+
+        if (source_unsigned)
+        {
             return builder->CreateCast(Instruction::CastOps::ZExt, get_value(conv.source_expr), llvm_type(conv.target_type), "zext");
+        }
         else
+        {
             return builder->CreateCast(Instruction::CastOps::SExt, get_value(conv.source_expr), llvm_type(conv.target_type), "sext");
+        }
     }
     throw std::string("convert failed");
 }
@@ -251,7 +309,6 @@ Value *codegen_llvm::get_dot(const syntax_dot &dot)
     auto inner_type = inner_val->type;
     auto inner_llvm_val = (Value *)inner_val->reserved;
     auto llvm_i32 = IntegerType::getInt32PtrTy(context);
-    auto llvm_zero = ConstantInt::get(llvm_i32, 0);
 
     if (inner_type.is_sum())
     {

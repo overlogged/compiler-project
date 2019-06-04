@@ -8,7 +8,7 @@ bool syntax_type::subtyping(const syntax_type &t) const
         if (t.is_ref())
         {
             auto a_de = de_ref();
-            auto b_de= t.de_ref();
+            auto b_de = t.de_ref();
 
             return a_de.get_primary() == "unit" || a_de.type_equal(b_de);
         }
@@ -324,6 +324,27 @@ syntax_type type_table::type_check(const node_type &node, top_graph *dependency_
         return syntax_type{sum_t};
     }
     assert(false);
+}
+
+void product_type::fix()
+{
+    for (auto i = 0; i < types.size(); i++)
+    {
+        types[i]->fix();
+    }
+}
+
+void sum_type::fix()
+{
+    for (auto i = 0; i < types.size(); i++)
+    {
+        types[i]->fix();
+    }
+}
+
+void pointer_type::fix()
+{
+    type->fix();
 }
 
 std::string product_type::to_string() const

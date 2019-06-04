@@ -1,0 +1,10 @@
+
+fn main() i32 {
+	var s:i32 = 0;
+	var i = 0;
+	for(i=0;i<=100;i+=1) {
+		s += i;
+	}
+	printf("sum: %d\n", s);
+	return 0;
+}

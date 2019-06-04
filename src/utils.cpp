@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <cassert>
 
-bool debug_flag = true;
+bool debug_flag = false;
 bool verbose_flag = false;
 
 std::string myprintf(const char *format, ...)

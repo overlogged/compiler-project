@@ -1,0 +1,16 @@
+type Money = (RMB:f64 | Dollar:f64);
+
+fn print_money(m:Money) {
+    if m.RMB? { 
+        printf("RMB: %.2lf\n",m.RMB);
+    } else {
+        printf("Dollar: %.2lf\n",m.Dollar);
+    }
+}
+
+fn main() i32 {
+    var s:Money = {RMB = 6.6};
+    print_money(s);
+    s = {Dollar = 3};
+    print_money(s);
+}

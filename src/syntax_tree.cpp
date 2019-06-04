@@ -79,8 +79,10 @@ void syntax_module::add_var(const node_var_def_statement &def, std::vector<synta
     if (t.is_auto())
     {
         // 类型推导
-        t = init_expr->type; // todo: t 应该被修正，u15 -> i16 这种
+        t = init_expr->type;
+        t.fix();
         rval = init_expr;
+        rval->type = t;
     }
     else
     {

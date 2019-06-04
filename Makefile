@@ -1,10 +1,10 @@
 # This Makefile is designed to be simple and readable.  It does not
 # aim at portability.  It requires GNU Make.
 
-BASE = bin/main
+BASE = bin/icecola
 CXX = g++
 FLEX = flex
-CXXFLAGS = -g -I$(shell llvm-config --includedir) -std=c++17
+CXXFLAGS = -I$(shell llvm-config --includedir) -std=c++17 -O2
 LLVMLIBS = support core irreader executionengine interpreter mc mcjit bitwriter x86codegen target
 LDFLAGS = $(shell llvm-config --ldflags --libs $(LLVMLIBS)) $(shell llvm-config --system-libs) -lffi
 
@@ -26,12 +26,7 @@ bin/%.o: src/%.cpp
 $(BASE): bin/main.o bin/parser.o bin/lexer.o bin/driver.o bin/utils.o bin/syntax_tree.o bin/function.o bin/codegen_llvm.o bin/type.o bin/syntax_expr.o bin/codegen_llvm_type.o bin/codegen_llvm_fun.o 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-%.json: %.rs
-	bash -c "bin/main $^ > $@"
-
-.PHONY: test clean
-
-test: all bin/main samples/function.json
+.PHONY: clean
 
 $(BASE).o: src/parser.hpp
 parser.o: src/parser.hpp

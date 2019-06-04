@@ -16,15 +16,7 @@ int main(int argc, char *argv[])
     bool llvm_ir = false;
     for (int i = 1; i < argc; ++i)
     {
-        if (argv[i] == string("-p"))
-        {
-            drv.trace_parsing = true;
-        }
-        else if (argv[i] == string("-s"))
-        {
-            drv.trace_scanning = true;
-        }
-        else if (argv[i] == string("-o"))
+        if (argv[i] == string("-o"))
         {
             if (i == argc - 1)
             {
@@ -36,6 +28,17 @@ int main(int argc, char *argv[])
         else if (argv[i] == string("-l"))
         {
             llvm_ir = true;
+        }
+        else if (argv[i] == string("-h") || argv[i] == string("--help"))
+        {
+            std::string help =
+                "OVERVIEW: Ice Cola Lang 1.0\n\n"
+                "USAGE: "
+                "icecola xx.ic [-o xx.o] [-l]\n\n"
+                "OPTIONS:\n\t-l: output the llvm ir to a.ll\n";
+
+            std::cout << help;
+            return 0;
         }
         else
         {
@@ -59,7 +62,7 @@ int main(int argc, char *argv[])
         {
             module.syntax_analysis(drv.parse_tree);
             llvm.codegen();
-            system(("clang a.ll -o " + out_file).c_str());
+            system(("clang a.ll -Wno-override-module -o " + out_file).c_str());
             if (!llvm_ir)
             {
                 system("rm -rf a.ll");

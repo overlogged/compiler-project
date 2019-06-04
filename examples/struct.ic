@@ -1,0 +1,13 @@
+type A = (x:i32,y:i32,z:i32);
+
+fn fun(p:(x:i32,y:i32)) (sum:i32) {
+    printf("(%d,%d)\n",p.x,p.y);
+    return {sum = p.x+p.y};
+}
+
+fn main() i32 {
+    val p = {x=3,y=5,z=6};
+    val s = fun(p);
+    printf("%d\n",s.sum);
+    return 0;
+}

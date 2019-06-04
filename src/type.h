@@ -19,6 +19,20 @@ struct primary_type
     {
         return name;
     }
+
+    void fix()
+    {
+        std::string left[] = {"u7", "u15", "u31", "u63"};
+        std::string right[] = {"i8", "i16", "i32", "i64"};
+        for (auto i = 0; i < 4; i++)
+        {
+            if (name == left[i])
+            {
+                name = right[i];
+                return;
+            }
+        }
+    }
 };
 
 struct product_type
@@ -27,6 +41,7 @@ struct product_type
     std::vector<std::shared_ptr<syntax_type>> types;
 
     std::string to_string() const;
+    void fix();
 
     // 不是就返回 -1
     int get_index(const std::string &name) const
@@ -48,6 +63,7 @@ struct sum_type
     std::vector<std::shared_ptr<syntax_type>> types;
 
     std::string to_string() const;
+    void fix();
 
     // 不是则返回 -1
     int get_index(const std::string &name)
@@ -67,6 +83,7 @@ struct pointer_type
 {
     std::shared_ptr<syntax_type> type;
 
+    void fix();
     std::string to_string() const;
 };
 
@@ -135,6 +152,26 @@ struct syntax_type
     std::variant<primary_type, product_type, sum_type, pointer_type> type;
 
     syntax_type() = default;
+
+    void fix()
+    {
+        if (auto p = std::get_if<primary_type>(&type))
+        {
+            return p->fix();
+        }
+        else if (auto p = std::get_if<pointer_type>(&type))
+        {
+            return p->fix();
+        }
+        else if (auto p = std::get_if<sum_type>(&type))
+        {
+            return p->fix();
+        }
+        else if (auto p = std::get_if<product_type>(&type))
+        {
+            return p->fix();
+        }
+    }
 
     bool is_signed_primary() const
     {

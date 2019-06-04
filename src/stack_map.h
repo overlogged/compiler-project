@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include "exception.h"
 
 template <typename T>
 class stack_map
@@ -43,7 +44,7 @@ public:
                 return it->second;
             }
         }
-        throw std::string("not found");
+        throw std::string(name);
     }
 
     void insert(const std::string &name, const T &t)

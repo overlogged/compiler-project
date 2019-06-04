@@ -325,7 +325,7 @@ std::shared_ptr<syntax_expr> syntax_module::post_expr_analysis(const node_post_e
             }
             catch (const std::string &e)
             {
-                throw e;
+                throw syntax_error{node.loc, "no such variable '" + e + "'"};
             }
         }
         // 字面量
