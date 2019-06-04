@@ -22,6 +22,7 @@ std::shared_ptr<syntax_expr> syntax_module::assign_analysis(const node_assign_ex
         {
             auto syntax_fun_node = syntax_fun_call{.fun_name = node.op.substr(0, 1), .parameters = {syntax_node_l, syntax_node_r}};
             syntax_node_r = env_fun.infer_type(syntax_fun_node, stmts);
+            stmts.push_back(syntax_stmt{syntax_node_r});
         }
         syntax_node_r = expr_convert_to(syntax_node_r, syntax_node_l->type, stmts);
     }

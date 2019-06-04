@@ -136,6 +136,16 @@ struct syntax_type
 
     syntax_type() = default;
 
+    bool is_signed_primary() const
+    {
+        auto p = get_primary();
+        if (p != "" && p[0] == 's')
+        {
+            return true;
+        }
+        return false;
+    }
+
     bool is_sum() const
     {
         return std::get_if<sum_type>(&type) != nullptr;

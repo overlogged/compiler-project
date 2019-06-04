@@ -62,7 +62,7 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateMul(arg1, arg2, "multmp");
     }
-    else if (call.fun_name == "s/")
+    else if (call.fun_name == "/")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
@@ -98,29 +98,24 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateOr(arg1, arg2, "ortmp");
     }
-    else if (call.fun_name == "s%")
+    else if (call.fun_name == "%")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateSRem(arg1, arg2, "modtmp");
+        if (call.parameters[0]->type.is_signed_primary())
+        {
+            return builder->CreateSRem(arg1, arg2, "modtmp");
+        }
+        else
+        {
+            return builder->CreateURem(arg1, arg2, "modtmp");
+        }
     }
-    else if (call.fun_name == "u%")
-    {
-        auto arg1 = get_value(call.parameters[0]);
-        auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateURem(arg1, arg2, "modtmp");
-    }
-    else if (call.fun_name == "l>>")
+    else if (call.fun_name == ">>")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateLShr(arg1, arg2, "shifttmp");
-    }
-    else if (call.fun_name == "a>>")
-    {
-        auto arg1 = get_value(call.parameters[0]);
-        auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateAShr(arg1, arg2, "shifttmp");
     }
     else if (call.fun_name == "<<")
     {
@@ -128,53 +123,57 @@ Value *codegen_llvm::get_call(const syntax_fun_call &call)
         auto arg2 = get_value(call.parameters[1]);
         return builder->CreateShl(arg1, arg2, "shifttmp");
     }
-    else if (call.fun_name == "s>")
+    else if (call.fun_name == ">")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_SGT, arg1, arg2, "cmptmp");
+        if (call.parameters[0]->type.is_signed_primary())
+        {
+            return builder->CreateICmp(CmpInst::ICMP_SGT, arg1, arg2, "cmptmp");
+        }
+        else
+        {
+            return builder->CreateICmp(CmpInst::ICMP_UGT, arg1, arg2, "cmptmp");
+        }
     }
-    else if (call.fun_name == "u>")
+    else if (call.fun_name == "<")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_UGT, arg1, arg2, "cmptmp");
+        if (call.parameters[0]->type.is_signed_primary())
+        {
+            return builder->CreateICmp(CmpInst::ICMP_SLT, arg1, arg2, "cmptmp");
+        }
+        else
+        {
+            return builder->CreateICmp(CmpInst::ICMP_ULT, arg1, arg2, "cmptmp");
+        }
     }
-    else if (call.fun_name == "s<")
+    else if (call.fun_name == ">=")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_SLT, arg1, arg2, "cmptmp");
+        if (call.parameters[0]->type.is_signed_primary())
+        {
+            return builder->CreateICmp(CmpInst::ICMP_SGE, arg1, arg2, "cmptmp");
+        }
+        else
+        {
+            return builder->CreateICmp(CmpInst::ICMP_UGE, arg1, arg2, "cmptmp");
+        }
     }
-    else if (call.fun_name == "u<")
+    else if (call.fun_name == "<=")
     {
         auto arg1 = get_value(call.parameters[0]);
         auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_ULT, arg1, arg2, "cmptmp");
-    }
-    else if (call.fun_name == "s>=")
-    {
-        auto arg1 = get_value(call.parameters[0]);
-        auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_SGE, arg1, arg2, "cmptmp");
-    }
-    else if (call.fun_name == "u>=")
-    {
-        auto arg1 = get_value(call.parameters[0]);
-        auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_UGE, arg1, arg2, "cmptmp");
-    }
-    else if (call.fun_name == "s<=")
-    {
-        auto arg1 = get_value(call.parameters[0]);
-        auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_SLE, arg1, arg2, "cmptmp");
-    }
-    else if (call.fun_name == "u<=")
-    {
-        auto arg1 = get_value(call.parameters[0]);
-        auto arg2 = get_value(call.parameters[1]);
-        return builder->CreateICmp(CmpInst::ICMP_ULE, arg1, arg2, "cmptmp");
+        if (call.parameters[0]->type.is_signed_primary())
+        {
+            return builder->CreateICmp(CmpInst::ICMP_SLE, arg1, arg2, "cmptmp");
+        }
+        else
+        {
+            return builder->CreateICmp(CmpInst::ICMP_ULE, arg1, arg2, "cmptmp");
+        }
     }
     else
     {
@@ -289,6 +288,7 @@ Value *codegen_llvm::expression(std::shared_ptr<syntax_expr> expr)
 
     return (Value *)expr->reserved;
 }
+
 void codegen_llvm::block_for(const syntax_for_block &syntax_for)
 {
     auto block_begin_test = BasicBlock::Create(context, "begin_test");
@@ -307,19 +307,21 @@ void codegen_llvm::block_for(const syntax_for_block &syntax_for)
     //test
     builder->SetInsertPoint(block_begin_test);
     block(syntax_for.begin_test_stmt);
-    builder->CreateCondBr(get_value(syntax_for.begin_test),block_loop,block_loop_end);
+    builder->CreateCondBr(get_value(syntax_for.begin_test), block_loop, block_loop_end);
     block_begin_test->insertInto(func);
 
-    //loop 
+    //loop
     builder->SetInsertPoint(block_loop);
     block(syntax_for.body);
     block(syntax_for.end_process_stmt);
     builder->CreateBr(block_begin_test);
     block_loop->insertInto(func);
+
     //loop end
     builder->SetInsertPoint(block_loop_end);
     block_loop_end->insertInto(func);
 }
+
 void codegen_llvm::block_if(const syntax_if_block &syntax_if)
 {
     // 计算条件
@@ -368,6 +370,7 @@ void codegen_llvm::block_while(const syntax_while_block &syntax_while)
     block(syntax_while.body);
     builder->CreateBr(block_begin_test);
     block_loop->insertInto(func);
+
     // loop end
     builder->SetInsertPoint(block_loop_end);
     block_loop_end->insertInto(func);
